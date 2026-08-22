@@ -42,7 +42,7 @@ function VisitsPage() {
         .from('visits')
         .select(`
           *,
-          promoters:promoter_id(name),
+          profiles:promoter_id(full_name),
           stores:store_id(name, city),
           industries:industry_id(name)
         `)
@@ -73,7 +73,7 @@ function VisitsPage() {
   const filteredVisits = visits.filter(v => {
     const matchesSearch = 
       v.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.promoters?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.industries?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (statusFilter === 'all') return matchesSearch;
@@ -161,7 +161,7 @@ function VisitsPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-sm font-semibold text-slate-700">
                           <User className="w-3 h-3 text-slate-400" />
-                          {visit.promoters?.name || 'Promotor não vinculado'}
+                          {visit.profiles?.full_name || 'Promotor não vinculado'}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           <Badge variant="outline" className="text-[9px] h-4 font-bold border-slate-200">
