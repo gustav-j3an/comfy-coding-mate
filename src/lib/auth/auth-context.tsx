@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     // Clean up sensitive local data
-    localStorage.removeItem('sb-' + (import.meta.env.VITE_SUPABASE_URL?.split('.')[0].split('//')[1] || '') + '-auth-token');
+    localStorage.removeItem('sb-' + (import.meta.env['VITE_SUPABASE_URL']?.split('.')[0].split('//')[1] || '') + '-auth-token');
     sessionStorage.clear();
     
     // Clear all non-essential items
