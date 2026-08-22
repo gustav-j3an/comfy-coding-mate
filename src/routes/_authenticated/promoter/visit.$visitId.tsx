@@ -73,11 +73,11 @@ function VisitExecution() {
       return;
     }
     if (isVideo && file.size > 30 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "Vídeos devem ter no máximo 30MB", variant: "destructive" });
+      toast.error("Arquivo muito grande: Vídeos devem ter no máximo 30MB");
       return;
     }
     if (isPdf && file.size > 10 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "PDFs devem ter no máximo 10MB", variant: "destructive" });
+      toast.error("Arquivo muito grande: PDFs devem ter no máximo 10MB");
       return;
     }
 
@@ -98,9 +98,9 @@ function VisitExecution() {
         evidenceType: activeEvidenceType
       }]);
 
-      toast({ title: "Arquivo enviado", description: "Evidência anexada com sucesso." });
+      toast.success("Evidência anexada com sucesso.");
     } catch (error: any) {
-      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
+      toast.error("Erro no upload: " + error.message);
     }
   };
 
@@ -121,7 +121,7 @@ function VisitExecution() {
 
   const handleSubmit = async () => {
     if (evidences.length === 0) {
-      toast({ title: "Evidência obrigatória", description: "Envie pelo menos uma foto ou prova da execução.", variant: "destructive" });
+      toast.error("Envie pelo menos uma foto ou prova da execução.");
       return;
     }
 
@@ -141,10 +141,10 @@ function VisitExecution() {
         }
       });
 
-      toast({ title: "Visita enviada!", description: "Dados enviados para conferência administrativa." });
+      toast.success("Visita enviada para conferência administrativa.");
       navigate({ to: '/promoter' });
     } catch (error: any) {
-      toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
+      toast.error("Erro ao enviar: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
