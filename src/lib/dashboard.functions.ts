@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { Database } from "@/integrations/supabase/types";
 
 export const getDashboardStats = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -16,14 +15,11 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     
-    // Using a more type-safe approach for status
-    const status: Database["public"]["Enums"]["visit_status"] = 'submitted';
-    
     const { count: pendingVisits } = await supabaseAdmin
       .from('visits')
       .select('*', { count: 'exact', head: true })
       .eq('scheduled_date', today)
-      .eq('status', status);
+      .eq('status', 'submitted' as any);
 
     return {
       criticalOccurrences: criticalOccurrences || 0,
