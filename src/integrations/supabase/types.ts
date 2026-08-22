@@ -278,29 +278,38 @@ export type Database = {
         Row: {
           active: boolean | null
           address: string
+          cep: string | null
+          city: string | null
           created_at: string | null
           id: string
           latitude: number | null
           longitude: number | null
           name: string
+          state: string | null
         }
         Insert: {
           active?: boolean | null
           address: string
+          cep?: string | null
+          city?: string | null
           created_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name: string
+          state?: string | null
         }
         Update: {
           active?: boolean | null
           address?: string
+          cep?: string | null
+          city?: string | null
           created_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name?: string
+          state?: string | null
         }
         Relationships: []
       }
