@@ -15,12 +15,31 @@ function AdminDashboard() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [hasData, setHasData] = useState(true);
+
+  useEffect(() => {
+    checkData();
+  }, []);
+
+  const checkData = async () => {
+    try {
+      const { count: promoterCount } = await (supabase as any).from('promoters').select('*', { count: 'exact', head: true });
+      const { count: storeCount } = await (supabase as any).from('stores').select('*', { count: 'exact', head: true });
+      const { count: industryCount } = await (supabase as any).from('industries').select('*', { count: 'exact', head: true });
+      
+      setHasData((promoterCount || 0) > 0 || (storeCount || 0) > 0 || (industryCount || 0) > 0);
+    } catch (e) {
+      setHasData(true); // Default to true on error to hide the button
+    }
+  };
+
   const handleSeed = async () => {
     toast.promise(seedTestData(), {
       loading: 'Gerando dados de teste...',
       success: 'Dados de teste gerados com sucesso!',
       error: 'Erro ao gerar dados de teste',
     });
+    setHasData(true);
   };
 
   const stats = [
