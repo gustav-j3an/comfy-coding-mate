@@ -248,10 +248,11 @@ function AutomationPage() {
                 </p>
               </div>
               <ul className="text-xs text-slate-600 space-y-3 list-disc pl-4 font-medium">
-                <li>Use o HMAC secret para validar a origem das requisições no n8n.</li>
-                <li>Os webhooks são disparados em segundo plano para não afetar o tempo de resposta do app.</li>
-                <li>Falhas temporárias no n8n são registradas no log histórico abaixo.</li>
-                <li>A retenção automática remove arquivos privados do storage após o prazo definido.</li>
+                <li>A URL do n8n e o Segredo HMAC devem ser configurados via variáveis de ambiente (N8N_WEBHOOK_URL, N8N_HMAC_SECRET).</li>
+                <li>Cada webhook é assinado com HMAC-SHA256 e timestamp para evitar ataques de repetição.</li>
+                <li>A retenção mínima é de 90 dias conforme política de compliance.</li>
+                <li>A limpeza manual exige confirmação por texto e registra auditoria.</li>
+                <li>Os arquivos físicos do storage são excluídos permanentemente na rotina.</li>
               </ul>
             </CardContent>
           </Card>
