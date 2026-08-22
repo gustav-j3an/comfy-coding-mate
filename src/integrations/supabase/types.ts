@@ -540,6 +540,7 @@ export type Database = {
       can_delete_industry: { Args: { i_id: string }; Returns: boolean }
       can_delete_promoter: { Args: { p_id: string }; Returns: boolean }
       can_delete_store: { Args: { s_id: string }; Returns: boolean }
+      delete_user_safely: { Args: { _user_id: string }; Returns: undefined }
       get_admin_count: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -548,6 +549,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_last_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
