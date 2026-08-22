@@ -721,7 +721,7 @@ export type Database = {
             foreignKeyName: "visits_promoter_id_fkey"
             columns: ["promoter_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "promoters"
             referencedColumns: ["id"]
           },
           {

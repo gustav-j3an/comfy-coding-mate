@@ -79,7 +79,7 @@ function VisitsPage() {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
 
       if (search.filter === 'predicted-today') {
-        query = query.eq('scheduled_date', todayStr).eq('status', 'pending');
+        query = query.eq('scheduled_date', todayStr).eq('status', 'planned' as any);
       } else if (search.filter === 'sent-today') {
         query = query.eq('scheduled_date', todayStr).eq('status', 'submitted');
       } else if (search.filter === 'pending') {
@@ -170,6 +170,8 @@ function VisitsPage() {
         return <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none font-bold"><AlertCircle className="w-3 h-3 mr-1" /> Rejeitada</Badge>;
       case 'submitted':
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none font-bold"><Clock className="w-3 h-3 mr-1" /> Em Conferência</Badge>;
+      case 'planned':
+        return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none font-bold">Planejada</Badge>;
       default:
         return <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none font-bold">Pendente</Badge>;
     }
@@ -215,7 +217,7 @@ function VisitsPage() {
               <option value="submitted">Pendentes de Conferência</option>
               <option value="approved">Aprovadas</option>
               <option value="rejected">Rejeitadas</option>
-              <option value="pending">Agendadas</option>
+              <option value="planned">Agendadas</option>
             </select>
           </div>
           <Button variant="outline" className="flex items-center gap-2">
@@ -426,23 +428,27 @@ function VisitsPage() {
             >
               Cancelar
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => handleAudit('rejected')}
-              disabled={isAuditing}
-              className="font-bold"
-            >
-              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
-              Reprovar
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 font-bold"
-              onClick={() => handleAudit('approved')}
-              disabled={isAuditing}
-            >
-              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-              Aprovar Visita
-            </Button>
+            {selectedVisit?.status === 'submitted' && (
+              <>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleAudit('rejected')}
+                  disabled={isAuditing}
+                  className="font-bold"
+                >
+                  {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                  Reprovar
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 font-bold"
+                  onClick={() => handleAudit('approved')}
+                  disabled={isAuditing}
+                >
+                  {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                  Aprovar Visita
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

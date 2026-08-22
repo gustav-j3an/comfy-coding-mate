@@ -31,18 +31,24 @@ function PromoterDashboard() {
     queryFn: async () => {
       const currentUserId = user?.id;
       const currentPromoterId = profile?.promoter_id;
-      if (!currentUserId || !currentPromoterId) return [];
+      if (!currentUserId) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('visits')
         .select(`
           *,
           store:stores(name, address),
           industry:industries(name)
         `)
-        .eq('promoter_id', currentPromoterId)
-        .eq('scheduled_date', today as string)
-        .order('visit_order', { ascending: true });
+        .eq('scheduled_date', today as string);
+
+      if (currentPromoterId) {
+        query = query.eq('promoter_id', currentPromoterId);
+      } else {
+        query = query.eq('executor_id', currentUserId);
+      }
+
+      const { data, error } = await query.order('visit_order', { ascending: true });
 
       if (error) throw error;
       return data;

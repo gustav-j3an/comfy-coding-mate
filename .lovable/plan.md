@@ -1,48 +1,41 @@
-# Mission 4: Registration of Visits, Evidence, and Occurrences
+# Implementation Plan - Mission 4 Completion & Mission 5 Foundation
 
-Implementation of the field operation module, focusing on data integrity, execution evidence, and administrative auditing.
+Complete the Mission 4 requirements for audit integrity and evidence handling, while preparing the groundwork for Mission 5 (Extraordinary visits and occurrence management).
 
-## User Interface & Experience
+## User Review Required
 
-### Promoter Dashboard (`/promoter`)
-- **Today's Itinerary**: List of scheduled stores for the current date.
-- **Status Indicators**: Visual cues for `planned`, `submitted`, `approved`, and `rejected`.
-- **Visit Execution**: Access to the specialized execution screen.
+> [!IMPORTANT]
+> - **Visit Linkage:** We have established `executor_id` (Auth User) as the primary record for WHO executed a visit, while `promoter_id` links to the team member profile. This allows Admins to test the flow without needing a promoter record.
+> - **Audit Decision:** Once a visit is Approved or Rejected, should the Admin be able to change the status again? (Currently: No, once audited, the buttons hide to ensure process integrity).
 
-### Visit Execution (`/promoter/visit/$visitId`)
-- **Evidence Capture**:
-  - Photo (max 2MB, optimized).
-  - Video (max 30MB).
-  - PDF/Documents (max 10MB).
-- **Occurrence Reporting**: Quick triggers for "Ruptura", "Vencido", etc.
-- **Location Guard**: Automatic GPS coordinate capture during check-in/submission.
-- **Feedback**: Success notification after submission to admin conference.
+## Proposed Changes
 
-### Admin Audit (`/admin/visits`)
-- **Submission Queue**: View of all visits pending conference.
-- **Evidence Viewer**: Dialog to inspect photos, videos, and PDFs using secure signed URLs.
-- **Decision Engine**: Approve or Reject (with required reason).
-- **History**: Permanent audit log of who approved/rejected and when.
+### Database & Security
+- Add RLS policies to `visit_evidence` and `visit_audits` to ensure only the creator and admins can read/write.
+- Ensure `occurrences` are linked to the industry for reporting.
+
+### Admin Experience
+- **Visits Audit:** Refine the Audit Modal in `/admin/visits` to show detailed execution data (geolocation, check-in/out times) and prevent re-auditing.
+- **Reports:** Ensure performance calculations include the new `planned` status as the baseline.
+
+### Promoter Experience
+- **Visit Execution:** Fix the "Anexar PDF" functionality to correctly filter and upload PDF files.
+- **Occurrences:** Implement a specific "Ruptura" occurrence form with SKU/Product details as per Mission 5 requirements.
+
+### Foundation for Mission 5
+- Create the public API structure for potential external integrations (WhatsApp/Cron).
+- Implement the "Extraordinary Route" logic in the backend.
 
 ## Technical Details
 
-### Data Integrity & Relationships
-- **Promoter Link**: `visits.promoter_id` now correctly references the `promoters` table (not the auth profile).
-- **Executor Tracking**: Added `executor_id` to `visits` to record the actual user performing the visit (for accountability).
-- **Audit Logging**: Created `visit_audits` table to track decision history.
+### 1. Data Integrity Fixes
+- Fix `src/routes/_authenticated/admin/visits.tsx` to handle the `executor_id` join correctly in the audit list.
+- Update `src/lib/execution.functions.ts` to include `rejection_reason` in the `visits` table update during audit.
 
-### Storage & Security
-- **Bucket**: `visit-evidences` (private).
-- **Access Control**: RLS policies allowing promoters to upload, and admins/industry-owners to read specific files.
-- **Secure Retrieval**: `getSignedUrl` server function to generate temporary links for protected files.
+### 2. UI/UX Refinements
+- **Promoter Dashboard:** Fix the `Link` component in `visit.$visitId.tsx` to use the standard `@tanstack/react-router` pattern.
+- **Admin Users:** Fix the "Invite" flow to correctly populate data when coming from the Promoters list.
 
-### Backend Functions
-- `submitVisit`: Processes metadata, uploads evidence records, and creates occurrences in a transaction-like flow.
-- `auditVisit`: Updates visit status and records the auditor's identity and reasoning.
-
-## Phases
-
-1.  **Schema Stabilization**: Fix FK relationships and storage buckets. (Done)
-2.  **Promoter Experience**: Build the dashboard and execution UI. (Done)
-3.  **Admin Audit**: Implement the review and decision interface. (Done)
-4.  **Industry View**: Update industry portal to see validated evidence. (In Progress)
+### 3. Missing Files & Routes
+- Create `src/routes/api/public/webhook.ts` skeleton.
+- Create `src/routes/_authenticated/admin/occurrences.tsx` (Occurrence management).

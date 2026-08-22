@@ -21,10 +21,63 @@ function IndustryPortal() {
     occurrences: 0,
     storesServed: 0
   });
+  const [recentEvidences, setRecentEvidences] = useState<any[]>([]);
+  const [loadingEvidences, setLoadingEvidences] = useState(false);
 
   useEffect(() => {
-    if (user) fetchIndustryData();
+    if (user) {
+      fetchIndustryData();
+      fetchRecentEvidences();
+    }
   }, [user]);
+
+  const fetchRecentEvidences = async () => {
+    try {
+      setLoadingEvidences(true);
+      if (!user?.id) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('industry_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.industry_id) return;
+
+      const { data: evidences, error } = await supabase
+        .from('visit_evidence')
+        .select(`
+          *,
+          visit:visit_id(
+            status,
+            industry_id,
+            stores:store_id(name)
+          )
+        `)
+        .filter('visit.industry_id', 'eq', profile.industry_id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Get signed URLs for each evidence
+      const { getSignedUrl } = await import('@/lib/execution.functions');
+      const evidencesWithUrls = await Promise.all((evidences || []).map(async (ev) => {
+        try {
+          const url = await getSignedUrl({ data: { filePath: ev.file_path } });
+          return { ...ev, signedUrl: url };
+        } catch (e) {
+          return ev;
+        }
+      }));
+
+      setRecentEvidences(evidencesWithUrls);
+    } catch (error: any) {
+      console.error('Erro ao carregar evidências:', error);
+    } finally {
+      setLoadingEvidences(false);
+    }
+  };
 
   const fetchIndustryData = async () => {
     try {
@@ -150,21 +203,39 @@ function IndustryPortal() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Últimas Evidências de Campo</CardTitle>
+              <CardTitle className="text-base">Últimas Evidências de Campo (Validadas)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {[1, 2, 3, 4, 5].map((_, i) => (
-                  <div key={i} className="aspect-square bg-slate-200 rounded-lg overflow-hidden relative group">
-                    <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-                      <Image className="w-8 h-8" />
+              {loadingEvidences ? (
+                <div className="flex justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                </div>
+              ) : recentEvidences.length === 0 ? (
+                <div className="text-center p-8 text-slate-400 text-sm">
+                  Nenhuma evidência disponível no momento.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {recentEvidences.map((ev, i) => (
+                    <div key={ev.id} className="aspect-square bg-slate-200 rounded-lg overflow-hidden relative group border shadow-sm">
+                      {ev.file_type?.startsWith('image/') ? (
+                        <img 
+                          src={ev.signedUrl} 
+                          className="w-full h-full object-cover" 
+                          alt="evidencia"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                          <FileText className="w-8 h-8 text-slate-400" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 text-white text-[10px] transform translate-y-full group-hover:translate-y-0 transition-transform">
+                        {ev.visit?.stores?.name || 'Loja Desconhecida'}
+                      </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 text-white text-[10px] transform translate-y-full group-hover:translate-y-0 transition-transform">
-                      Atacadão QNL
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
