@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "./auth/supabase-auth.server";
+
 
 const exportFiltersSchema = z.object({
   industryId: z.string().optional(),
