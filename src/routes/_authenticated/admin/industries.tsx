@@ -318,7 +318,7 @@ function IndustriesPage() {
                           <DropdownMenuItem onClick={() => navigate({ to: '/admin/users' })}>
                             <BarChart3 className="mr-2 h-4 w-4" /> Visão Indústria
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/users' })}>
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/users', search: { invite: 'industry', id: industry.id } })}>
                             <UserPlus className="mr-2 h-4 w-4" /> Convidar Usuário
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
