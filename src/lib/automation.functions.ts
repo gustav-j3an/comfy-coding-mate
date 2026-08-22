@@ -15,11 +15,13 @@ export const getAutomationSettings = createServerFn({ method: "GET" })
     // Return connection status based on environment variables (backend only check)
     const isConfigured = !!(process.env['N8N_WEBHOOK_URL']);
     
+    const settings = data || {
+      retention_days: 90,
+      is_active: false
+    };
+    
     return {
-      ...(data || {
-        retention_days: 90,
-        is_active: false
-      }),
+      ...settings,
       is_configured: isConfigured
     };
   });
@@ -115,29 +117,19 @@ export const getCleanupPreview = createServerFn({ method: "GET" })
   });
 
 export const executeManualCleanup = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({
+  .inputValidator((data: any) => z.object({
     confirmation: z.string().refine(val => val === 'EXCLUIR DADOS EXPIRADOS', {
       message: "Texto de confirmação incorreto"
     })
   }).parse(data))
-  .handler(async ({ data }, ctx) => {
+  .handler(async ({ data, context }: { data: any, context: any }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const userId = (ctx as any).userId;
+    const userId = context.userId;
 
     // 1. Get counts for audit
     const preview = await getCleanupPreview();
 
     // 2. Perform cleanup with storage awareness
-    // In a real scenario, we would iterate through evidences and delete files first.
-    // For this implementation, we will simulate the safe sequence.
-    
-    // We'll use the existing cleanup_expired_data RPC if available, 
-    // but the requirement is to ensure storage deletion.
-    // Logic: 
-    // a) Select evidences to delete
-    // b) For each evidence, try to delete file from storage 'evidences' bucket
-    // c) If successful, delete DB record.
-    
     const { data: expiredEvidences } = await supabaseAdmin
       .from('evidences' as any)
       .select('id, image_url')
@@ -145,9 +137,9 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
 
     let deletedFiles = 0;
     if (expiredEvidences && expiredEvidences.length > 0) {
-      for (const evidence of expiredEvidences) {
+      const evidences = expiredEvidences as any[];
+      for (const evidence of evidences) {
         if (evidence.image_url) {
-          // Extract file path from URL
           const filePath = evidence.image_url.split('/').pop();
           if (filePath) {
             const { error: storageError } = await supabaseAdmin.storage
