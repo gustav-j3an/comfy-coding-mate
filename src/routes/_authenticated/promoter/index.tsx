@@ -29,7 +29,8 @@ function PromoterDashboard() {
   const { data: visits } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
-      if (!profile?.promoter_id) return [];
+      const promoterId = profile?.promoter_id;
+      if (!promoterId) return [];
       
       const { data, error } = await supabase
         .from('visits')
@@ -38,7 +39,7 @@ function PromoterDashboard() {
           store:stores(name, address),
           industry:industries(name)
         `)
-        .eq('promoter_id', profile.promoter_id)
+        .eq('promoter_id', promoterId)
         .eq('scheduled_date', today)
         .order('visit_order', { ascending: true });
 
