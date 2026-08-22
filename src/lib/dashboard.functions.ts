@@ -22,7 +22,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       .eq('status', 'submitted' as any);
 
     return {
-      criticalOccurrences: criticalOccurrences || 0,
-      pendingVisits: pendingVisits || 0,
+      criticalOccurrences: (criticalOccurrences as number) || 0,
+      pendingVisits: (pendingVisits as number) || 0,
     };
   });
