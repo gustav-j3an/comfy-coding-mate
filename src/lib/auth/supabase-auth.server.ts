@@ -19,9 +19,9 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
       const match = cookie.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
       if (match) {
         try {
-          const session = JSON.parse(decodeURIComponent(match[1]));
+          const session = JSON.parse(decodeURIComponent(match[1])) as any;
           if (session && typeof session.access_token === 'string') {
-            token = session.access_token as string;
+            token = session.access_token;
           }
         } catch (e) {
           // Ignore
