@@ -16,66 +16,87 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   /*
-  A Missão 8 está bem encaminhada, mas eu não seguiria para publicação ainda. Pelo relatório, há dois pontos que precisam ser endurecidos:
+  MISSÃO 9 — PWA instalável, uso em celular e preparação para publicação.
 
-  1. O segredo HMAC não deve ficar editável ou visível no painel administrativo. Ele deve ficar exclusivamente nos segredos/variáveis de ambiente do backend.
-  2. O botão de “forçar limpeza” não pode apagar dados imediatamente sem prévia, confirmação forte e auditoria.
+  OBJETIVO:
+  Preparar o Rota do Promotor para ser instalado e usado por promotores em Android e iPhone, sem publicar em produção automaticamente.
 
-  Também precisamos garantir que a rotina apague os arquivos físicos do Storage, não somente os registros no banco.
+  PWA:
+  - Criar manifest completo com nome “Rota do Promotor”.
+  - Criar ícones adequados para instalação.
+  - Configurar tema, cor de fundo e tela de abertura.
+  - Configurar service worker.
+  - Permitir instalação pelo navegador em Android e iPhone.
+  - Exibir botão ou orientação discreta “Instalar aplicativo” somente quando compatível.
+  - Não criar aplicativo nativo nesta fase.
 
-  Envie esta correção antes da missão de PWA/publicação:
+  SEGURANÇA DE CACHE:
+  - Cachear somente arquivos estáticos necessários para abrir a interface.
+  - Nunca manter em cache público:
+    - fotos;
+    - vídeos;
+    - PDFs;
+    - links assinados;
+    - dados de visitas;
+    - dados financeiros;
+    - dados de outras indústrias.
+  - Ao sair da conta, limpar dados sensíveis armazenados localmente.
+  - Não exibir dados sensíveis em notificações.
 
-  MISSÃO 8.1 — Endurecimento de segurança da automação e retenção.
+  CELULAR E PROMOTOR:
+  - Garantir interface mobile-first em `/promoter`.
+  - Botões grandes e fáceis de usar com uma mão.
+  - Exibir indicador de conexão: online, sem conexão e reconectando.
+  - Exibir progresso de envio de foto, vídeo e PDF.
+  - Não permitir duplicação de envio ao tocar várias vezes.
+  - Mostrar mensagem clara quando câmera, GPS ou upload falharem.
+  - Solicitar localização somente no momento de registrar visita.
+  - Solicitar câmera somente ao tocar em “Tirar foto”.
+  - Priorizar captura por câmera em celular.
+  - Não prometer bloqueio absoluto da galeria, pois navegadores e sistemas operacionais podem oferecer essa opção.
+  - Validar permissões recusadas e orientar o usuário a habilitá-las nas configurações do aparelho.
 
-  Corrigir os seguintes pontos sem remover as funcionalidades da Missão 8.
+  SESSÃO E LOGIN:
+  - Manter login seguro entre aberturas do aplicativo.
+  - Permitir sair da conta claramente.
+  - Ao sair, limpar sessão e dados sensíveis locais.
+  - Redirecionar cada perfil para sua área correta após reabrir:
+    - administrador: `/admin`;
+    - promotor: `/promoter`;
+    - indústria: `/industry`.
 
-  SEGREDOS E WEBHOOK:
-  - Remover do painel administrativo qualquer campo que revele ou permita ler o segredo HMAC.
-  - Não salvar o segredo HMAC em texto aberto na tabela `automation_settings`.
-  - Armazenar URL do n8n, segredo HMAC e credenciais somente em variáveis de ambiente/segredos do backend.
-  - O painel `/admin/automation` deve mostrar apenas:
-    - conexão configurada ou não configurada;
-    - domínio autorizado;
-    - data da última comunicação;
-    - resultado do último teste;
-    - eventos ativos;
-    - logs sanitizados.
-  - Não mostrar URL completa sensível, segredo, token ou payload completo.
-  - Aceitar somente URLs HTTPS e domínios previamente autorizados para o webhook.
-  - Assinar cada webhook com HMAC-SHA256 e timestamp.
-  - Implementar proteção contra repetição: o n8n deve poder rejeitar eventos com timestamp expirado.
-  - Não armazenar dados sensíveis, e-mails completos, links assinados, URLs de mídia, senhas ou tokens nos logs de webhook.
+  PREPARAÇÃO PARA PRODUÇÃO:
+  - Criar página administrativa de diagnóstico, exclusiva para administradores, com:
+    - status do Supabase;
+    - status da automação n8n;
+    - status do Storage;
+    - status do PWA;
+    - versão atual do aplicativo;
+    - data da última limpeza;
+    - último erro crítico, sem expor segredos.
+  - Preparar variáveis de ambiente necessárias para produção.
+  - Criar configuração de URLs permitidas para autenticação e recuperação de senha.
+  - Documentar, em uma tela ou arquivo de administração, os passos para:
+    - conectar domínio próprio;
+    - configurar URL de produção no Supabase;
+    - configurar redirecionamento de convite e redefinição de senha;
+    - configurar variáveis de ambiente;
+    - conectar n8n.
+  - Não publicar sem confirmação explícita do administrador.
 
-  LIMPEZA DE DADOS:
-  - Confirmar que a rotina exclui os arquivos físicos privados do Storage, não apenas metadados no banco.
-  - Se a exclusão de arquivo falhar, registrar falha e manter item em fila para nova tentativa.
-  - Só excluir o registro de evidência após sucesso ou status controlado de exclusão do arquivo.
-  - Nunca excluir visitas que façam parte de uma cobrança emitida sem garantir que o snapshot financeiro e checklist financeiro estejam preservados.
-  - Preservar contratos, cobranças, snapshots financeiros e logs de auditoria conforme política configurada.
-  - Manter política mínima de retenção de 90 dias; não permitir configurar prazo menor sem confirmação explícita e registro de auditoria.
+  TESTES OBRIGATÓRIOS:
+  - Testar layout em largura de Android e iPhone.
+  - Testar instalação PWA.
+  - Testar login e logout.
+  - Testar abertura da câmera.
+  - Testar solicitação de GPS.
+  - Testar envio de foto.
+  - Testar comportamento sem conexão, exibindo mensagem clara.
+  - Testar que arquivos privados não aparecem em cache público.
+  - Testar acesso de promotor, administrador e indústria após instalação.
+  - Corrigir links quebrados e erros de navegação.
 
-  AÇÃO MANUAL:
-  - Substituir “forçar limpeza” por “Prévia de limpeza”.
-  - A prévia deve mostrar quantidade de visitas, evidências, ocorrências e arquivos que seriam excluídos.
-  - Para confirmar a exclusão manual, exigir que o administrador digite exatamente:
-    `EXCLUIR DADOS EXPIRADOS`
-  - Registrar administrador, data/hora, quantidade de registros e resultado.
-  - Não permitir exclusão manual de dados ainda dentro do prazo de 90 dias.
-
-  ALERTAS:
-  - Implementar e registrar alertas de retenção com 15 e 3 dias de antecedência.
-  - Alertas devem informar indústria, período, quantidade estimada de evidências e link para exportação.
-  - Não enviar arquivos de mídia ao n8n.
-
-  TESTES:
-  - Confirmar que segredo HMAC não aparece no frontend, banco de dados de configuração ou logs.
-  - Testar exclusão física de arquivo de evidência em ambiente de teste.
-  - Testar falha de exclusão e nova tentativa.
-  - Testar prévia de limpeza sem apagar nada.
-  - Testar confirmação manual.
-  - Confirmar que cobrança emitida continua consistente após a limpeza dos dados operacionais.
-
-  Depois dessa correção, seguimos para a Missão 9: aplicativo instalável no celular, permissões de câmera/GPS, teste de upload e publicação.
+  Ao finalizar, entregar checklist de publicação com os itens que ainda dependem de configuração manual fora do Lovable.
   */
   return <Navigate to="/admin" />;
 }
