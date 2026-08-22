@@ -116,11 +116,16 @@ function AutomationPage() {
   };
 
   const handleCleanup = async () => {
-    if (!confirm("Isso irá remover permanentemente evidências e dados expirados (90 dias). Continuar?")) return;
+    const confirmation = prompt("Para confirmar a limpeza manual, digite: EXCLUIR DADOS EXPIRADOS");
+    if (confirmation !== 'EXCLUIR DADOS EXPIRADOS') {
+      if (confirmation !== null) toast.error("Confirmação incorreta.");
+      return;
+    }
     try {
       setIsCleaning(true);
-      await cleanupFn();
+      await cleanupFn({ confirmation });
       toast.success("Limpeza executada com sucesso!");
+      fetchData();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
