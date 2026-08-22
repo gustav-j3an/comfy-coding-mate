@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { triggerAutomationEvent } from "./automation.server";
 
 /**
  * Submits a visit for audit, uploading metadata and creating occurrences.
@@ -90,6 +91,13 @@ export const submitVisit = createServerFn({ method: "POST" })
       if (occurrenceError) throw occurrenceError;
     }
 
+    // 4. Trigger automation
+    await triggerAutomationEvent('visit.submitted', {
+      visitId: data.visitId,
+      executorId: data.executorId,
+      timestamp: new Date().toISOString()
+    });
+
     return { success: true };
   });
 
@@ -128,6 +136,13 @@ export const auditVisit = createServerFn({ method: "POST" })
       });
 
     if (auditError) throw auditError;
+
+    // 3. Trigger automation
+    await triggerAutomationEvent(data.decision === 'approved' ? 'visit.approved' : 'visit.rejected', {
+      visitId: data.visitId,
+      auditorId: data.auditorId,
+      reason: data.reason || null
+    });
 
     return { success: true };
   });
