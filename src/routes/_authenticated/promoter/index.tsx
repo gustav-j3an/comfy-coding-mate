@@ -115,7 +115,10 @@ function PromoterDashboard() {
                   <span className="truncate">{(nextStop as any).store?.address}</span>
                 </div>
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
-                  <Link to={`/promoter/visit/${nextStop.id}`}>
+                  <Link 
+                    to={"/promoter/visit/$visitId" as any} 
+                    params={{ visitId: nextStop.id }}
+                  >
                     Iniciar Visita
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Link>
