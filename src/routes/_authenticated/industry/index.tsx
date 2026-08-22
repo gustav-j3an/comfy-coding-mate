@@ -153,10 +153,15 @@ function IndustryPortal() {
                       <Button className="flex-1 bg-slate-900 hover:bg-black font-bold text-xs uppercase tracking-widest">
                         <BarChart3 className="h-4 w-4 mr-2" /> Abrir BI
                       </Button>
-                      <Button variant="outline" className="font-bold text-xs uppercase tracking-widest border-slate-300">
+                      <Button 
+                        variant="outline" 
+                        className="font-bold text-xs uppercase tracking-widest border-slate-300"
+                        onClick={() => handleDownloadPDF(report)}
+                      >
                         <Download className="h-4 w-4 mr-2" /> PDF
                       </Button>
                     </div>
+
                   </CardContent>
                 </Card>
               ))}
