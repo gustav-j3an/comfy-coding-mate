@@ -18,8 +18,8 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const { count: pendingVisits } = await supabaseAdmin
       .from('visits')
       .select('*', { count: 'exact', head: true })
-      .eq('scheduled_date', today)
-      .eq('status', 'submitted' as any);
+      .filter('scheduled_date', 'eq', today)
+      .filter('status', 'eq', 'submitted');
 
     return {
       criticalOccurrences: (criticalOccurrences as number) || 0,
