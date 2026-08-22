@@ -20,7 +20,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
     const cookie = request.headers.get('Cookie');
     if (cookie) {
       const match = cookie.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
-      if (match) {
+      if (match && match[1]) {
         try {
           const cookieVal = decodeURIComponent(match[1]);
           const session = JSON.parse(cookieVal);
