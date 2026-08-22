@@ -21,7 +21,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
         try {
           const session = JSON.parse(decodeURIComponent(match[1]));
           if (session && typeof session.access_token === 'string') {
-            token = session.access_token;
+            token = session.access_token as string;
           }
         } catch (e) {
           // Ignore
@@ -34,14 +34,14 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
     throw new Error('Unauthorized');
   }
 
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
 
-  if (error || !user) {
+  if (error || !data.user) {
     throw new Error('Unauthorized');
   }
 
   return {
-    user,
-    session: { user, access_token: token }
+    user: data.user,
+    session: { user: data.user, access_token: token }
   };
 }
