@@ -170,6 +170,8 @@ function VisitsPage() {
         return <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none font-bold"><AlertCircle className="w-3 h-3 mr-1" /> Rejeitada</Badge>;
       case 'submitted':
         return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none font-bold"><Clock className="w-3 h-3 mr-1" /> Em Conferência</Badge>;
+      case 'planned':
+        return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 border-none font-bold">Planejada</Badge>;
       default:
         return <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none font-bold">Pendente</Badge>;
     }
