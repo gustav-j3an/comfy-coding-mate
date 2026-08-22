@@ -1,117 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { triggerAutomationEvent } from "./automation.server";
-
-export const getAutomationSettings = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from('automation_settings' as any)
-      .select('id, is_active, retention_days, authorized_domain, last_communication_at, last_test_result, active_events')
-      .maybeSingle();
-
-    if (error) throw error;
-    
-    // Return connection status based on environment variables (backend only check)
-    const isConfigured = !!(process.env['N8N_WEBHOOK_URL']);
-    
-    const settings = (data as any) || {
-      retention_days: 90,
-      is_active: false
-    };
-    
-    return {
-      ...settings,
-      is_configured: isConfigured
-    };
-  });
-
-export const updateAutomationSettings = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({
-    retention_days: z.number().int().min(90, "Mínimo 90 dias conforme política de segurança"),
-    is_active: z.boolean(),
-    active_events: z.array(z.string()).optional()
-  }).parse(data))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
-    const { data: existing } = await supabaseAdmin
-      .from('automation_settings' as any)
-      .select('id')
-      .maybeSingle();
-
-    const payload = {
-      retention_days: data.retention_days,
-      is_active: data.is_active,
-      active_events: data.active_events
-    };
-
-    if (existing) {
-      const { data: updated, error } = await supabaseAdmin
-        .from('automation_settings' as any)
-        .update(payload as any)
-        .eq('id', (existing as any).id)
-        .select()
-        .single();
-      if (error) throw error;
-      return updated;
-    } else {
-      const { data: inserted, error } = await supabaseAdmin
-        .from('automation_settings' as any)
-        .insert([payload as any])
-        .select()
-        .single();
-      if (error) throw error;
-      return inserted;
-    }
-  });
-
-export const getWebhookLogs = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from('webhook_logs' as any)
-      .select('id, event_type, status_code, error_message, created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error) throw error;
-    return data;
-  });
-
-export const testWebhook = createServerFn({ method: "POST" })
-  .handler(async () => {
-    return await triggerAutomationEvent('system.test', {
-      message: 'Teste de conectividade segura.',
-      timestamp: new Date().toISOString()
-    });
-  });
 
 export const getCleanupPreview = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
-    const { data: settings } = await supabaseAdmin
-      .from('automation_settings' as any)
-      .select('retention_days')
-      .maybeSingle();
-      
-    const retentionDays = (settings as any)?.retention_days || 90;
+    const retentionDays = 90;
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
     const cutoffStr = cutoffDate.toISOString();
 
-    // Count records to be deleted
-    const [visits, evidences, logs] = await Promise.all([
-      supabaseAdmin.from('visits' as any).select('id', { count: 'exact', head: true }).lt('date', cutoffStr),
-      supabaseAdmin.from('evidences' as any).select('id', { count: 'exact', head: true }).lt('created_at', cutoffStr),
-      supabaseAdmin.from('webhook_logs' as any).select('id', { count: 'exact', head: true }).lt('created_at', cutoffStr)
-    ]);
+    const { count: visits } = await supabaseAdmin
+      .from('visits')
+      .select('id', { count: 'exact', head: true })
+      .lt('date', cutoffStr);
+
+    const { count: evidences } = await supabaseAdmin
+      .from('visit_evidence' as any)
+      .select('id', { count: 'exact', head: true })
+      .lt('created_at', cutoffStr);
+
+    const { count: logs } = await supabaseAdmin
+      .from('webhook_logs' as any)
+      .select('id', { count: 'exact', head: true })
+      .lt('created_at', cutoffStr);
 
     return {
-      visits: visits.count || 0,
-      evidences: evidences.count || 0,
-      logs: logs.count || 0,
+      visits: visits || 0,
+      evidences: evidences || 0,
+      logs: logs || 0,
       cutoff_date: cutoffStr
     };
   });
@@ -126,39 +42,57 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = (context as any)?.userId;
 
-    // 1. Get counts for audit
+    // 1. Get preview to know what we are deleting
     const preview = await getCleanupPreview();
 
     // 2. Perform cleanup with storage awareness
     const { data: expiredEvidences } = await supabaseAdmin
-      .from('evidences' as any)
-      .select('id, image_url')
+      .from('visit_evidence' as any)
+      .select('id, file_path, visit_id')
       .lt('created_at', preview.cutoff_date);
+
+    // 2.1 Get visits linked to ANY billing to exclude them from deletion
+    const { data: billedVisits } = await supabaseAdmin
+      .from('billing_items')
+      .select('visit_id');
+    
+    const billedVisitIds = new Set((billedVisits || []).map(v => v.visit_id));
 
     let deletedFiles = 0;
     if (expiredEvidences && expiredEvidences.length > 0) {
-      const evidences = expiredEvidences as any[];
-      for (const evidence of evidences) {
-        if (evidence.image_url) {
-          const filePath = evidence.image_url.split('/').pop();
-          if (filePath) {
-            const { error: storageError } = await supabaseAdmin.storage
-              .from('evidences')
-              .remove([filePath]);
-            
-            if (!storageError) {
-              await supabaseAdmin.from('evidences' as any).delete().eq('id', evidence.id);
-              deletedFiles++;
-            } else {
-              console.error(`Failed to delete storage file ${filePath}:`, storageError);
-            }
+      for (const evidence of expiredEvidences as any[]) {
+        // Skip if visit is part of a billing (preservation rule)
+        if (billedVisitIds.has(evidence.visit_id)) continue;
+
+        if (evidence.file_path) {
+          const { error: storageError } = await supabaseAdmin.storage
+            .from('visit-evidences')
+            .remove([evidence.file_path]);
+          
+          if (!storageError) {
+            await supabaseAdmin.from('visit_evidence' as any).delete().eq('id', evidence.id);
+            deletedFiles++;
+          } else {
+            console.error(`Failed to delete storage file ${evidence.file_path}:`, storageError);
           }
         }
       }
     }
 
-    // 3. Clean up other records
-    await supabaseAdmin.from('visits' as any).delete().lt('date', preview.cutoff_date);
+    // 3. Clean up other records, excluding billed ones
+    const { data: visitsToDelete } = await supabaseAdmin
+      .from('visits')
+      .select('id')
+      .lt('date', preview.cutoff_date);
+    
+    const visitIdsToDelete = (visitsToDelete || [])
+      .map(v => v.id)
+      .filter(id => !billedVisitIds.has(id));
+
+    if (visitIdsToDelete.length > 0) {
+      await supabaseAdmin.from('visits').delete().in('id', visitIdsToDelete);
+    }
+    
     await supabaseAdmin.from('webhook_logs' as any).delete().lt('created_at', preview.cutoff_date);
 
     // 4. Audit entry
@@ -167,12 +101,52 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
       records_count: { ...preview, deleted_files: deletedFiles },
       result: 'Success',
       confirmation_text: data.confirmation
-    });
-
-    await triggerAutomationEvent('system.manual_cleanup_executed', {
-      admin_id: userId,
-      deleted_files: deletedFiles
-    });
+    } as any);
 
     return { success: true, deleted_files: deletedFiles };
+  });
+
+export const updateAutomationSettings = createServerFn({ method: "POST" })
+  .inputValidator((data: any) => z.object({
+    retention_days: z.number().min(90, "Retenção mínima de 90 dias"),
+    authorized_domains: z.array(z.string()),
+    events_enabled: z.array(z.string())
+  }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const { data: settings, error } = await supabaseAdmin
+      .from('automation_settings' as any)
+      .update(data)
+      .eq('id', (await supabaseAdmin.from('automation_settings' as any).select('id').single()).data?.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return settings;
+  });
+
+export const getAutomationSettings = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from('automation_settings' as any)
+      .select('*')
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  });
+
+export const getWebhookLogs = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from('webhook_logs' as any)
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    return data;
   });
