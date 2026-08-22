@@ -71,10 +71,9 @@ function AutomationPage() {
         getLogsFn()
       ]);
       setSettings(settingsData || {
-        n8n_webhook_url: '',
-        n8n_secret: '',
+        is_active: false,
         retention_days: 90,
-        is_active: true
+        is_configured: false
       });
       setLogs(logsData || []);
     } catch (error: any) {
