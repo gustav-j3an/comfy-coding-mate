@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -151,9 +151,12 @@ function BillingPage() {
               <Button variant="outline" size="sm" className="font-bold flex-1 sm:flex-none">
                 <Filter className="h-4 w-4 mr-2" /> Filtros
               </Button>
-              <Button variant="outline" size="sm" className="font-bold flex-1 sm:flex-none">
-                <Download className="h-4 w-4 mr-2" /> Exportar
-              </Button>
+              <Link to="/admin/exports">
+                <Button variant="outline" size="sm" className="font-bold flex-1 sm:flex-none">
+                  <Download className="h-4 w-4 mr-2" /> Exportar
+                </Button>
+              </Link>
+
             </div>
           </div>
           <Table>
