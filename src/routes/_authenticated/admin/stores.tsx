@@ -36,7 +36,7 @@ interface StoreItem {
   name: string;
   address: string;
   city: string | null;
-  active: boolean;
+  active: boolean | null;
   industry_count?: number;
 }
 
