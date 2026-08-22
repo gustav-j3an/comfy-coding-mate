@@ -83,9 +83,9 @@ export const submitVisit = createServerFn({ method: "POST" })
         status: 'open'
       }));
 
-      const { error: occurrenceError } = await supabaseAdmin
-        .from('occurrences')
-        .insert(occurrencesToInsert as any);
+      const { error: occurrenceError } = await (supabaseAdmin
+        .from('occurrences') as any)
+        .insert(occurrencesToInsert);
       
       if (occurrenceError) throw occurrenceError;
     }
@@ -118,14 +118,14 @@ export const auditVisit = createServerFn({ method: "POST" })
     if (visitError) throw visitError;
 
     // 2. Record audit
-    const { error: auditError } = await supabaseAdmin
-      .from('visit_audits')
+    const { error: auditError } = await (supabaseAdmin
+      .from('visit_audits') as any)
       .insert({
         visit_id: data.visitId,
         auditor_id: data.auditorId,
         decision: data.decision,
         reason: data.reason || null
-      } as any);
+      });
 
     if (auditError) throw auditError;
 
