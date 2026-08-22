@@ -44,9 +44,15 @@ function IndustryPortal() {
     }
   };
 
+  const handleDownloadPDF = (report: any) => {
+    const url = `/api/public/reports/pdf?industryId=${report.industry_id}&month=${report.month}&year=${report.year}`;
+    window.open(url, '_blank');
+  };
+
   const getMonthLabel = (month: number) => {
     return format(new Date(2024, month - 1, 1), 'MMMM', { locale: ptBR });
   };
+
 
   return (
     <div className="flex min-h-screen bg-slate-50">
