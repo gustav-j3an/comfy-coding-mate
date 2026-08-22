@@ -87,8 +87,7 @@ function RoutesPage() {
       toast.error('Selecione um promotor primeiro');
       return;
     }
-    toast.info('Navegando para criação de roteiro...');
-    // In a real implementation, we would navigate to /admin/routes/new?promoterId=...
+    navigate({ to: `/admin/routes/new`, search: { promoterId: selectedPromoterId } as any });
   };
 
   return (
