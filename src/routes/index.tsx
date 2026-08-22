@@ -19,11 +19,32 @@ export const Route = createFileRoute('/')({
       <div className="max-w-md w-full text-center space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Rota do Promotor</h1>
         <p className="text-slate-600 italic whitespace-pre-wrap">
-          Excelente. As correções de integridade entre `promoters` e `profiles` foram aplicadas, e as políticas de RLS garantem que evidências e auditorias sejam privadas.
+          Continue a MISSÃO 4 a partir do ponto atual. Não considere a missão concluída apenas porque erros de tipagem e server functions foram corrigidos.
           {"\n\n"}
-          MISSÃO 5 — Dashboard Executivo e Alertas Críticos
+          Agora implemente e teste as funcionalidades pendentes:
+          {"\n"}- tela funcional do promotor com roteiro do dia;
+          {"\n"}- abertura de visita prevista;
+          {"\n"}- captura/anexo de foto, vídeo e PDF;
+          {"\n"}- múltiplas evidências por visita;
+          {"\n"}- criação de ocorrência por ruptura, vencimento ou produto próximo do vencimento;
+          {"\n"}- armazenamento privado e links temporários de arquivos;
+          {"\n"}- envio da visita para conferência;
+          {"\n"}- aprovação e reprovação pelo administrador;
+          {"\n"}- exibição do motivo de reprovação ao promotor;
+          {"\n"}- atualização de dashboard, ocorrências, portal da indústria e relatórios.
           {"\n\n"}
-          Agora vamos conectar as pontas: o administrador precisa de uma visão executiva em tempo real. Implemente alertas automáticos no dashboard administrativo para rupturas críticas e crie o módulo de exportação PDF para relatórios de visita.
+          Antes de finalizar, execute os testes de ponta a ponta com dois perfis:
+          {"\n"}1. Promotor envia uma visita com foto e ocorrência.
+          {"\n"}2. Administrador localiza, aprova ou reprova a visita.
+          {"\n"}3. Promotor visualiza o novo status e, se reprovado, o motivo.
+          {"\n"}4. Usuário da indústria visualiza somente a evidência ligada à própria indústria.
+          {"\n\n"}
+          Ao final, entregue um relatório objetivo com:
+          {"\n"}- telas implementadas;
+          {"\n"}- tabelas e arquivos criados;
+          {"\n"}- permissões aplicadas;
+          {"\n"}- testes realizados;
+          {"\n"}- itens ainda bloqueados, se existirem.
         </p>
       </div>
     </div>
