@@ -148,13 +148,20 @@ function ReportsPage() {
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Relatórios Mensais</h2>
           <p className="text-sm text-slate-500">BI e consolidado executivo por indústria</p>
         </div>
-        
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
-              <Plus className="mr-2 h-4 w-4" /> Novo Relatório
+        <div className="flex gap-2">
+          <Link to="/admin/exports">
+            <Button variant="outline" className="font-bold border-slate-200">
+              <Package className="mr-2 h-4 w-4" /> Exportações
             </Button>
-          </DialogTrigger>
+          </Link>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
+                <Plus className="mr-2 h-4 w-4" /> Novo Relatório
+              </Button>
+            </DialogTrigger>
+
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Gerar Novo Relatório</DialogTitle>
