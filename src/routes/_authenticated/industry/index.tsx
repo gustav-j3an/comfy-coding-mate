@@ -2,7 +2,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, LayoutDashboard, Image, AlertCircle, FileText, CreditCard } from 'lucide-react';
+import { LogOut, LayoutDashboard, Image, AlertCircle, FileText, CreditCard, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/industry/')({
   component: IndustryPortal,
@@ -10,6 +13,63 @@ export const Route = createFileRoute('/_authenticated/industry/')({
 
 function IndustryPortal() {
   const { user, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    visitsPerformed: 0,
+    visitsTotal: 0,
+    approved: 0,
+    occurrences: 0,
+    storesServed: 0
+  });
+
+  useEffect(() => {
+    if (user) fetchIndustryData();
+  }, [user]);
+
+  const fetchIndustryData = async () => {
+    try {
+      setLoading(true);
+      // 1. Get industry_id from profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('industry_id')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError || !profile?.industry_id) throw new Error('Indústria não vinculada ao perfil.');
+
+      const industryId = profile.industry_id;
+
+      // 2. Fetch visits for this industry
+      const { data: visits, error: visitsError } = await supabase
+        .from('visits')
+        .select('id, status, store_id')
+        .eq('industry_id', industryId);
+
+      if (visitsError) throw visitsError;
+
+      // 3. Fetch occurrences
+      const { count: occurrencesCount, error: occError } = await supabase
+        .from('occurrences')
+        .select('id', { count: 'exact', head: true })
+        .in('visit_id', visits?.map(v => v.id) || []);
+
+      const uniqueStores = new Set(visits?.map(v => v.store_id));
+
+      setStats({
+        visitsPerformed: visits?.filter(v => v.status !== 'pending').length || 0,
+        visitsTotal: visits?.length || 0,
+        approved: visits?.filter(v => v.status === 'approved').length || 0,
+        occurrences: occurrencesCount || 0,
+        storesServed: uniqueStores.size
+      });
+
+    } catch (error: any) {
+      toast.error('Erro ao carregar dados da indústria: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -51,32 +111,40 @@ function IndustryPortal() {
         </header>
 
         <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <p className="text-sm text-slate-500">Visitas Realizadas</p>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold">142 / 150</CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <p className="text-sm text-slate-500">Aprovadas</p>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold text-green-600">138</CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <p className="text-sm text-slate-500">Ocorrências</p>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold text-red-600">4</CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <p className="text-sm text-slate-500">Lojas Atendidas</p>
-              </CardHeader>
-              <CardContent className="text-2xl font-bold">48</CardContent>
-            </Card>
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <p className="text-sm text-slate-500">Visitas Realizadas</p>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">{stats.visitsPerformed} / {stats.visitsTotal}</CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <p className="text-sm text-slate-500">Aprovadas</p>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-green-600">{stats.approved}</CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <p className="text-sm text-slate-500">Ocorrências</p>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold text-red-600">{stats.occurrences}</CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <p className="text-sm text-slate-500">Lojas Atendidas</p>
+                  </CardHeader>
+                  <CardContent className="text-2xl font-bold">{stats.storesServed}</CardContent>
+                </Card>
+              </div>
+            </>
+          )}
 
           <Card>
             <CardHeader>
