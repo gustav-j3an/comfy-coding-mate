@@ -16,124 +16,66 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   /*
-  Ótimo. A Missão 7 fecha o ciclo financeiro, mas antes de colocar em produção faça um teste real: crie uma visita aprovada, gere uma cobrança, altere o valor do contrato e confirme que a cobrança já emitida não muda.
+  A Missão 8 está bem encaminhada, mas eu não seguiria para publicação ainda. Pelo relatório, há dois pontos que precisam ser endurecidos:
 
-  A próxima missão é a automação com n8n e a exclusão após 90 dias. O n8n receberá apenas eventos e metadados — nunca fotos, vídeos ou PDFs.
+  1. O segredo HMAC não deve ficar editável ou visível no painel administrativo. Ele deve ficar exclusivamente nos segredos/variáveis de ambiente do backend.
+  2. O botão de “forçar limpeza” não pode apagar dados imediatamente sem prévia, confirmação forte e auditoria.
 
-  MISSÃO 8 — Integração n8n, alertas e retenção automática de 90 dias.
+  Também precisamos garantir que a rotina apague os arquivos físicos do Storage, não somente os registros no banco.
 
-  OBJETIVO:
-  Preparar e implementar integração segura entre o sistema e n8n para alertas, relatórios, cobranças e exclusão automática de dados expirados.
+  Envie esta correção antes da missão de PWA/publicação:
 
-  SEGURANÇA:
-  - Não enviar fotos, vídeos ou PDFs pelo webhook.
-  - Enviar apenas IDs, tipo de evento e metadados necessários.
-  - Configurar URL do webhook e segredo somente em variáveis de ambiente do backend.
-  - Nunca expor URL secreta, token ou chave no frontend.
-  - Implementar autenticação entre sistema e n8n usando segredo de webhook.
-  - Registrar tentativas, sucesso e falha de cada evento.
-  - Implementar nova tentativa automática para falhas temporárias.
+  MISSÃO 8.1 — Endurecimento de segurança da automação e retenção.
 
-  EVENTOS PARA N8N:
-  Criar webhooks de saída para:
+  Corrigir os seguintes pontos sem remover as funcionalidades da Missão 8.
 
-  1. Visita enviada:
-  - ID da visita;
-  - promotor;
-  - loja;
-  - indústria;
-  - data/hora;
-  - status;
-  - tipo de ocorrência, se houver.
+  SEGREDOS E WEBHOOK:
+  - Remover do painel administrativo qualquer campo que revele ou permita ler o segredo HMAC.
+  - Não salvar o segredo HMAC em texto aberto na tabela `automation_settings`.
+  - Armazenar URL do n8n, segredo HMAC e credenciais somente em variáveis de ambiente/segredos do backend.
+  - O painel `/admin/automation` deve mostrar apenas:
+    - conexão configurada ou não configurada;
+    - domínio autorizado;
+    - data da última comunicação;
+    - resultado do último teste;
+    - eventos ativos;
+    - logs sanitizados.
+  - Não mostrar URL completa sensível, segredo, token ou payload completo.
+  - Aceitar somente URLs HTTPS e domínios previamente autorizados para o webhook.
+  - Assinar cada webhook com HMAC-SHA256 e timestamp.
+  - Implementar proteção contra repetição: o n8n deve poder rejeitar eventos com timestamp expirado.
+  - Não armazenar dados sensíveis, e-mails completos, links assinados, URLs de mídia, senhas ou tokens nos logs de webhook.
 
-  2. Visita aprovada:
-  - ID da visita;
-  - indústria;
-  - promotor;
-  - loja;
-  - administrador responsável;
-  - data/hora da aprovação.
+  LIMPEZA DE DADOS:
+  - Confirmar que a rotina exclui os arquivos físicos privados do Storage, não apenas metadados no banco.
+  - Se a exclusão de arquivo falhar, registrar falha e manter item em fila para nova tentativa.
+  - Só excluir o registro de evidência após sucesso ou status controlado de exclusão do arquivo.
+  - Nunca excluir visitas que façam parte de uma cobrança emitida sem garantir que o snapshot financeiro e checklist financeiro estejam preservados.
+  - Preservar contratos, cobranças, snapshots financeiros e logs de auditoria conforme política configurada.
+  - Manter política mínima de retenção de 90 dias; não permitir configurar prazo menor sem confirmação explícita e registro de auditoria.
 
-  3. Visita reprovada:
-  - ID da visita;
-  - promotor;
-  - motivo da reprovação;
-  - administrador responsável.
+  AÇÃO MANUAL:
+  - Substituir “forçar limpeza” por “Prévia de limpeza”.
+  - A prévia deve mostrar quantidade de visitas, evidências, ocorrências e arquivos que seriam excluídos.
+  - Para confirmar a exclusão manual, exigir que o administrador digite exatamente:
+    `EXCLUIR DADOS EXPIRADOS`
+  - Registrar administrador, data/hora, quantidade de registros e resultado.
+  - Não permitir exclusão manual de dados ainda dentro do prazo de 90 dias.
 
-  4. Ocorrência criada:
-  - indústria;
-  - loja;
-  - promotor;
-  - tipo;
-  - status;
-  - data/hora.
-
-  5. Relatório mensal publicado:
-  - indústria;
-  - competência;
-  - ID do relatório;
-  - indicadores principais;
-  - link seguro para visualização.
-
-  6. Cobrança emitida:
-  - indústria;
-  - competência;
-  - valor;
-  - vencimento;
-  - ID da cobrança;
-  - link seguro para portal financeiro.
-
-  7. Cobrança vencida:
-  - indústria;
-  - número da cobrança;
-  - valor;
-  - dias em atraso.
-
-  AUTOMAÇÕES AGENDADAS:
-  Preparar chamadas para n8n executar:
-
-  - aviso diário ao administrador sobre visitas pendentes de conferência;
-  - resumo diário de visitas previstas, enviadas, aprovadas e reprovadas;
-  - alerta de roteiro do dia para cada promotor;
-  - alerta de ocorrência aberta;
-  - aviso de relatório mensal disponível;
-  - aviso de cobrança próxima do vencimento;
-  - aviso de cobrança vencida;
-  - aviso de retenção de dados 15 dias antes;
-  - aviso de retenção de dados 3 dias antes.
-
-  RETENÇÃO DE 90 DIAS:
-  Criar rotina agendada e auditável para:
-  - identificar evidências, ocorrências e detalhes operacionais expirados;
-  - avisar usuários antes da exclusão;
-  - garantir que exportações em processamento sejam concluídas antes da exclusão;
-  - excluir arquivos privados do bucket;
-  - excluir ou anonimizar detalhes operacionais conforme política atual;
-  - manter snapshots mensais apenas conforme configuração de retenção;
-  - registrar log de exclusão com quantidade de visitas, arquivos e dados removidos;
-  - nunca excluir arquivos antes do prazo de 90 dias;
-  - nunca excluir dados de outra indústria por erro de filtro.
-
-  CONFIGURAÇÃO ADMINISTRATIVA:
-  Criar área “Integrações e Automação” acessível apenas a administradores:
-  - status da conexão n8n;
-  - última execução;
-  - lista de eventos;
-  - histórico de falhas;
-  - botão de teste de webhook;
-  - configuração de alertas ativos/inativos;
-  - prazo de retenção, inicialmente definido como 90 dias.
+  ALERTAS:
+  - Implementar e registrar alertas de retenção com 15 e 3 dias de antecedência.
+  - Alertas devem informar indústria, período, quantidade estimada de evidências e link para exportação.
+  - Não enviar arquivos de mídia ao n8n.
 
   TESTES:
-  - testar webhook de visita enviada;
-  - testar aprovação e reprovação;
-  - testar publicação de relatório;
-  - testar emissão de cobrança;
-  - testar evento de retenção com dado de teste expirado;
-  - confirmar que o payload não contém mídia, senha, token ou dados de outras indústrias;
-  - confirmar que falha de webhook não impede envio de visita ou aprovação.
+  - Confirmar que segredo HMAC não aparece no frontend, banco de dados de configuração ou logs.
+  - Testar exclusão física de arquivo de evidência em ambiente de teste.
+  - Testar falha de exclusão e nova tentativa.
+  - Testar prévia de limpeza sem apagar nada.
+  - Testar confirmação manual.
+  - Confirmar que cobrança emitida continua consistente após a limpeza dos dados operacionais.
 
-  Depois disso, faremos a última missão: PWA instalável, testes em celular, permissões de câmera/GPS e publicação segura do aplicativo.
+  Depois dessa correção, seguimos para a Missão 9: aplicativo instalável no celular, permissões de câmera/GPS, teste de upload e publicação.
   */
   return <Navigate to="/admin" />;
 }
