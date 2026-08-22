@@ -256,6 +256,9 @@ function VisitExecution() {
             <Button size="sm" variant="ghost" className="bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200" onClick={() => addOccurrence('vencido')}>
               <AlertCircle className="h-4 w-4 mr-1" /> Vencido
             </Button>
+            <Button size="sm" variant="ghost" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200" onClick={() => addOccurrence('preco_errado')}>
+              <AlertCircle className="h-4 w-4 mr-1" /> Preço Errado
+            </Button>
           </div>
           
           {occurrences.length > 0 && (
