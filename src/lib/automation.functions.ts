@@ -122,7 +122,7 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
       message: "Texto de confirmação incorreto"
     })
   }).parse(data))
-  .handler(async ({ data, context }: { data: any, context: any }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
 
