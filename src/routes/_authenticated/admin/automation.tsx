@@ -26,7 +26,6 @@ import {
   getAutomationSettings, 
   updateAutomationSettings, 
   getWebhookLogs, 
-  testWebhook,
   getCleanupPreview,
   executeManualCleanup 
 } from '@/lib/automation.functions';
@@ -56,7 +55,7 @@ function AutomationPage() {
   const getSettingsFn = useServerFn(getAutomationSettings);
   const updateSettingsFn = useServerFn(updateAutomationSettings);
   const getLogsFn = useServerFn(getWebhookLogs);
-  const testWebhookFn = useServerFn(testWebhook);
+  
   const cleanupFn = useServerFn(executeManualCleanup);
 
   useEffect(() => {
@@ -97,22 +96,6 @@ function AutomationPage() {
     }
   };
 
-  const handleTestWebhook = async () => {
-    try {
-      setIsTesting(true);
-      const result = await testWebhookFn();
-      if ((result as any)?.success) {
-        toast.success("Webhook enviado com sucesso!");
-      } else {
-        toast.error("Falha ao enviar webhook. Verifique os logs.");
-      }
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
   const getPreviewFn = useServerFn(getCleanupPreview);
 
@@ -160,8 +143,8 @@ function AutomationPage() {
           <p className="text-sm text-slate-500 text-left">Conecte o sistema ao n8n e gerencie a retenção de dados.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTestWebhook} disabled={isTesting || !settings?.is_configured}>
-            {isTesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+          <Button variant="outline" disabled={true}>
+            <Zap className="mr-2 h-4 w-4" />
             Testar Webhook
           </Button>
           <Button variant="destructive" onClick={handleCleanup} disabled={isCleaning}>

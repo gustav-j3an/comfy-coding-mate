@@ -75,7 +75,7 @@ function PromoterDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-50 pb-20 safe-area-inset-bottom">
       {/* Header */}
       <div className="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg">
         <div className="flex justify-between items-start mb-6">
@@ -120,7 +120,7 @@ function PromoterDashboard() {
                   <MapPin className="h-3 w-3 mr-1" />
                   <span className="truncate">{(nextStop as any).store?.address}</span>
                 </div>
-                <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
+                <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-blue-200 shadow-lg active:scale-[0.98] transition-transform">
                   <Link 
                     to={"/promoter/visit/$visitId" as any} 
                     params={{ visitId: String(nextStop.id) } as any}
@@ -156,7 +156,7 @@ function PromoterDashboard() {
                   params={{ visitId: String(visit.id) } as any}
                   className="block"
                 >
-                  <Card className={`overflow-hidden transition-all hover:shadow-md border-none ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
+                  <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
                     <CardContent className="p-0">
                       <div className="flex">
                         <div className={`w-12 flex flex-col items-center justify-center text-sm font-bold ${

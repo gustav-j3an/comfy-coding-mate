@@ -98,6 +98,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Clean up sensitive local data
+    localStorage.removeItem('sb-' + (import.meta.env['VITE_SUPABASE_URL']?.split('.')[0].split('//')[1] || '') + '-auth-token');
+    sessionStorage.clear();
+    
+    // Clear all non-essential items
+    const keysToKeep = ['pwa-installed', 'theme'];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !keysToKeep.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    }
+
     await supabase.auth.signOut();
   };
 

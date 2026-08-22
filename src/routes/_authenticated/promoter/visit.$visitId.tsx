@@ -36,6 +36,7 @@ function VisitExecution() {
   const [evidences, setEvidences] = useState<any[]>([]);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [checkinTime] = useState(new Date().toISOString());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +89,11 @@ function VisitExecution() {
 
       const { error: uploadError } = await supabase.storage
         .from('visit-evidences')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          onUploadProgress: (progress: any) => {
+            setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
+          }
+        } as any);
 
       if (uploadError) throw uploadError;
 
@@ -101,6 +106,8 @@ function VisitExecution() {
       toast.success("Evidência anexada com sucesso.");
     } catch (error: any) {
       toast.error("Erro no upload: " + error.message);
+    } finally {
+      setUploadProgress(0);
     }
   };
 
@@ -217,6 +224,19 @@ function VisitExecution() {
             'application/pdf,image/*'
           }
         />
+
+        {/* Upload Progress */}
+        {uploadProgress > 0 && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-bold text-blue-600">
+              <span>Enviando arquivo...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div className="bg-blue-600 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+            </div>
+          </div>
+        )}
 
         {/* Evidence List */}
         {evidences.length > 0 && (
