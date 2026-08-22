@@ -50,6 +50,7 @@ function IndustryPortal() {
           *,
           visit:visit_id(
             status,
+            industry_id,
             stores:store_id(name)
           )
         `)
