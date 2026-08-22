@@ -174,30 +174,28 @@ function AutomationPage() {
               <form onSubmit={handleSaveSettings} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2 text-left">
-                    <Label htmlFor="webhook_url" className="text-slate-700">URL do Webhook n8n</Label>
+                    <Label htmlFor="webhook_url" className="text-slate-700">URL do Webhook n8n (Configurado via ENV)</Label>
                     <div className="relative">
                       <Webhook className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
                         id="webhook_url"
-                        placeholder="https://n8n.seu-dominio.com/webhook/..."
-                        className="pl-10"
-                        value={settings.n8n_webhook_url || ''}
-                        onChange={e => setSettings({...settings, n8n_webhook_url: e.target.value})}
+                        disabled={true}
+                        className="pl-10 bg-slate-100"
+                        value={settings.is_configured ? '************' : 'Não configurado'}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2 text-left">
-                    <Label htmlFor="secret" className="text-slate-700">Segredo do Webhook (HMAC Secret)</Label>
+                    <Label htmlFor="secret" className="text-slate-700">Segredo do Webhook (HMAC Secret - ENV)</Label>
                     <div className="relative">
                       <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
                         id="secret"
                         type="password"
-                        placeholder="Chave para assinatura dos payloads"
-                        className="pl-10"
-                        value={settings.n8n_secret || ''}
-                        onChange={e => setSettings({...settings, n8n_secret: e.target.value})}
+                        disabled={true}
+                        className="pl-10 bg-slate-100"
+                        value={settings.is_configured ? '************' : 'Não configurado'}
                       />
                     </div>
                   </div>
