@@ -4,8 +4,8 @@ import { z } from "zod";
 export const getReports = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from('monthly_reports')
+    const { data, error } = await (supabaseAdmin
+      .from('monthly_reports' as any) as any)
       .select(`
         *,
         industry:industries(name)
@@ -53,7 +53,7 @@ export const createReportSnapshot = createServerFn({ method: "POST" })
 
     const stats = {
       total_visits_planned: visits.length,
-      total_visits_sent: visits.filter(v => ['submitted', 'approved', 'rejected'].includes(v.status)).length,
+      total_visits_sent: visits.filter(v => ['submitted', 'approved', 'rejected'].includes(v.status || '')).length,
       total_visits_approved: visits.filter(v => v.status === 'approved').length,
       total_visits_rejected: visits.filter(v => v.status === 'rejected').length,
       total_visits_pending: visits.filter(v => v.status === 'pending').length,
@@ -68,8 +68,8 @@ export const createReportSnapshot = createServerFn({ method: "POST" })
     };
 
     // 2. Upsert the report
-    const { data: report, error: reportError } = await supabaseAdmin
-      .from('monthly_reports')
+    const { data: report, error: reportError } = await (supabaseAdmin
+      .from('monthly_reports' as any) as any)
       .upsert({
         industry_id: data.industryId,
         month: data.month,
@@ -77,7 +77,7 @@ export const createReportSnapshot = createServerFn({ method: "POST" })
         status: 'em_montagem',
         ...stats,
         updated_at: new Date().toISOString()
-      } as any)
+      })
       .select()
       .single();
 
@@ -91,12 +91,12 @@ export const publishReport = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from('monthly_reports')
+    const { error } = await (supabaseAdmin
+      .from('monthly_reports' as any) as any)
       .update({
         status: 'publicado',
         published_at: new Date().toISOString()
-      } as any)
+      })
       .filter('id', 'eq', data.reportId);
 
     if (error) throw error;
@@ -119,8 +119,8 @@ export const getIndustryReports = createServerFn({ method: "GET" })
 
     if (indError || !industry) return [];
 
-    const { data: reports, error } = await supabaseAdmin
-      .from('monthly_reports')
+    const { data: reports, error } = await (supabaseAdmin
+      .from('monthly_reports' as any) as any)
       .select('*')
       .filter('industry_id', 'eq', industry.id)
       .filter('status', 'eq', 'publicado')
