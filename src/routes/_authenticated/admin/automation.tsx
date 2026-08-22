@@ -123,7 +123,7 @@ function AutomationPage() {
     }
     try {
       setIsCleaning(true);
-      await cleanupFn({ confirmation });
+      await cleanupFn({ data: { confirmation } });
       toast.success("Limpeza executada com sucesso!");
       fetchData();
     } catch (error: any) {
