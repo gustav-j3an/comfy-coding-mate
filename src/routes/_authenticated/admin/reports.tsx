@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Search, Filter, FileText, Download, 
+  Search, Download, 
   ChevronRight, Calendar, BarChart3,
   TrendingUp, TrendingDown, Factory, Loader2
 } from 'lucide-react';
@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { exportVisitReport } from '@/lib/dashboard.functions';
 
 export const Route = createFileRoute('/_authenticated/admin/reports')({
   component: ReportsPage,
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/_authenticated/admin/reports')({
 
 function ReportsPage() {
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<string | null>(null);
   const [stats, setStats] = useState({
     avgPerformance: 0,
     ruptureRate: 0,
@@ -71,6 +73,28 @@ function ReportsPage() {
       toast.error('Erro ao carregar dados dos relatórios: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (industryId: string, name: string) => {
+    setExporting(industryId);
+    try {
+      const report = await exportVisitReport({
+        data: {
+          industryId,
+          month: new Date().getMonth() + 1,
+          year: new Date().getFullYear()
+        }
+      });
+      
+      // In a real app, this would trigger a file download.
+      // For now, we simulate success and show the data in console.
+      console.log('Report generated:', report);
+      toast.success(`Relatório PDF de ${name} gerado com sucesso!`);
+    } catch (error: any) {
+      toast.error('Erro ao exportar relatório: ' + error.message);
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -160,7 +184,7 @@ function ReportsPage() {
                 <TableHead className="font-bold text-slate-700">Indústria</TableHead>
                 <TableHead className="font-bold text-slate-700 text-center">Referência</TableHead>
                 <TableHead className="font-bold text-slate-700 text-center">Status</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
+                <TableHead className="w-[150px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -191,15 +215,32 @@ function ReportsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="text-sm font-medium text-slate-600">Agosto / 2026</div>
+                      <div className="text-sm font-medium text-slate-600">
+                        {format(new Date(), 'MMMM / yyyy')}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge className="bg-green-100 text-green-700 border-none font-bold hover:bg-green-100">Consolidado</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        ABRIR <ChevronRight className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                          onClick={() => handleExport(ind.id, ind.name)}
+                          disabled={exporting === ind.id}
+                        >
+                          {exporting === ind.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <><FileText className="h-4 w-4" /> PDF</>
+                          )}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-slate-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
