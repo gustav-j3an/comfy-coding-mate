@@ -191,6 +191,9 @@ function AdminDashboard() {
               <Plus className="h-4 w-4" /> Gerar Dados de Teste
             </Button>
           )}
+          <Button size="sm" onClick={() => navigate({ to: '/admin/occurrences' })} className="bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 font-bold">
+            Alertas Campo
+          </Button>
           <Button size="sm" onClick={() => navigate({ to: '/admin/reports' })} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
             Novo Relatório
           </Button>
