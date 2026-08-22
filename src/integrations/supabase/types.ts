@@ -14,16 +14,451 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      billing: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          industry_id: string
+          month: string
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          industry_id: string
+          month: string
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          industry_id?: string
+          month?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      industries: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      occurrences: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          industry_id: string
+          status: string | null
+          store_id: string
+          type: string
+          visit_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          industry_id: string
+          status?: string | null
+          store_id: string
+          type: string
+          visit_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          industry_id?: string
+          status?: string | null
+          store_id?: string
+          type?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrences_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          industry_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          industry_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          industry_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_stops: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          frequency: string | null
+          id: string
+          route_id: string
+          store_id: string
+          visit_order: number
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          frequency?: string | null
+          id?: string
+          route_id: string
+          store_id: string
+          visit_order: number
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          frequency?: string | null
+          id?: string
+          route_id?: string
+          store_id?: string
+          visit_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_stops_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routes: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          name: string
+          promoter_id: string
+          valid_from: string | null
+          version: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name: string
+          promoter_id: string
+          valid_from?: string | null
+          version?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          promoter_id?: string
+          valid_from?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      stop_tasks: {
+        Row: {
+          created_at: string | null
+          id: string
+          industry_id: string
+          stop_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          industry_id: string
+          stop_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          industry_id?: string
+          stop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stop_tasks_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stop_tasks_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "route_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          active: boolean | null
+          address: string
+          created_at: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          address: string
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          address?: string
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visit_audits: {
+        Row: {
+          auditor_id: string
+          created_at: string | null
+          decision: Database["public"]["Enums"]["visit_status"]
+          id: string
+          reason: string | null
+          visit_id: string
+        }
+        Insert: {
+          auditor_id: string
+          created_at?: string | null
+          decision: Database["public"]["Enums"]["visit_status"]
+          id?: string
+          reason?: string | null
+          visit_id: string
+        }
+        Update: {
+          auditor_id?: string
+          created_at?: string | null
+          decision?: Database["public"]["Enums"]["visit_status"]
+          id?: string
+          reason?: string | null
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_audits_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_evidence: {
+        Row: {
+          created_at: string | null
+          evidence_type: string
+          file_path: string
+          file_type: string
+          id: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          evidence_type: string
+          file_path: string
+          file_type: string
+          id?: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string | null
+          evidence_type?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_evidence_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visits: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          industry_id: string
+          latitude: number | null
+          longitude: number | null
+          observation: string | null
+          promoter_id: string
+          scheduled_date: string
+          status: Database["public"]["Enums"]["visit_status"] | null
+          store_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          industry_id: string
+          latitude?: number | null
+          longitude?: number | null
+          observation?: string | null
+          promoter_id: string
+          scheduled_date: string
+          status?: Database["public"]["Enums"]["visit_status"] | null
+          store_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          industry_id?: string
+          latitude?: number | null
+          longitude?: number | null
+          observation?: string | null
+          promoter_id?: string
+          scheduled_date?: string
+          status?: Database["public"]["Enums"]["visit_status"] | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "promoter" | "industry"
+      visit_status: "pending" | "submitted" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +585,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "promoter", "industry"],
+      visit_status: ["pending", "submitted", "approved", "rejected"],
+    },
   },
 } as const
