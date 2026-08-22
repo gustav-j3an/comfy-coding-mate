@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Plus, Search, Filter, MoreVertical, 
-  Factory, User, Store, ExternalLink,
-  Edit, Trash2, Phone, Mail, Building2
+  Plus, Search, MoreVertical, 
+  Edit, Trash2, Phone, Mail, 
+  Loader2, AlertCircle, Building2,
+  FileText, BarChart3, UserPlus
 } from 'lucide-react';
 import {
   Table,
@@ -24,8 +25,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { industrySchema } from '@/lib/schemas/admin';
 
 export const Route = createFileRoute('/_authenticated/admin/industries')({
   component: IndustriesPage,
@@ -34,13 +56,12 @@ export const Route = createFileRoute('/_authenticated/admin/industries')({
 interface IndustryItem {
   id: string;
   name: string;
-  active: boolean | null;
   cnpj: string | null;
   contact_name: string | null;
   email: string | null;
   phone: string | null;
+  active: boolean | null;
   stores_count?: number;
-  promoters_count?: number;
   visits_this_month?: number;
 }
 
@@ -49,6 +70,21 @@ function IndustriesPage() {
   const [loading, setLoading] = useState(true);
   const [industries, setIndustries] = useState<IndustryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingIndustry, setEditingIndustry] = useState<IndustryItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    cnpj: '',
+    contact_name: '',
+    email: '',
+    phone: '',
+    active: true
+  });
 
   useEffect(() => {
     fetchIndustries();
@@ -57,28 +93,12 @@ function IndustriesPage() {
   const fetchIndustries = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('industries')
-        .select('*');
-
+        .select('*')
+        .order('name');
       if (error) throw error;
-
-      // In a real app, we'd join with stop_tasks, routes, and visits
-      const mappedIndustries: IndustryItem[] = (data || []).map((i: any) => ({
-        id: i.id,
-        name: i.name,
-        active: i.active,
-        cnpj: i.cnpj || null,
-        contact_name: i.contact_name || null,
-        email: i.email || null,
-        phone: i.phone || null,
-        stores_count: Math.floor(Math.random() * 20),
-        promoters_count: Math.floor(Math.random() * 8),
-        visits_this_month: Math.floor(Math.random() * 150),
-      }));
-
-      setIndustries(mappedIndustries);
+      setIndustries(data || []);
     } catch (error: any) {
       toast.error('Erro ao carregar indústrias: ' + error.message);
     } finally {
@@ -86,10 +106,109 @@ function IndustriesPage() {
     }
   };
 
-  const filteredIndustries = industries.filter(i => 
-    i.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    i.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredIndustries = industries.filter(i => {
+    const matchesSearch = i.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         i.cnpj?.includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && i.active) || 
+                         (statusFilter === 'inactive' && !i.active);
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleOpenForm = (industry?: IndustryItem) => {
+    if (industry) {
+      setEditingIndustry(industry);
+      setFormData({
+        name: industry.name || '',
+        cnpj: industry.cnpj || '',
+        contact_name: industry.contact_name || '',
+        email: industry.email || '',
+        phone: industry.phone || '',
+        active: industry.active ?? true
+      });
+    } else {
+      setEditingIndustry(null);
+      setFormData({
+        name: '',
+        cnpj: '',
+        contact_name: '',
+        email: '',
+        phone: '',
+        active: true
+      });
+    }
+    setIsFormOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setFormLoading(true);
+      const validated = industrySchema.parse(formData);
+      
+      const payload = {
+        name: validated.name,
+        cnpj: validated.cnpj || null,
+        contact_name: validated.contact_name || null,
+        email: validated.email || null,
+        phone: validated.phone || null,
+        active: validated.active
+      };
+
+      if (editingIndustry) {
+        const { error } = await supabase
+          .from('industries')
+          .update(payload)
+          .eq('id', editingIndustry.id);
+        if (error) throw error;
+        toast.success('Indústria atualizada!');
+      } else {
+        const { error } = await supabase
+          .from('industries')
+          .insert([payload]);
+        if (error) throw error;
+        toast.success('Indústria cadastrada!');
+      }
+      
+      setIsFormOpen(false);
+      fetchIndustries();
+    } catch (error: any) {
+      if (error.errors) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error('Erro: ' + error.message);
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { data: canDelete, error: rpcError } = await supabase
+        .rpc('can_delete_industry' as any, { i_id: id });
+        
+      if (rpcError) throw rpcError;
+      
+      if (!canDelete) {
+        toast.error('Indústria possui dados vinculados. Inative-a.');
+        setIsDeleting(null);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('industries')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      toast.success('Excluída!');
+      fetchIndustries();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   const toggleStatus = async (industry: IndustryItem) => {
     try {
@@ -97,13 +216,10 @@ function IndustriesPage() {
         .from('industries')
         .update({ active: !industry.active })
         .eq('id', industry.id);
-
       if (error) throw error;
-      
-      setIndustries(industries.map(i => i.id === industry.id ? { ...i, active: !i.active } : i));
-      toast.success(`Indústria ${!industry.active ? 'ativada' : 'inativada'} com sucesso!`);
+      fetchIndustries();
     } catch (error: any) {
-      toast.error('Erro ao atualizar status: ' + error.message);
+      toast.error(error.message);
     }
   };
 
@@ -114,7 +230,7 @@ function IndustriesPage() {
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Indústrias</h2>
           <p className="text-sm text-slate-500">Parceiros e fabricantes</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
+        <Button onClick={() => handleOpenForm()} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="mr-2 h-4 w-4" /> Nova Indústria
         </Button>
       </header>
@@ -130,32 +246,38 @@ function IndustriesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" /> Filtros
-          </Button>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 px-3 py-2 bg-white border border-slate-200 rounded-md text-sm"
+          >
+            <option value="all">Todos os Status</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+          </select>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="font-bold text-slate-700">Indústria</TableHead>
-                <TableHead className="font-bold text-slate-700">Contato</TableHead>
-                <TableHead className="font-bold text-slate-700">Métricas (Mês)</TableHead>
-                <TableHead className="font-bold text-slate-700">Status</TableHead>
+                <TableHead className="font-bold">Indústria</TableHead>
+                <TableHead className="font-bold">Contato</TableHead>
+                <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="w-[80px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-slate-500">
-                    Carregando indústrias...
+                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+                    Carregando...
                   </TableCell>
                 </TableRow>
               ) : filteredIndustries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
                     Nenhuma indústria encontrada.
                   </TableCell>
                 </TableRow>
@@ -164,56 +286,25 @@ function IndustriesPage() {
                   <TableRow key={industry.id} className="hover:bg-slate-50 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
-                          <Factory className="h-5 w-5" />
+                        <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                          <Building2 className="h-5 w-5" />
                         </div>
                         <div>
                           <div className="font-bold text-slate-900">{industry.name}</div>
-                          {industry.cnpj && <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{industry.cnpj}</div>}
+                          {industry.cnpj && <div className="text-[10px] text-slate-400 font-medium">CNPJ: {industry.cnpj}</div>}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
-                          <User className="h-3 w-3 text-slate-400" />
-                          {industry.contact_name || 'Não informado'}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {industry.phone && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                              <Phone className="h-3 w-3" />
-                              {industry.phone}
-                            </div>
-                          )}
-                          {industry.email && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                              <Mail className="h-3 w-3" />
-                              {industry.email}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <div className="text-xs font-black text-slate-900">{industry.stores_count}</div>
-                          <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Lojas</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs font-black text-slate-900">{industry.promoters_count}</div>
-                          <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Promotores</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs font-black text-blue-600">{industry.visits_this_month}</div>
-                          <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Visitas</div>
-                        </div>
+                      <div className="text-sm font-medium text-slate-700">{industry.contact_name}</div>
+                      <div className="flex gap-2 text-[10px] text-slate-400">
+                        {industry.email && <span className="flex items-center gap-0.5"><Mail className="h-2.5 w-2.5" />{industry.email}</span>}
+                        {industry.phone && <span className="flex items-center gap-0.5"><Phone className="h-2.5 w-2.5" />{industry.phone}</span>}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={industry.active ? 'default' : 'secondary'} className="font-bold">
-                        {industry.active ? 'Ativa' : 'Inativa'}
+                        {industry.active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -224,27 +315,21 @@ function IndustriesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" /> Editar Indústria
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/users' })}>
+                            <BarChart3 className="mr-2 h-4 w-4" /> Visão Indústria
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => toggleStatus(industry)}>
-                            {industry.active ? (
-                              <>
-                                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                <span className="text-red-600">Inativar Indústria</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="mr-2 h-4 w-4 text-green-500" />
-                                <span className="text-green-600">Ativar Indústria</span>
-                              </>
-                            )}
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/users' })}>
+                            <UserPlus className="mr-2 h-4 w-4" /> Convidar Usuário
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => navigate({ to: '/industry' })}>
-                            <ExternalLink className="mr-2 h-4 w-4 text-blue-500" />
-                            <span className="text-blue-600 font-bold">Acessar Visão da Indústria</span>
+                          <DropdownMenuItem onClick={() => handleOpenForm(industry)}>
+                            <Edit className="mr-2 h-4 w-4" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toggleStatus(industry)}>
+                            <AlertCircle className="mr-2 h-4 w-4" /> {industry.active ? 'Inativar' : 'Ativar'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setIsDeleting(industry.id)} className="text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -256,6 +341,83 @@ function IndustriesPage() {
           </Table>
         </div>
       </div>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingIndustry ? 'Editar Indústria' : 'Nova Indústria'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4 py-4 px-1">
+            <div className="space-y-2">
+              <Label>Nome da Indústria *</Label>
+              <Input 
+                value={formData.name} 
+                onChange={e => setFormData({...formData, name: e.target.value})} 
+                required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>CNPJ (opcional)</Label>
+              <Input 
+                value={formData.cnpj} 
+                onChange={e => setFormData({...formData, cnpj: e.target.value})} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome do Contato Principal</Label>
+              <Input 
+                value={formData.contact_name} 
+                onChange={e => setFormData({...formData, contact_name: e.target.value})} 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input 
+                  type="email"
+                  value={formData.email} 
+                  onChange={e => setFormData({...formData, email: e.target.value})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input 
+                  value={formData.phone} 
+                  onChange={e => setFormData({...formData, phone: e.target.value})} 
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <Label>Status Ativo</Label>
+              <Switch 
+                checked={formData.active} 
+                onCheckedChange={val => setFormData({...formData, active: val})} 
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-blue-600" disabled={formLoading}>
+                {formLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!isDeleting} onOpenChange={() => setIsDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir indústria?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação é irreversível e requer que não haja dados vinculados.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => isDeleting && handleDelete(isDeleting)} className="bg-red-600">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

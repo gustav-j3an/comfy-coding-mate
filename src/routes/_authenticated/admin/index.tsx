@@ -37,13 +37,13 @@ function AdminDashboard() {
 
   const checkData = async () => {
     try {
-      const { count: promoterCount } = await (supabase as any).from('promoters').select('*', { count: 'exact', head: true });
-      const { count: storeCount } = await (supabase as any).from('stores').select('*', { count: 'exact', head: true });
-      const { count: industryCount } = await (supabase as any).from('industries').select('*', { count: 'exact', head: true });
+      const { count: promoterCount } = await supabase.from('promoters').select('*', { count: 'exact', head: true });
+      const { count: storeCount } = await supabase.from('stores').select('*', { count: 'exact', head: true });
+      const { count: industryCount } = await supabase.from('industries').select('*', { count: 'exact', head: true });
       
       setHasData((promoterCount || 0) > 0 || (storeCount || 0) > 0 || (industryCount || 0) > 0);
     } catch (e) {
-      setHasData(true); // Default to true on error to hide the button
+      setHasData(true);
     }
   };
 
