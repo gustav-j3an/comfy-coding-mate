@@ -8,9 +8,9 @@ export const getAutomationSettings = createServerFn({ method: "GET" })
     const { data, error } = await supabaseAdmin
       .from('automation_settings' as any)
       .select('*')
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
     return data;
   });
 
@@ -24,17 +24,16 @@ export const updateAutomationSettings = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // We only have one settings record
     const { data: existing } = await supabaseAdmin
       .from('automation_settings' as any)
       .select('id')
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { data: updated, error } = await supabaseAdmin
         .from('automation_settings' as any)
         .update(data as any)
-        .eq('id', existing.id)
+        .eq('id', (existing as any).id)
         .select()
         .single();
       if (error) throw error;
@@ -75,9 +74,9 @@ export const runRetentionCleanup = createServerFn({ method: "POST" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // We trigger the Postgres function via RPC if possible, 
-    // or just run a query that calls it.
-    const { data, error } = await supabaseAdmin.rpc('cleanup_expired_data');
+    // Using maybeSingle to suppress lint or checking for existence isn't enough for rpc type safety
+    // so we use a raw query if the rpc isn't recognized by the client generator
+    const { error } = await supabaseAdmin.rpc('cleanup_expired_data' as any);
     
     if (error) throw error;
 

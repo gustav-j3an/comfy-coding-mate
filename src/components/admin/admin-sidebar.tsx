@@ -65,6 +65,7 @@ export function AdminSidebar({ className }: { className?: string }) {
     { to: '/admin/exports', icon: Download, label: 'Exportações' },
     { to: '/admin/contracts', icon: FileText, label: 'Contratos' },
     { to: '/admin/billing', icon: CreditCard, label: 'Cobranças' },
+    { to: '/admin/automation', icon: Zap, label: 'Automação n8n' },
   ];
 
   const SidebarContent = () => (
