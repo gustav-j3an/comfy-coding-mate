@@ -49,6 +49,62 @@ export type Database = {
           },
         ]
       }
+      export_tasks: {
+        Row: {
+          created_at: string
+          download_count: number
+          error_message: string | null
+          expires_at: string | null
+          file_path: string | null
+          filters: Json
+          format: Database["public"]["Enums"]["export_format"]
+          id: string
+          industry_id: string | null
+          last_downloaded_at: string | null
+          status: Database["public"]["Enums"]["export_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          download_count?: number
+          error_message?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          filters?: Json
+          format: Database["public"]["Enums"]["export_format"]
+          id?: string
+          industry_id?: string | null
+          last_downloaded_at?: string | null
+          status?: Database["public"]["Enums"]["export_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          download_count?: number
+          error_message?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          filters?: Json
+          format?: Database["public"]["Enums"]["export_format"]
+          id?: string
+          industry_id?: string | null
+          last_downloaded_at?: string | null
+          status?: Database["public"]["Enums"]["export_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_tasks_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extraordinary_route_stops: {
         Row: {
           created_at: string | null
@@ -816,6 +872,7 @@ export type Database = {
       can_delete_industry: { Args: { i_id: string }; Returns: boolean }
       can_delete_promoter: { Args: { p_id: string }; Returns: boolean }
       can_delete_store: { Args: { s_id: string }; Returns: boolean }
+      cleanup_expired_exports: { Args: never; Returns: undefined }
       delete_user_safely: { Args: { _user_id: string }; Returns: undefined }
       get_admin_count: { Args: never; Returns: number }
       has_role: {
@@ -829,6 +886,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
+      export_format: "xlsx" | "csv" | "json" | "pdf" | "zip"
+      export_status:
+        | "solicitada"
+        | "processando"
+        | "pronta"
+        | "falhou"
+        | "expirada"
       report_status:
         | "em_montagem"
         | "pronto_revisao"
@@ -970,6 +1034,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "industry"],
+      export_format: ["xlsx", "csv", "json", "pdf", "zip"],
+      export_status: [
+        "solicitada",
+        "processando",
+        "pronta",
+        "falhou",
+        "expirada",
+      ],
       report_status: [
         "em_montagem",
         "pronto_revisao",
