@@ -302,7 +302,12 @@ function ReportsPage() {
                         <Button variant="ghost" size="sm" className="text-slate-400">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-slate-400">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-slate-400"
+                          onClick={() => handleDownloadPDF(rep)}
+                        >
                           <FileText className="h-4 w-4" />
                         </Button>
                       </div>
@@ -310,6 +315,7 @@ function ReportsPage() {
                   </TableRow>
                 ))
               )}
+
             </TableBody>
           </Table>
         </div>
