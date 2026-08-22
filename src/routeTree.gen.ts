@@ -29,6 +29,7 @@ import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
+import { Route as AuthenticatedPromoterVisitVisitIdRouteImport } from './routes/_authenticated/promoter/visit.$visitId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -141,6 +142,12 @@ const AuthenticatedAdminRoutesNewRoute =
     path: '/new',
     getParentRoute: () => AuthenticatedAdminRoutesRoute,
   } as any)
+const AuthenticatedPromoterVisitVisitIdRoute =
+  AuthenticatedPromoterVisitVisitIdRouteImport.update({
+    id: '/promoter/visit/$visitId',
+    path: '/promoter/visit/$visitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
+  '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +190,7 @@ export interface FileRoutesByTo {
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
+  '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/_authenticated/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
+  '/_authenticated/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/industry/'
     | '/promoter/'
     | '/admin/routes/new'
+    | '/promoter/visit/$visitId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/industry'
     | '/promoter'
     | '/admin/routes/new'
+    | '/promoter/visit/$visitId'
   id:
     | '__root__'
     | '/'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
     | '/_authenticated/admin/routes/new'
+    | '/_authenticated/promoter/visit/$visitId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRoutesNewRouteImport
       parentRoute: typeof AuthenticatedAdminRoutesRoute
     }
+    '/_authenticated/promoter/visit/$visitId': {
+      id: '/_authenticated/promoter/visit/$visitId'
+      path: '/promoter/visit/$visitId'
+      fullPath: '/promoter/visit/$visitId'
+      preLoaderRoute: typeof AuthenticatedPromoterVisitVisitIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -477,12 +497,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedIndustryIndexRoute: typeof AuthenticatedIndustryIndexRoute
   AuthenticatedPromoterIndexRoute: typeof AuthenticatedPromoterIndexRoute
+  AuthenticatedPromoterVisitVisitIdRoute: typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedIndustryIndexRoute: AuthenticatedIndustryIndexRoute,
   AuthenticatedPromoterIndexRoute: AuthenticatedPromoterIndexRoute,
+  AuthenticatedPromoterVisitVisitIdRoute:
+    AuthenticatedPromoterVisitVisitIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

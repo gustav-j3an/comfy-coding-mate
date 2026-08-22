@@ -1,10 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Camera, 
   Video, 
@@ -19,8 +20,7 @@ import {
 import { useState, useRef } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { submitVisit } from '@/lib/execution.functions';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')({
   component: VisitExecution,
