@@ -269,7 +269,19 @@ function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {user.user_roles?.[0]?.role ? getRoleBadge(user.user_roles[0].role) : '—'}
+                        <div className="flex flex-col gap-1">
+                          {user.user_roles?.[0]?.role ? getRoleBadge(user.user_roles[0].role) : '—'}
+                          {user.promoter_id && (
+                            <div className="flex items-center gap-1 text-[10px] text-blue-600 font-bold uppercase">
+                              <LinkIcon className="w-2 h-2" /> Promotor Vinculado
+                            </div>
+                          )}
+                          {user.industry_id && (
+                            <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold uppercase">
+                              <LinkIcon className="w-2 h-2" /> Indústria Vinculada
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(user.status || 'active')}
