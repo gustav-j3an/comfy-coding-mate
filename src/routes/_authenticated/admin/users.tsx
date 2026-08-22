@@ -59,10 +59,17 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 
 function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
+  const [promoters, setPromoters] = useState<any[]>([]);
+  const [industries, setIndustries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Form states
+  const [inviteRole, setInviteRole] = useState<'admin' | 'promoter' | 'industry'>('promoter');
+  const [selectedPromoterId, setSelectedPromoterId] = useState<string>('');
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string>('');
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       // Get profiles and their roles
@@ -75,15 +82,24 @@ function UserManagement() {
 
       if (profileError) throw profileError;
       setUsers(profiles || []);
+
+      // Get promoters for linking
+      const { data: promotersData } = await (supabase as any).from('promoters').select('*').eq('active', true);
+      setPromoters(promotersData || []);
+
+      // Get industries for linking
+      const { data: industriesData } = await (supabase as any).from('industries').select('*').eq('active', true);
+      setIndustries(industriesData || []);
+      
     } catch (error: any) {
-      toast.error('Erro ao carregar usuários: ' + error.message);
+      toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
   const filteredUsers = users.filter(user => 
