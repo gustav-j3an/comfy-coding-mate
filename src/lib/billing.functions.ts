@@ -150,7 +150,7 @@ export const createBilling = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     // Generate unique billing number
-    const billingNumber = `BILL-${data.competence_year}${data.competence_month.toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    const billingNumber = `BILL-${data.competence_year}${data.competence_month.toString().padStart(2, '0')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
     const { visits, ...billingData } = data;
 
