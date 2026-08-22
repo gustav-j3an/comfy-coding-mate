@@ -231,7 +231,6 @@ function UserManagement() {
     toast.success('Mensagem para WhatsApp copiada!');
   };
 
-
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin':
