@@ -15,6 +15,17 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAdmins = async () => {
+      const { data, error } = await (supabase as any).rpc('get_admin_count');
+      if (!error) {
+        setHasAdmins(Number(data) > 0);
+      }
+    };
+    checkAdmins();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
