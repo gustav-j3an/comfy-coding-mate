@@ -3,6 +3,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { ConnectionStatus } from '@/components/common/connection-status';
 
 export const Route = createFileRoute('/_authenticated')({
   component: AuthenticatedLayout,
@@ -40,5 +41,10 @@ function AuthenticatedLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <ConnectionStatus />
+      <Outlet />
+    </>
+  );
 }
