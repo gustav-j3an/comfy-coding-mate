@@ -4,11 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2 } from 'lucide-react';
+import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2, Bell, Factory, Store, MapPin, Map, AlertTriangle, ArrowUpRight, ArrowDownRight, Filter, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { seedTestData } from '@/lib/data/seed';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { getDashboardStats } from '@/lib/dashboard.functions';
 
 export const Route = createFileRoute('/_authenticated/admin/')({
   component: AdminDashboard,
@@ -24,7 +34,8 @@ function AdminDashboard() {
     predicted: 0,
     sent: 0,
     pending: 0,
-    occurrences: 0
+    occurrences: 0,
+    critical: 0
   });
   const [latestVisits, setLatestVisits] = useState<any[]>([]);
   const [recentOccurrences, setRecentOccurrences] = useState<any[]>([]);
@@ -78,11 +89,19 @@ function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'open');
 
+      // Critical Occurrences
+      const { count: critical } = await supabase
+        .from('occurrences')
+        .select('*', { count: 'exact', head: true })
+        .eq('severity', 'critical')
+        .eq('status', 'open');
+
       setRealStats({
         predicted: predicted || 0,
         sent: sent || 0,
         pending: pending || 0,
-        occurrences: occurrences || 0
+        occurrences: occurrences || 0,
+        critical: critical || 0
       });
     } catch (e) {
       console.error(e);
