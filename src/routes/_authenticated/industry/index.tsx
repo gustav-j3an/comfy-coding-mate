@@ -54,7 +54,7 @@ function IndustryPortal() {
             stores:store_id(name)
           )
         `)
-        .eq('visit.industry_id', profile.industry_id)
+        .filter('visit.industry_id', 'eq', profile.industry_id)
         .order('created_at', { ascending: false })
         .limit(10);
 
