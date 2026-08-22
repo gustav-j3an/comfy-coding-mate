@@ -29,9 +29,9 @@ function PromoterDashboard() {
   const { data: visits } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
-      const userId = user?.id;
-      const promoterId = profile?.promoter_id;
-      if (!userId || !promoterId) return [];
+      const currentUserId = user?.id;
+      const currentPromoterId = profile?.promoter_id;
+      if (!currentUserId || !currentPromoterId) return [];
       
       const { data, error } = await supabase
         .from('visits')
@@ -40,8 +40,8 @@ function PromoterDashboard() {
           store:stores(name, address),
           industry:industries(name)
         `)
-        .eq('promoter_id', promoterId)
-        .eq('scheduled_date', today)
+        .eq('promoter_id', currentPromoterId)
+        .eq('scheduled_date', today as string)
         .order('visit_order', { ascending: true });
 
       if (error) throw error;
@@ -117,7 +117,7 @@ function PromoterDashboard() {
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
                   <Link 
                     to={"/promoter/visit/$visitId" as any} 
-                    params={{ visitId: nextStop.id }}
+                    params={{ visitId: nextStop.id } as any}
                   >
                     Iniciar Visita
                     <ChevronRight className="ml-2 h-4 w-4" />
@@ -146,7 +146,8 @@ function PromoterDashboard() {
               visits.map((visit, index) => (
                 <Link 
                   key={visit.id} 
-                  to={`/promoter/visit/${visit.id}`}
+                  to={"/promoter/visit/$visitId" as any}
+                  params={{ visitId: visit.id } as any}
                   className="block"
                 >
                   <Card className={`overflow-hidden transition-all hover:shadow-md border-none ${visit.status === 'approved' ? 'opacity-75' : ''}`}>

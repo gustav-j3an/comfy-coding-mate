@@ -189,30 +189,48 @@ export type Database = {
       }
       occurrences: {
         Row: {
+          batch: string | null
           created_at: string | null
           description: string | null
+          expiry_date: string | null
           id: string
           industry_id: string
+          product_name: string | null
+          quantity: number | null
+          severity: string | null
+          sku: string | null
           status: string | null
           store_id: string
           type: string
           visit_id: string | null
         }
         Insert: {
+          batch?: string | null
           created_at?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           industry_id: string
+          product_name?: string | null
+          quantity?: number | null
+          severity?: string | null
+          sku?: string | null
           status?: string | null
           store_id: string
           type: string
           visit_id?: string | null
         }
         Update: {
+          batch?: string | null
           created_at?: string | null
           description?: string | null
+          expiry_date?: string | null
           id?: string
           industry_id?: string
+          product_name?: string | null
+          quantity?: number | null
+          severity?: string | null
+          sku?: string | null
           status?: string | null
           store_id?: string
           type?: string
@@ -628,45 +646,70 @@ export type Database = {
       }
       visits: {
         Row: {
+          checkin_at: string | null
+          checkout_at: string | null
           completed_at: string | null
           created_at: string | null
+          execution_latitude: number | null
+          execution_longitude: number | null
+          executor_id: string | null
           id: string
           industry_id: string
           latitude: number | null
           longitude: number | null
           observation: string | null
           promoter_id: string
+          rejection_reason: string | null
           scheduled_date: string
           status: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
         }
         Insert: {
+          checkin_at?: string | null
+          checkout_at?: string | null
           completed_at?: string | null
           created_at?: string | null
+          execution_latitude?: number | null
+          execution_longitude?: number | null
+          executor_id?: string | null
           id?: string
           industry_id: string
           latitude?: number | null
           longitude?: number | null
           observation?: string | null
           promoter_id: string
+          rejection_reason?: string | null
           scheduled_date: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
         }
         Update: {
+          checkin_at?: string | null
+          checkout_at?: string | null
           completed_at?: string | null
           created_at?: string | null
+          execution_latitude?: number | null
+          execution_longitude?: number | null
+          executor_id?: string | null
           id?: string
           industry_id?: string
           latitude?: number | null
           longitude?: number | null
           observation?: string | null
           promoter_id?: string
+          rejection_reason?: string | null
           scheduled_date?: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visits_executor_id_fkey"
+            columns: ["executor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visits_industry_id_fkey"
             columns: ["industry_id"]
@@ -695,6 +738,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_evidence: {
+        Args: { evidence_id: string; user_id: string }
+        Returns: boolean
+      }
       can_delete_industry: { Args: { i_id: string }; Returns: boolean }
       can_delete_promoter: { Args: { p_id: string }; Returns: boolean }
       can_delete_store: { Args: { s_id: string }; Returns: boolean }

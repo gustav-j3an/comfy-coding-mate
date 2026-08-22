@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,10 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, Filter, CheckCircle2, Clock, 
   AlertCircle, Eye, ChevronRight, MapPin,
-  Calendar, User
+  Calendar, User, X, Check, Loader2,
+  ExternalLink,
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import {
   Table,
@@ -21,6 +24,16 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { z } from 'zod';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { auditVisit, getSignedUrl } from '@/lib/execution.functions';
+import { useAuth } from '@/lib/auth/auth-context';
+import { Textarea } from '@/components/ui/textarea';
 
 const visitsSearchSchema = z.object({
   filter: z.string().optional(),
@@ -33,10 +46,19 @@ export const Route = createFileRoute('/_authenticated/admin/visits')({
 
 function VisitsPage() {
   const search = Route.useSearch();
+  const { user: authUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(search.filter || 'all');
+  
+  // Audit Modal State
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<any>(null);
+  const [auditReason, setAuditReason] = useState('');
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [evidences, setEvidences] = useState<any[]>([]);
+  const [loadingEvidences, setLoadingEvidences] = useState(false);
 
   useEffect(() => {
     fetchVisits();
@@ -49,7 +71,7 @@ function VisitsPage() {
         .from('visits')
         .select(`
           *,
-          profiles:promoter_id(full_name),
+          profiles:executor_id(full_name),
           stores:store_id(name, city),
           industries:industry_id(name)
         `);
@@ -72,6 +94,71 @@ function VisitsPage() {
       toast.error('Erro ao carregar visitas: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEvidences = async (visitId: string) => {
+    try {
+      setLoadingEvidences(true);
+      const { data, error } = await supabase
+        .from('visit_evidence')
+        .select('*')
+        .eq('visit_id', visitId);
+
+      if (error) throw error;
+
+      // Get signed URLs for each evidence
+      const evidencesWithUrls = await Promise.all(
+        (data || []).map(async (ev) => {
+          try {
+            const url = await getSignedUrl({ data: { filePath: ev.file_path } });
+            return { ...ev, signedUrl: url };
+          } catch (e) {
+            console.error('Error getting signed URL:', e);
+            return ev;
+          }
+        })
+      );
+
+      setEvidences(evidencesWithUrls);
+    } catch (error: any) {
+      toast.error('Erro ao carregar evidências: ' + error.message);
+    } finally {
+      setLoadingEvidences(false);
+    }
+  };
+
+  const handleOpenAudit = (visit: any) => {
+    setSelectedVisit(visit);
+    setAuditReason(visit.rejection_reason || '');
+    setIsAuditModalOpen(true);
+    fetchEvidences(visit.id);
+  };
+
+  const handleAudit = async (decision: 'approved' | 'rejected') => {
+    if (decision === 'rejected' && !auditReason) {
+      toast.error('Informe o motivo da reprovação.');
+      return;
+    }
+
+    try {
+      setIsAuditing(true);
+      await auditVisit({
+        data: {
+          visitId: selectedVisit.id,
+          auditorId: authUser!.id,
+          decision,
+          reason: auditReason
+        }
+      });
+
+      toast.success(decision === 'approved' ? 'Visita aprovada!' : 'Visita reprovada.');
+      setIsAuditModalOpen(false);
+      fetchVisits();
+    } catch (error: any) {
+      toast.error('Erro ao auditar visita: ' + error.message);
+    } finally {
+      setIsAuditing(false);
     }
   };
 
@@ -192,7 +279,12 @@ function VisitsPage() {
                       {getStatusBadge(visit.status)}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleOpenAudit(visit)}
+                        className="font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                      >
                         AUDITAR <ChevronRight className="w-4 h-4" />
                       </Button>
                     </TableCell>
@@ -203,6 +295,157 @@ function VisitsPage() {
           </Table>
         </div>
       </div>
+
+      <Dialog open={isAuditModalOpen} onOpenChange={setIsAuditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Auditoria de Visita</span>
+              {selectedVisit && (
+                <Badge variant="outline" className="ml-4 font-bold">
+                  {selectedVisit.stores?.name}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedVisit && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-600" /> Detalhes da Execução
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Promotor</p>
+                        <p className="font-semibold">{selectedVisit.profiles?.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Indústria</p>
+                        <p className="font-semibold">{selectedVisit.industries?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Check-in</p>
+                        <p className="font-semibold">
+                          {selectedVisit.checkin_at ? format(new Date(selectedVisit.checkin_at), 'HH:mm', { locale: ptBR }) : '--:--'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Check-out</p>
+                        <p className="font-semibold">
+                          {selectedVisit.checkout_at ? format(new Date(selectedVisit.checkout_at), 'HH:mm', { locale: ptBR }) : '--:--'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-blue-600" /> Observações do Promotor
+                    </h3>
+                    <div className="bg-white border p-3 rounded-lg text-sm text-slate-600 min-h-[60px]">
+                      {selectedVisit.observation || 'Nenhuma observação informada.'}
+                    </div>
+                  </div>
+
+                  {selectedVisit.status === 'rejected' && (
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                      <h3 className="font-bold text-red-700 text-sm flex items-center gap-2 mb-1">
+                        <X className="w-4 h-4" /> Motivo da Reprovação
+                      </h3>
+                      <p className="text-sm text-red-600">{selectedVisit.rejection_reason}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-blue-600" /> Evidências
+                  </h3>
+                  
+                  {loadingEvidences ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    </div>
+                  ) : evidences.length === 0 ? (
+                    <div className="bg-slate-50 border-dashed border-2 p-8 text-center text-slate-500 rounded-lg">
+                      Nenhuma evidência anexada.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {evidences.map((ev, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden border bg-slate-100 aspect-square">
+                          {ev.file_type?.startsWith('image/') ? (
+                            <img 
+                              src={ev.signedUrl} 
+                              alt="evidencia" 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                              <FileText className="h-8 w-8 text-slate-400 mb-2" />
+                              <span className="text-[10px] font-bold text-slate-500 truncate w-full">
+                                {ev.evidence_type}
+                              </span>
+                            </div>
+                          )}
+                          <a 
+                            href={ev.signedUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          >
+                            <ExternalLink className="text-white h-6 w-6" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t space-y-4">
+                <h3 className="font-bold text-slate-800">Decisão da Auditoria</h3>
+                <Textarea 
+                  placeholder="Descreva o motivo caso deseje reprovar esta visita..."
+                  value={auditReason}
+                  onChange={(e) => setAuditReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAuditModalOpen(false)}
+              disabled={isAuditing}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleAudit('rejected')}
+              disabled={isAuditing}
+              className="font-bold"
+            >
+              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+              Reprovar
+            </Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 font-bold"
+              onClick={() => handleAudit('approved')}
+              disabled={isAuditing}
+            >
+              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+              Aprovar Visita
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
