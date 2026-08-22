@@ -143,8 +143,8 @@ function AutomationPage() {
           <p className="text-sm text-slate-500 text-left">Conecte o sistema ao n8n e gerencie a retenção de dados.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTestWebhook} disabled={isTesting || !settings?.is_configured}>
-            {isTesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+          <Button variant="outline" disabled={true}>
+            <Zap className="mr-2 h-4 w-4" />
             Testar Webhook
           </Button>
           <Button variant="destructive" onClick={handleCleanup} disabled={isCleaning}>
