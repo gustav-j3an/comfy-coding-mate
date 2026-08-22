@@ -12,7 +12,9 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       .eq('status', 'open');
 
     // Get count of submitted visits today
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
     const { count: pendingVisits } = await supabaseAdmin
       .from('visits')
       .select('*', { count: 'exact', head: true })
