@@ -57,7 +57,7 @@ function AdminDashboard() {
         .from('visits')
         .select('*', { count: 'exact', head: true })
         .eq('scheduled_date', todayStr)
-        .eq('status', 'pending');
+        .eq('status', 'planned');
 
       // Sent (submitted visits today)
       const { count: sent } = await supabase
