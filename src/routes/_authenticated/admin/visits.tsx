@@ -45,10 +45,19 @@ export const Route = createFileRoute('/_authenticated/admin/visits')({
 
 function VisitsPage() {
   const search = Route.useSearch();
+  const { user: authUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(search.filter || 'all');
+  
+  // Audit Modal State
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<any>(null);
+  const [auditReason, setAuditReason] = useState('');
+  const [isAuditing, setIsAuditing] = useState(false);
+  const [evidences, setEvidences] = useState<any[]>([]);
+  const [loadingEvidences, setLoadingEvidences] = useState(false);
 
   useEffect(() => {
     fetchVisits();
