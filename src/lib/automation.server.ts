@@ -112,9 +112,11 @@ function sanitizePayloadData(data: any): any {
   for (const key of Object.keys(sanitized)) {
     if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
       // Mask email but keep domain if useful, or just mask entirely
-      if (key.toLowerCase().includes('email') && typeof sanitized[key] === 'string') {
-        const [user, domain] = sanitized[key].split('@');
-        sanitized[key] = `${user[0]}***@${domain}`;
+      if (key.toLowerCase().includes('email') && typeof sanitized[key] === 'string' && sanitized[key].includes('@')) {
+        const parts = sanitized[key].split('@');
+        const user = parts[0] || '';
+        const domain = parts[1] || '';
+        sanitized[key] = `${user[0] || '*'}***@${domain}`;
       } else {
         sanitized[key] = '[REDACTED]';
       }
