@@ -1,41 +1,53 @@
-# Missão 6 — Exportações, Backup e Pacote de Evidências
+# Missão 6 - Exportações, Backup e Pacote de Evidências
 
-Este plano implementa um sistema robusto de exportação de dados (Excel, CSV, JSON, PDF e ZIP) com foco em privacidade, auditoria e retenção de 90 dias.
+O objetivo desta missão é permitir que administradores e indústrias exportem seus dados (relatórios, visitas, evidências) em formatos estruturados (XLSX) e pacotes de arquivos (ZIP), garantindo a soberania dos dados antes do prazo de 90 dias.
 
-## Mudanças no Banco de Dados
+## Mudanças Propostas
 
-### Tabelas e Segurança
-- Criar tabela `export_tasks` para rastrear solicitações de exportação.
-- Criar tabela `audit_logs` para registrar ações sensíveis (opcional, ou usar logs de exportação).
-- Configurar RLS em `export_tasks` para garantir que indústrias vejam apenas suas exportações.
+### Backend e Dados
+- **Tabela `export_tasks`**: Já criada via migração, rastreia solicitações de exportação.
+- **Storage `exports`**: Balde privado para armazenar os arquivos gerados.
+- **Server Functions (`src/lib/exports.functions.ts`)**:
+    - `createExportTask`: Solicita uma nova exportação.
+    - `getExportTasks`: Lista o histórico de exportações.
+    - `getDownloadUrl`: Gera link assinado para download.
+- **API Segura**: O endpoint de PDF foi movido para `/api/reports.pdf.ts` e agora exige autenticação.
 
-### Bucket de Storage
-- Criar bucket `exports` privado para armazenar os arquivos gerados.
-- Configurar políticas de acesso baseadas no criador da exportação.
+### Frontend
+- **Interface de Exportação**:
+    - Nova aba/módulo em `/admin/reports` ou uma nova rota `/admin/exports`.
+    - Filtros por data, indústria e promotor.
+    - Seleção de formato (XLSX para dados estruturados, ZIP para fotos).
+- **Portal da Indústria**:
+    - Adição de botão "Exportar Tudo" no dashboard da indústria.
+    - Histórico de exportações solicitadas pela indústria.
 
-## Implementação Técnica
+### Segurança
+- **RLS**: Indústrias só veem suas próprias exportações. Administradores veem tudo.
+- **Exclusão Automática**: Arquivos expiram e são removidos após 7 dias (lógica via `cleanup_expired_exports`).
+- **Audit Log**: Cada download é registrado com timestamp e contador.
 
-### Backend (Server Functions & Routes)
-1.  **Renomear Endpoint de PDF:** Mover `/api/public/reports/pdf` para `/api/reports/pdf` e adicionar validação de sessão obrigatória via `requireSupabaseAuth`.
-2.  **Processador de Exportação:** Criar `src/lib/exports.functions.ts` para:
-    - Solicitar nova exportação (inserção em `export_tasks`).
-    - Gerar arquivos (XLSX via `xlsx`, ZIP via `jszip` ou similar).
-    - Consultar status do processamento.
-3.  **Endpoint de Download:** Rota que serve links assinados e temporários (7 dias).
+## Detalhes Técnicos
 
-### Frontend (Admin & Industry)
-1.  **Módulo de Exportações:** Tela centralizada `/admin/exports` e `/industry/exports`.
-2.  **Formulário de Filtros:** Componente reutilizável com filtros de data, indústria, promotor, loja, etc.
-3.  **Lista de Tarefas:** Exibição do status das exportações (Solicitada, Processando, Pronta, Expirada).
-4.  **Botões de Ação:** "Solicitar Exportação" e "Baixar" (quando pronta).
+### Estrutura do Arquivo ZIP (Evidências)
+```text
+export_id_data/
+├── relatorio_consolidado.xlsx
+├── visitas/
+│   ├── visita_ID_LOJA_DATA.pdf
+│   └── evidencias/
+│       ├── foto_1.jpg
+│       └── foto_2.jpg
+└── ocorrencias/
+    └── comprovante_ID.jpg
+```
 
-## Segurança e Auditoria
-- Registro de auditoria em cada etapa: solicitação, processamento e download.
-- Validação estrita de escopo (indústria só exporta dados da própria indústria).
-- Links temporários com expiração forçada.
+### Bibliotecas Utilizadas
+- `xlsx`: Para geração de planilhas.
+- `jszip`: Para criação de pacotes ZIP no servidor.
+- `@supabase/supabase-js`: Para interação com o Storage e Banco de Dados.
 
-## Próximos Passos
-1.  Executar migração SQL para `export_tasks`.
-2.  Renomear e proteger a rota de PDF.
-3.  Implementar a lógica de geração de planilhas e ZIP.
-4.  Construir as interfaces de usuário.
+### Fluxo de Execução
+1. Usuário solicita exportação -> Grava tarefa como `solicitada`.
+2. (Simulado) Processamento gera o arquivo -> Upload para Storage -> Status `pronta`.
+3. Usuário clica em baixar -> Gera URL assinada de 1 hora -> Incrementa contador de downloads.
