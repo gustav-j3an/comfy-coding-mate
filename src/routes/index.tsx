@@ -52,95 +52,68 @@ function Briefing() {
       </div>
 
       <div className="mt-20 p-8 max-w-4xl mx-auto font-sans whitespace-pre-wrap leading-relaxed text-slate-300 text-[10px] border-t border-slate-200 opacity-50">
-        Continue o projeto sem alterar o visual atual do dashboard administrativo. Agora transforme o painel em módulos administrativos reais, com rotas funcionais, navegação e operações ligadas ao Supabase.
+MISSÃO 0 — Corrigir banco de dados, relacionamentos e erros de carregamento.
 
-IMPORTANTE:
-- Todos os botões, cards e links devem funcionar.
-- Não usar telas vazias ou apenas demonstrativas.
-- Usar dados reais do Supabase quando existirem.
-- Os dados de teste devem aparecer somente quando a base estiver vazia e devem ser claramente identificados.
-- Depois de inserir dados reais, não mostrar “Dados de Teste” como recurso normal do administrador.
+Não criar telas novas nesta missão. Corrigir primeiro todos os erros de dados e garantir que as telas existentes carreguem corretamente.
 
-Criar menu lateral administrativo, responsivo para computador e celular, com os módulos:
+Erro atual a corrigir:
+“Could not find a relationship between 'visits' and 'promoter_id' in the schema cache”.
 
-1. Dashboard Geral
-2. Rotas e Roteiros
-3. Visitas para Conferência
-4. Ocorrências
-5. Cadastros
-   - Promotores
-   - Lojas
-   - Indústrias
-6. Usuários e Acessos
-7. Relatórios Mensais
-8. Exportações
-9. Cobranças
+Tarefas:
 
-Dashboard:
-- Fazer os cards clicáveis.
-- “Visitas Previstas Hoje” abre lista filtrada de visitas previstas para hoje.
-- “Visitas Enviadas Hoje” abre lista de visitas enviadas hoje.
-- “Pendentes de Conferência” abre a tela de conferência já filtrada.
-- “Ocorrências Abertas” abre a tela de ocorrências já filtrada.
-- Cada item em “Últimas Visitas Enviadas” deve abrir o detalhe daquela visita.
-- Cada ocorrência recente deve abrir o detalhe da ocorrência.
-- Manter botão “Novo Relatório”, levando para Relatórios Mensais.
+1. Inspecionar o schema real já criado no Supabase e identificar:
+- nome real da tabela de visitas;
+- nome real da tabela de promotores;
+- nome real das colunas de vínculo;
+- se o campo está nomeado como `promoter_id`, `promotor_id` ou outro nome;
+- se existe chave estrangeira válida entre visita e promotor.
 
-Módulo Promotores:
-- Listagem de promotores com nome, telefone, e-mail, status, quantidade de visitas previstas nesta semana e última atividade.
-- Botão “Novo promotor”.
-- Tela/formulário com nome completo, telefone, e-mail, região, observação e status ativo/inativo.
-- Permitir editar e inativar, sem apagar o histórico.
-- Botão “Ver roteiro” em cada promotor.
-- Botão “Criar rota” em cada promotor.
+2. Corrigir as migrations e consultas sem apagar dados existentes.
+- A tabela de visitas deve ter vínculo válido com o promotor.
+- O vínculo deve ser uma chave estrangeira real no Supabase.
+- Ajustar as consultas do frontend para usar os nomes reais das tabelas e colunas.
+- Se já houver dados de teste incompatíveis, corrigir ou recriar somente os dados de teste.
+- Não apagar usuários, roteiros ou dados reais.
 
-Módulo Lojas:
-- Listagem com nome, endereço, cidade, status e quantidade de indústrias vinculadas.
-- Botão “Nova loja”.
-- Cadastro com nome, endereço completo, cidade, estado, CEP, latitude, longitude e status.
-- Permitir editar e inativar sem apagar histórico.
+3. Validar relacionamentos necessários:
+- visita → promotor;
+- visita → loja;
+- visita → indústria;
+- visita → roteiro/parada, quando existir;
+- ocorrência → visita;
+- usuário → perfil;
+- usuário de indústria → indústria.
 
-Módulo Indústrias:
-- Listagem com nome, status, lojas atendidas, promotores vinculados e visitas no mês.
-- Botão “Nova indústria”.
-- Cadastro com nome, CNPJ opcional, contato principal, e-mail, telefone e status.
-- Permitir editar e inativar sem apagar histórico.
-- Botão “Acessar visão da indústria” para visualizar como a indústria verá seus dados.
+4. Corrigir as seguintes telas, garantindo que não apresentem erro:
+- Visitas Previstas Hoje;
+- Visitas Enviadas Hoje;
+- Pendentes de Conferência;
+- Últimas Visitas Enviadas;
+- Visitas para Conferência;
+- visão da Indústria;
+- Relatórios Mensais.
 
-Módulo Usuários e Acessos:
-- Listar usuários com nome, e-mail, perfil, vínculo, status, último acesso e data de criação.
-- Perfis possíveis: administrador, promotor e indústria.
-- Botão “Convidar usuário”.
-- Ao convidar promotor, obrigar vínculo com um promotor cadastrado.
-- Ao convidar indústria, obrigar vínculo com uma indústria cadastrada.
-- Permitir reenviar convite, bloquear, reativar e solicitar redefinição de senha.
-- Não permitir cadastro público.
-- Mostrar convites pendentes e expirados.
+5. Para cada tela, implementar estados:
+- carregando;
+- sem dados;
+- erro amigável;
+- dados carregados.
 
-Módulo Rotas e Roteiros:
-- Só permitir criar rota depois de selecionar um promotor cadastrado.
-- Tela de roteiro semanal com segunda a domingo.
-- Em cada dia: adicionar lojas, ordenar paradas e incluir indústrias por loja.
-- Para cada indústria na loja: selecionar frequência semanal ou quinzenal.
-- Permitir salvar como rascunho e publicar.
-- Exigir data de vigência ao publicar uma alteração.
-- Mostrar histórico de versões da rota.
-- Nunca modificar visitas passadas ao alterar uma rota.
-- Criar botão “Visualizar como promotor”.
+6. Teste obrigatório antes de finalizar:
+- criar ou usar um promotor de teste;
+- criar uma loja de teste;
+- criar uma indústria de teste;
+- criar uma visita vinculada corretamente aos três;
+- abrir Visitas Previstas Hoje;
+- abrir Visitas para Conferência;
+- abrir a visão da indústria;
+- confirmar que nenhuma tela exibe erro de relacionamento.
 
-Integração:
-- Conectar cadastros, rotas, visitas e usuários ao Supabase.
-- Exibir mensagens de sucesso e erro.
-- Validar campos obrigatórios.
-- Proteger todas as rotas administrativas para somente administradores autenticados.
-- Criar navegação por URL para que cada módulo possa ser acessado diretamente.
-
-Comece implementando e testando nesta ordem:
-1. Menu administrativo;
-2. Cadastros de Promotores, Lojas e Indústrias;
-3. Usuários e Acessos;
-4. Rotas e Roteiros;
-5. Ligações dos cards do Dashboard.
+Ao final, informar claramente:
+- qual era a causa do erro;
+- quais tabelas e campos foram corrigidos;
+- quais telas foram testadas;
+- quais dados de teste foram usados.
       </div>
     </div>
   );
