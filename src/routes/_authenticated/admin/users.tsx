@@ -23,7 +23,8 @@ import {
   Mail,
   UserX,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  Link as LinkIcon
 } from 'lucide-react';
 import { 
   DropdownMenu, 
