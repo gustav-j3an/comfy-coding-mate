@@ -177,7 +177,7 @@ function UserManagement() {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
     try {
-      await deleteUser({ userId: userToDelete.id });
+      await deleteUser({ data: { userId: userToDelete.id } });
       toast.success('Usuário excluído!');
       setUserToDelete(null);
       fetchData();
