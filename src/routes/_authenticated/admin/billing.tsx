@@ -8,7 +8,7 @@ import {
   TrendingUp, Wallet, ArrowUpRight,
   MoreVertical, Factory, CheckCircle2,
   FileDown, Loader2, AlertCircle, FileText,
-  History, Info
+  History, Info, DollarSign, XCircle
 } from 'lucide-react';
 import {
   Table,

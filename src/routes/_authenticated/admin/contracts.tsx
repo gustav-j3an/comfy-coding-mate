@@ -112,8 +112,8 @@ function ContractsPage() {
       setEditingContract(null);
       setFormData({
         industry_id: '',
-        contract_number: `CONT-${new Date().getFullYear()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
-        start_date: new Date().toISOString().split('T')[0],
+        contract_number: `CONT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        start_date: new Date().toISOString().split('T')[0] as string,
         end_date: '',
         status: 'draft',
         value_per_visit: 0,
