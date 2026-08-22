@@ -50,24 +50,18 @@ export const inviteUser = createServerFn({ method: "POST" })
       }]);
 
     if (profileError) throw profileError;
-
-    // Generate invite link for WhatsApp
-    // In a real scenario, we might need a specific "reset password" or "accept invite" link
-    // Supabase invite emails usually contain a hash. For WhatsApp, we might need to 
-    // generate a recovery link or similar if we want a direct "set password" flow.
-    // For now, we'll return the user ID and email so the frontend can display success.
     
     return { success: true, userId, email: data.email };
   });
 
 export const updateUserStatus = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ userId: z.string(), status: z.string() }).parse(data))
+  .inputValidator((data) => z.object({ userId: z.string(), status: z.enum(['active', 'blocked', 'pending']) }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     const { error } = await supabaseAdmin
       .from('profiles')
-      .update({ status: data.status })
+      .update({ status: data.status as any })
       .eq('id', data.userId);
 
     if (error) throw error;
@@ -80,7 +74,6 @@ export const deleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
-    // The safely check is in SQL, but we call auth deletion here
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (authError) throw authError;
 
