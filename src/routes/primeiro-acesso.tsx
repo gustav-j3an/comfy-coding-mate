@@ -11,12 +11,13 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/primeiro-acesso')({
   loader: async () => {
-    const { data, error } = await supabase.rpc('get_admin_count');
+    // We use a regular query since get_admin_count might not be in the generated types yet
+    const { data, error } = await (supabase as any).rpc('get_admin_count');
     if (error) {
       console.error('Error checking admin count:', error);
     }
     
-    if (Number(data) > 0) {
+    if (data !== null && Number(data) > 0) {
       throw redirect({ to: '/admin' });
     }
     return { adminCount: Number(data) };
