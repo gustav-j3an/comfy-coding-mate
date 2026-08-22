@@ -8,8 +8,8 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
   // 1. Get token from Authorization header (for server functions/API)
   let token: string | null = null;
   const authHeader = request.headers.get('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.split('Bearer ')[1];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split('Bearer ')[1] || null;
   }
   
   // 2. Fallback to cookies (for browser requests to API routes)
@@ -20,7 +20,9 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
       if (match) {
         try {
           const session = JSON.parse(decodeURIComponent(match[1]));
-          token = session.access_token;
+          if (session && typeof session.access_token === 'string') {
+            token = session.access_token;
+          }
         } catch (e) {
           // Ignore
         }
