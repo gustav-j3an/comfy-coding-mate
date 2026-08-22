@@ -38,12 +38,12 @@ export const submitVisit = createServerFn({ method: "POST" })
     const { error: visitError } = await supabaseAdmin
       .from('visits')
       .update({
-        status: 'submitted' as any,
+        status: 'submitted',
         executor_id: data.executorId,
         checkin_at: data.checkinAt,
         checkout_at: data.checkoutAt,
-        execution_latitude: data.latitude,
-        execution_longitude: data.longitude,
+        execution_latitude: data.latitude ?? null,
+        execution_longitude: data.longitude ?? null,
         observation: data.observation || null
       } as any)
       .eq('id', data.visitId);
@@ -81,11 +81,11 @@ export const submitVisit = createServerFn({ method: "POST" })
         quantity: o.quantity || null,
         severity: o.severity,
         status: 'open'
-      } as any));
+      }));
 
       const { error: occurrenceError } = await supabaseAdmin
         .from('occurrences')
-        .insert(occurrencesToInsert);
+        .insert(occurrencesToInsert as any);
       
       if (occurrenceError) throw occurrenceError;
     }
@@ -110,7 +110,7 @@ export const auditVisit = createServerFn({ method: "POST" })
     const { error: visitError } = await supabaseAdmin
       .from('visits')
       .update({
-        status: data.decision as any,
+        status: data.decision,
         rejection_reason: data.decision === 'rejected' ? (data.reason || null) : null
       } as any)
       .eq('id', data.visitId);
@@ -123,7 +123,7 @@ export const auditVisit = createServerFn({ method: "POST" })
       .insert({
         visit_id: data.visitId,
         auditor_id: data.auditorId,
-        decision: data.decision as any,
+        decision: data.decision,
         reason: data.reason || null
       } as any);
 
