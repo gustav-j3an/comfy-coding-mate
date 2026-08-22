@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute('/_authenticated/industry/billing' as any)({
+export const Route = createFileRoute('/_authenticated/industry/billing')({
   component: IndustryBillingPage,
 });
 

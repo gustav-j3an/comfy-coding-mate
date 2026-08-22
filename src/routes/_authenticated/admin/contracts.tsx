@@ -40,7 +40,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { getContracts, createContract, updateContract } from '@/lib/billing.functions';
 import { supabase } from '@/integrations/supabase/client';
 
-export const Route = createFileRoute('/_authenticated/admin/contracts' as any)({
+export const Route = createFileRoute('/_authenticated/admin/contracts')({
   component: ContractsPage,
 });
 
