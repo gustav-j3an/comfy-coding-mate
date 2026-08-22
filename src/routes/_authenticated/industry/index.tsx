@@ -53,19 +53,27 @@ function IndustryPortal() {
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
-              <CardHeader className="pb-2 text-sm text-slate-500">Visitas Realizadas</CardTitle>
+              <CardHeader className="pb-2">
+                <p className="text-sm text-slate-500">Visitas Realizadas</p>
+              </CardHeader>
               <CardContent className="text-2xl font-bold">142 / 150</CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2 text-sm text-slate-500">Aprovadas</CardTitle>
+              <CardHeader className="pb-2">
+                <p className="text-sm text-slate-500">Aprovadas</p>
+              </CardHeader>
               <CardContent className="text-2xl font-bold text-green-600">138</CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2 text-sm text-slate-500">Ocorrências</CardHeader>
+              <CardHeader className="pb-2">
+                <p className="text-sm text-slate-500">Ocorrências</p>
+              </CardHeader>
               <CardContent className="text-2xl font-bold text-red-600">4</CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2 text-sm text-slate-500">Lojas Atendidas</CardHeader>
+              <CardHeader className="pb-2">
+                <p className="text-sm text-slate-500">Lojas Atendidas</p>
+              </CardHeader>
               <CardContent className="text-2xl font-bold">48</CardContent>
             </Card>
           </div>
