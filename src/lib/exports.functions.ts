@@ -18,8 +18,9 @@ export const createExportTask = createServerFn({ method: "POST" })
     industryId: z.string().optional()
   }).parse(data))
   .handler(async ({ data }) => {
-    const { getWebRequest } = await import("@tanstack/react-start/server");
-    const request = getWebRequest();
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const request = getRequest();
+
     const { user } = await requireSupabaseAuth({ request });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
