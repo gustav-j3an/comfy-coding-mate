@@ -114,14 +114,26 @@ function AutomationPage() {
     }
   };
 
+  const getPreviewFn = useServerFn(getCleanupPreview);
+
   const handleCleanup = async () => {
-    const confirmation = prompt("Para confirmar a limpeza manual, digite: EXCLUIR DADOS EXPIRADOS");
-    if (confirmation !== 'EXCLUIR DADOS EXPIRADOS') {
-      if (confirmation !== null) toast.error("Confirmação incorreta.");
-      return;
-    }
     try {
       setIsCleaning(true);
+      const preview = await getPreviewFn();
+      
+      const message = `Prévia de Limpeza:\n` +
+                      `- Visitas: ${(preview as any).visits}\n` +
+                      `- Evidências: ${(preview as any).evidences}\n` +
+                      `- Logs: ${(preview as any).logs}\n\n` +
+                      `Para confirmar a exclusão destes dados expirados, digite exatamente:\nEXCLUIR DADOS EXPIRADOS`;
+      
+      const confirmation = prompt(message);
+      
+      if (confirmation !== 'EXCLUIR DADOS EXPIRADOS') {
+        if (confirmation !== null) toast.error("Confirmação incorreta.");
+        return;
+      }
+
       await cleanupFn({ data: { confirmation } });
       toast.success("Limpeza executada com sucesso!");
       fetchData();
