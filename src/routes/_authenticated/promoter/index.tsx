@@ -31,7 +31,7 @@ function PromoterDashboard() {
     queryFn: async () => {
       const currentUserId = user?.id;
       const currentPromoterId = profile?.promoter_id;
-      if (!currentUserId || !currentPromoterId) return [];
+      if (!currentUserId) return [];
       
       const { data, error } = await supabase
         .from('visits')
