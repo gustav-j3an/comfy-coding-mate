@@ -5,7 +5,7 @@ import {
   LogOut, Users, Store, Factory, FileCheck, 
   AlertCircle, BarChart3, Map, Calendar, 
   FileText, Download, CreditCard, ChevronRight,
-  Menu, X
+  Menu, X, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
