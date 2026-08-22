@@ -146,7 +146,8 @@ function PromoterDashboard() {
               visits.map((visit, index) => (
                 <Link 
                   key={visit.id} 
-                  to={`/promoter/visit/${visit.id}`}
+                  to={"/promoter/visit/$visitId" as any}
+                  params={{ visitId: visit.id } as any}
                   className="block"
                 >
                   <Card className={`overflow-hidden transition-all hover:shadow-md border-none ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
