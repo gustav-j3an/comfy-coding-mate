@@ -23,7 +23,8 @@ import {
   Mail,
   UserX,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  Link as LinkIcon
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -58,10 +59,17 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 
 function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
+  const [promoters, setPromoters] = useState<any[]>([]);
+  const [industries, setIndustries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Form states
+  const [inviteRole, setInviteRole] = useState<'admin' | 'promoter' | 'industry'>('promoter');
+  const [selectedPromoterId, setSelectedPromoterId] = useState<string>('');
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string>('');
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       // Get profiles and their roles
@@ -74,15 +82,24 @@ function UserManagement() {
 
       if (profileError) throw profileError;
       setUsers(profiles || []);
+
+      // Get promoters for linking
+      const { data: promotersData } = await (supabase as any).from('promoters').select('*').eq('active', true);
+      setPromoters(promotersData || []);
+
+      // Get industries for linking
+      const { data: industriesData } = await (supabase as any).from('industries').select('*').eq('active', true);
+      setIndustries(industriesData || []);
+      
     } catch (error: any) {
-      toast.error('Erro ao carregar usuários: ' + error.message);
+      toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
   const filteredUsers = users.filter(user => 
@@ -139,16 +156,8 @@ function UserManagement() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input id="name" placeholder="Ex: João Silva" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="joao@exemplo.com" />
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="role">Perfil</Label>
-                <Select>
+                <Select value={inviteRole} onValueChange={(val: any) => setInviteRole(val)}>
                   <SelectTrigger id="role">
                     <SelectValue placeholder="Selecione um perfil" />
                   </SelectTrigger>
@@ -159,9 +168,50 @@ function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {inviteRole === 'promoter' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="promoter">Vincular a Promotor Cadastrado</Label>
+                  <Select value={selectedPromoterId} onValueChange={setSelectedPromoterId}>
+                    <SelectTrigger id="promoter">
+                      <SelectValue placeholder="Selecione o promotor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {promoters.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {inviteRole === 'industry' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="industry">Vincular a Indústria Cadastrada</Label>
+                  <Select value={selectedIndustryId} onValueChange={setSelectedIndustryId}>
+                    <SelectTrigger id="industry">
+                      <SelectValue placeholder="Selecione a indústria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {industries.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input id="name" placeholder="Ex: João Silva" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" type="email" placeholder="joao@exemplo.com" />
+              </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">Enviar Convite</Button>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold">Enviar Convite</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -219,7 +269,19 @@ function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {user.user_roles?.[0]?.role ? getRoleBadge(user.user_roles[0].role) : '—'}
+                        <div className="flex flex-col gap-1">
+                          {user.user_roles?.[0]?.role ? getRoleBadge(user.user_roles[0].role) : '—'}
+                          {user.promoter_id && (
+                            <div className="flex items-center gap-1 text-[10px] text-blue-600 font-bold uppercase">
+                              <LinkIcon className="w-2 h-2" /> Promotor Vinculado
+                            </div>
+                          )}
+                          {user.industry_id && (
+                            <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold uppercase">
+                              <LinkIcon className="w-2 h-2" /> Indústria Vinculada
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(user.status || 'active')}

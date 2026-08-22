@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +17,31 @@ function AdminDashboard() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
+  const [hasData, setHasData] = useState(true);
+
+  useEffect(() => {
+    checkData();
+  }, []);
+
+  const checkData = async () => {
+    try {
+      const { count: promoterCount } = await (supabase as any).from('promoters').select('*', { count: 'exact', head: true });
+      const { count: storeCount } = await (supabase as any).from('stores').select('*', { count: 'exact', head: true });
+      const { count: industryCount } = await (supabase as any).from('industries').select('*', { count: 'exact', head: true });
+      
+      setHasData((promoterCount || 0) > 0 || (storeCount || 0) > 0 || (industryCount || 0) > 0);
+    } catch (e) {
+      setHasData(true); // Default to true on error to hide the button
+    }
+  };
+
   const handleSeed = async () => {
     toast.promise(seedTestData(), {
       loading: 'Gerando dados de teste...',
       success: 'Dados de teste gerados com sucesso!',
       error: 'Erro ao gerar dados de teste',
     });
+    setHasData(true);
   };
 
   const stats = [
@@ -66,9 +87,11 @@ function AdminDashboard() {
           <p className="text-sm text-slate-500">Bem-vindo ao centro de operações</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={handleSeed} className="hidden sm:flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Dados de Teste
-          </Button>
+          {!hasData && (
+            <Button variant="outline" size="sm" onClick={handleSeed} className="hidden sm:flex items-center gap-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold">
+              <Plus className="h-4 w-4" /> Gerar Dados de Teste
+            </Button>
+          )}
           <Button size="sm" onClick={() => navigate({ to: '/admin/reports' })} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
             Novo Relatório
           </Button>
