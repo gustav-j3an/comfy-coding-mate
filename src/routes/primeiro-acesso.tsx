@@ -89,7 +89,7 @@ function FirstAdminPage() {
         navigate({ to: '/admin' });
       } else {
         toast.info('Verifique seu e-mail para confirmar o cadastro.');
-        navigate({ to: '/admin' });
+        navigate({ to: '/' });
       }
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar administrador inicial.');
