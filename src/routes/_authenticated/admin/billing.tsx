@@ -525,14 +525,25 @@ function BillingPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {billingItems.map((item) => (
-                      <TableRow key={item.id} className="text-xs">
-                        <TableCell className="text-left font-medium">{item.store_name}</TableCell>
-                        <TableCell className="text-left">{item.promoter_name}</TableCell>
-                        <TableCell className="text-center">{format(new Date(item.visit_date), 'dd/MM/yyyy')}</TableCell>
-                        <TableCell className="text-center text-green-600 font-medium">{format(new Date(item.approved_at), 'dd/MM HH:mm')}</TableCell>
+                    {billingItems.length > 0 ? (
+                      billingItems.map((item) => (
+                        <TableRow key={item.id} className="text-xs">
+                          <TableCell className="text-left font-medium">{item.store_name}</TableCell>
+                          <TableCell className="text-left">{item.promoter_name}</TableCell>
+                          <TableCell className="text-center">{format(new Date(item.visit_date), 'dd/MM/yyyy')}</TableCell>
+                          <TableCell className="text-center text-green-600 font-medium">
+                            {item.approved_at ? format(new Date(item.approved_at), 'dd/MM HH:mm') : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-slate-500 italic">
+                          Evidências detalhadas expiradas conforme política de retenção de 90 dias.
+                          O snapshot financeiro acima permanece preservado.
+                        </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>

@@ -51,19 +51,11 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
       .select('id, file_path, visit_id')
       .lt('created_at', preview.cutoff_date);
 
-    // 2.1 Get visits linked to ANY billing to exclude them from deletion
-    const { data: billedVisits } = await supabaseAdmin
-      .from('billing_items')
-      .select('visit_id');
-    
-    const billedVisitIds = new Set((billedVisits || []).map(v => v.visit_id));
-
     let deletedFiles = 0;
     if (expiredEvidences && expiredEvidences.length > 0) {
       for (const evidence of expiredEvidences as any[]) {
-        // Skip if visit is part of a billing (preservation rule)
-        if (billedVisitIds.has(evidence.visit_id)) continue;
-
+        // MISSION 9.1: Delete media even if linked to billing.
+        // We only preserve the financial record, not the proof.
         if (evidence.file_path) {
           const { error: storageError } = await supabaseAdmin.storage
             .from('visit-evidences')
@@ -79,18 +71,16 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Clean up other records, excluding billed ones
+    // 3. Clean up other records (occurrences, operational data)
+    // Preservation rule now only applies to the billing_items record itself.
     const { data: visitsToDelete } = await supabaseAdmin
       .from('visits')
       .select('id')
       .lt('date', preview.cutoff_date);
     
-    const visitIdsToDelete = (visitsToDelete || [])
-      .map(v => v.id)
-      .filter(id => !billedVisitIds.has(id));
-
-    if (visitIdsToDelete.length > 0) {
-      await supabaseAdmin.from('visits').delete().in('id', visitIdsToDelete);
+    if (visitsToDelete && visitsToDelete.length > 0) {
+      const visitIds = visitsToDelete.map(v => v.id);
+      await supabaseAdmin.from('visits').delete().in('id', visitIds);
     }
     
     await supabaseAdmin.from('webhook_logs' as any).delete().lt('created_at', preview.cutoff_date);
