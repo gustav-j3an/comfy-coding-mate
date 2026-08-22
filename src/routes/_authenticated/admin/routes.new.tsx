@@ -123,9 +123,15 @@ function RouteEditorPage() {
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
     
-    const items = Array.from(stopsByDay[selectedDay] || []);
+    const dayStops = stopsByDay[selectedDay];
+    if (!dayStops) return;
+
+    const items = Array.from(dayStops);
     const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    
+    if (reorderedItem) {
+      items.splice(result.destination.index, 0, reorderedItem);
+    }
     
     const updatedItems = items.map((item, index) => ({
       ...item,
