@@ -29,8 +29,9 @@ function PromoterDashboard() {
   const { data: visits } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
+      const userId = user?.id;
       const promoterId = profile?.promoter_id;
-      if (!promoterId) return [];
+      if (!userId || !promoterId) return [];
       
       const { data, error } = await supabase
         .from('visits')
