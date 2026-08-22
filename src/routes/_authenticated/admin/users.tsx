@@ -199,6 +199,11 @@ function UserManagement() {
     }
   };
 
+  const filteredUsers = users.filter(user => 
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
     try {
@@ -226,10 +231,6 @@ function UserManagement() {
     toast.success('Mensagem para WhatsApp copiada!');
   };
 
-  const filteredUsers = users.filter(user => 
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getRoleBadge = (role: string) => {
     switch (role) {
