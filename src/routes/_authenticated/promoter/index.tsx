@@ -23,7 +23,7 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 });
 
 function PromoterDashboard() {
-  const { user, profile } = useAuth() as any;
+  const { user, profile } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
   const { data: visits } = useSuspenseQuery({
