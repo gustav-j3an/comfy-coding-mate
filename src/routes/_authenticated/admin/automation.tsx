@@ -55,7 +55,7 @@ function AutomationPage() {
   const getSettingsFn = useServerFn(getAutomationSettings);
   const updateSettingsFn = useServerFn(updateAutomationSettings);
   const getLogsFn = useServerFn(getWebhookLogs);
-  const testWebhookFn = useServerFn(testWebhook);
+  
   const cleanupFn = useServerFn(executeManualCleanup);
 
   useEffect(() => {
