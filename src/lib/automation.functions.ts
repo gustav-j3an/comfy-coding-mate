@@ -124,7 +124,7 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const userId = context.userId;
+    const userId = (context as any)?.userId;
 
     // 1. Get counts for audit
     const preview = await getCleanupPreview();
