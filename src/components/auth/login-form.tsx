@@ -34,7 +34,7 @@ export function LoginForm() {
 
       // Update last access in profile
       if (data.user) {
-        await supabase
+        await (supabase as any)
           .from('profiles')
           .update({ last_access: new Date().toISOString() })
           .eq('id', data.user.id);
