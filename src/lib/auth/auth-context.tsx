@@ -59,16 +59,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setRole(data?.role as AppRole);
     } catch (error) {
       console.error('Error fetching user role:', error);
-    } finally {
-      setLoading(false);
     }
   }
+
+  async function fetchProfile(userId: string) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      Promise.all([
+        fetchRole(user.id),
+        fetchProfile(user.id)
+      ]).finally(() => setLoading(false));
+    }
+  }, [user]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
