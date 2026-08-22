@@ -9,8 +9,8 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const { count: criticalOccurrences } = await supabaseAdmin
       .from('occurrences')
       .select('*', { count: 'exact', head: true })
-      .eq('severity', 'critical')
-      .eq('status', 'open');
+      .filter('severity', 'eq', 'critical')
+      .filter('status', 'eq', 'open');
 
     // Get count of submitted visits today
     const now = new Date();
@@ -37,9 +37,6 @@ export const exportVisitReport = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // In a real scenario, this would use a library like jspdf or a specialized service.
-    // For this implementation, we'll fetch the data and return a structured summary.
-    
     const startDate = new Date(data.year, data.month - 1, 1).toISOString();
     const endDate = new Date(data.year, data.month, 0).toISOString();
 
@@ -51,9 +48,9 @@ export const exportVisitReport = createServerFn({ method: "POST" })
         executor:profiles(full_name),
         evidences:visit_evidence(*)
       `)
-      .eq('industry_id', data.industryId)
-      .gte('scheduled_date', startDate)
-      .lte('scheduled_date', endDate);
+      .filter('industry_id', 'eq', data.industryId)
+      .filter('scheduled_date', 'gte', startDate)
+      .filter('scheduled_date', 'lte', endDate);
 
     if (error) throw error;
 
@@ -61,6 +58,6 @@ export const exportVisitReport = createServerFn({ method: "POST" })
       reportId: `REP-${data.industryId.slice(0,4)}-${data.month}-${data.year}`,
       generatedAt: new Date().toISOString(),
       visitCount: visits?.length || 0,
-      visits: visits || []
+      visits: (visits || []) as any[]
     };
   });

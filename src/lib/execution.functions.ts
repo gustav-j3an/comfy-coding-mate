@@ -46,7 +46,7 @@ export const submitVisit = createServerFn({ method: "POST" })
         execution_longitude: data.longitude ?? null,
         observation: data.observation || null
       } as any)
-      .eq('id', data.visitId);
+      .filter('id', 'eq', data.visitId);
 
     if (visitError) throw visitError;
 
@@ -113,7 +113,7 @@ export const auditVisit = createServerFn({ method: "POST" })
         status: data.decision,
         rejection_reason: data.decision === 'rejected' ? (data.reason || null) : null
       } as any)
-      .eq('id', data.visitId);
+      .filter('id', 'eq', data.visitId);
 
     if (visitError) throw visitError;
 
