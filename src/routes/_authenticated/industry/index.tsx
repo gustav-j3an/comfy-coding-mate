@@ -30,10 +30,12 @@ function IndustryPortal() {
     try {
       setLoading(true);
       // 1. Get industry_id from profile
+      if (!user?.id) return;
+      
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('industry_id')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError || !profile?.industry_id) throw new Error('Indústria não vinculada ao perfil.');
