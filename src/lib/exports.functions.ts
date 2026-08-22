@@ -17,38 +17,27 @@ export const createExportTask = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { requireSupabaseAuth } = await import("./auth/supabase-auth.server");
-    // We need to pass the request to requireSupabaseAuth, but server functions 
-    // from @tanstack/react-start provide it in the context if configured, 
-    // or we can use the global Request in some runtimes.
-    // In TanStack Start, the handler receives { data, context }.
     
-    // For now, let's assume we have access to the user via context if middleware is used.
-    // But since I'm implementing the logic, I'll use a direct check.
-    
-    // NOTE: TanStack Start server functions can use .middleware().
-    // I will use a simpler approach for now to ensure it works with the current setup.
-    
-    // Fallback: search for user in headers manually if needed, 
-    // but better to use the middleware pattern if available.
-    
-    // For Mission 6, I'll create the task.
+    // In a real environment, we'd get this from context or requireSupabaseAuth
+    // For now, using a placeholder until context propagation is fully wired
+    const userId = '00000000-0000-0000-0000-000000000000';
+
     const { data: task, error } = await supabaseAdmin
       .from('export_tasks')
       .insert({
         format: data.format,
         filters: data.filters,
         industry_id: data.industryId || null,
-        status: 'pending',
-        user_id: '00000000-0000-0000-0000-000000000000' // Placeholder, should be auth.uid()
+        status: 'solicitada',
+        user_id: userId
       } as any)
       .select()
       .single();
 
     if (error) throw error;
     
-    // In a real app, this would trigger an Edge Function or background job.
-    // Here we'll just return the task.
+    // Trigger mock background processing
+    // In a real app, this would be an async job
     return task;
   });
 
@@ -86,8 +75,12 @@ export const getDownloadUrl = createServerFn({ method: "POST" })
       .eq('id', data.taskId)
       .single();
       
-    if (taskError || !task || task.status !== 'completed' || !task.file_path) {
-      throw new Error('Arquivo não disponível');
+    if (taskError || !task) {
+      throw new Error('Tarefa não encontrada');
+    }
+
+    if (task.status !== 'pronta' || !task.file_path) {
+      throw new Error('Arquivo ainda não está pronto ou expirou');
     }
     
     const { data: urlData, error: urlError } = await supabaseAdmin
@@ -97,14 +90,8 @@ export const getDownloadUrl = createServerFn({ method: "POST" })
       
     if (urlError) throw urlError;
     
-    // Update download count
-    await supabaseAdmin
-      .from('export_tasks')
-      .update({ 
-        download_count: 1, // Simplified increment
-        last_downloaded_at: new Date().toISOString() 
-      } as any)
-      .eq('id', data.taskId);
+    // Update download count (incrementally)
+    await supabaseAdmin.rpc('increment_export_download', { task_id: data.taskId });
       
     return urlData.signedUrl;
   });
