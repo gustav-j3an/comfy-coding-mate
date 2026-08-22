@@ -13,8 +13,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [
-      VitePWA({
-        registerType: 'autoUpdate',
+    VitePWA({
+      registerType: 'prompt',
         includeAssets: ['favicon.ico', 'icons/*.png'],
         manifest: {
           name: 'Rota do Promotor',

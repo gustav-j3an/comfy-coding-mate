@@ -4,6 +4,7 @@ import { LoginForm } from '@/components/auth/login-form';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
+import { PWAUpdateNotification } from '@/components/common/pwa-updater';
 
 export const Route = createFileRoute('/_authenticated')({
   component: AuthenticatedLayout,
@@ -44,6 +45,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
+      <PWAUpdateNotification />
       <Outlet />
     </>
   );
