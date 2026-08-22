@@ -225,7 +225,7 @@ function AdminDashboard() {
           {stats.map((stat, i) => (
             <Link key={i} to={stat.to} search={stat.search} className="group">
               <Card className={cn(
-                "border-2 transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md cursor-pointer",
+                "border-2 transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md cursor-pointer relative",
                 stat.borderColor,
                 stat.bgColor
               )}>
@@ -240,7 +240,11 @@ function AdminDashboard() {
                 <CardContent>
                   <div className="flex items-baseline gap-2">
                     <div className={cn("text-3xl font-black tabular-nums", stat.color)}>{stat.value}</div>
-                    <span className="text-[10px] font-bold text-slate-400">+12% vs ontem</span>
+                    {stat.label === 'Ocorrências Abertas' && realStats.critical > 0 && (
+                      <Badge className="bg-red-600 text-white border-none animate-pulse">
+                        {realStats.critical} CRÍTICAS
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
