@@ -52,21 +52,33 @@ export type Database = {
       industries: {
         Row: {
           active: boolean | null
+          cnpj: string | null
+          contact_name: string | null
           created_at: string | null
+          email: string | null
           id: string
           name: string
+          phone: string | null
         }
         Insert: {
           active?: boolean | null
+          cnpj?: string | null
+          contact_name?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
           name: string
+          phone?: string | null
         }
         Update: {
           active?: boolean | null
+          cnpj?: string | null
+          contact_name?: string | null
           created_at?: string | null
+          email?: string | null
           id?: string
           name?: string
+          phone?: string | null
         }
         Relationships: []
       }
