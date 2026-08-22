@@ -22,7 +22,7 @@ interface SidebarItemProps {
 
 function SidebarItem({ to, icon: Icon, label, active, onClick, className }: SidebarItemProps) {
   return (
-    <Link to={to} onClick={onClick} className="block w-full">
+    <Link to={to as any} onClick={onClick} className="block w-full">
       <Button 
         variant="ghost" 
         className={cn(
