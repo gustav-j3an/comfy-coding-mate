@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,9 +43,11 @@ function AdminDashboard() {
           <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
             <FileCheck className="mr-2 h-4 w-4" /> Conferência
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
-            <Users className="mr-2 h-4 w-4" /> Promotores
-          </Button>
+          <Link to="/admin/users" className="w-full">
+            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
+              <Users className="mr-2 h-4 w-4" /> Usuários e Acessos
+            </Button>
+          </Link>
           <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
             <Store className="mr-2 h-4 w-4" /> Lojas
           </Button>
