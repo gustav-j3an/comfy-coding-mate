@@ -27,7 +27,7 @@ import {
   updateAutomationSettings, 
   getWebhookLogs, 
   testWebhook,
-  runRetentionCleanup 
+  executeManualCleanup 
 } from '@/lib/automation.functions';
 import {
   Table,
