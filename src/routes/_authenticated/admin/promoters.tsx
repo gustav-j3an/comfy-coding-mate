@@ -35,8 +35,8 @@ export const Route = createFileRoute('/_authenticated/admin/promoters')({
 
 interface Promoter {
   id: string;
-  full_name: string;
-  email: string;
+  full_name: string | null;
+  email: string | null;
   status: 'pending' | 'active' | 'blocked';
   last_access: string | null;
   phone?: string;
