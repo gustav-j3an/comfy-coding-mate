@@ -69,7 +69,7 @@ function VisitExecution() {
     const isPdf = file.type === 'application/pdf';
 
     if (isImage && file.size > 2 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "Fotos devem ter no máximo 2MB", variant: "destructive" });
+      toast.error("Arquivo muito grande: Fotos devem ter no máximo 2MB");
       return;
     }
     if (isVideo && file.size > 30 * 1024 * 1024) {
