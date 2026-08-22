@@ -44,8 +44,8 @@ export const submitVisit = createServerFn({ method: "POST" })
         checkout_at: data.checkoutAt,
         execution_latitude: data.latitude,
         execution_longitude: data.longitude,
-        observation: data.observation
-      })
+        observation: data.observation || null
+      } as any)
       .eq('id', data.visitId);
 
     if (visitError) throw visitError;
@@ -73,15 +73,15 @@ export const submitVisit = createServerFn({ method: "POST" })
         type: o.type,
         industry_id: o.industryId,
         store_id: o.storeId,
-        description: o.description,
-        product_name: o.productName,
-        sku: o.sku,
-        batch: o.batch,
-        expiry_date: o.expiryDate,
-        quantity: o.quantity,
+        description: o.description || null,
+        product_name: o.productName || null,
+        sku: o.sku || null,
+        batch: o.batch || null,
+        expiry_date: o.expiryDate || null,
+        quantity: o.quantity || null,
         severity: o.severity,
         status: 'open'
-      }));
+      } as any));
 
       const { error: occurrenceError } = await supabaseAdmin
         .from('occurrences')
@@ -111,8 +111,8 @@ export const auditVisit = createServerFn({ method: "POST" })
       .from('visits')
       .update({
         status: data.decision as any,
-        rejection_reason: data.decision === 'rejected' ? data.reason : null
-      })
+        rejection_reason: data.decision === 'rejected' ? (data.reason || null) : null
+      } as any)
       .eq('id', data.visitId);
 
     if (visitError) throw visitError;
@@ -124,8 +124,8 @@ export const auditVisit = createServerFn({ method: "POST" })
         visit_id: data.visitId,
         auditor_id: data.auditorId,
         decision: data.decision as any,
-        reason: data.reason
-      });
+        reason: data.reason || null
+      } as any);
 
     if (auditError) throw auditError;
 
