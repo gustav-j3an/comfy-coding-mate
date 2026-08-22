@@ -210,9 +210,11 @@ function BillingPage() {
           <p className="text-sm text-slate-500 text-left">Cobranças e histórico financeiro por indústria</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate({ to: '/admin/billing' as any })} variant="outline" className="font-bold border-slate-200">
-            <FileText className="mr-2 h-4 w-4" /> Contratos
-          </Button>
+          <Link to="/admin/contracts" as={Link}>
+            <Button variant="outline" className="font-bold border-slate-200">
+              <FileText className="mr-2 h-4 w-4" /> Contratos
+            </Button>
+          </Link>
           <Button onClick={() => setIsNewBillingOpen(true)} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
             <Plus className="mr-2 h-4 w-4" /> Nova Cobrança
           </Button>

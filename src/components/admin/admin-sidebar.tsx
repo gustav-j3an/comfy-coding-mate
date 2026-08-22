@@ -63,6 +63,7 @@ export function AdminSidebar({ className }: { className?: string }) {
     { to: '/admin/users', icon: Users, label: 'Usuários e Acessos' },
     { to: '/admin/reports', icon: FileText, label: 'Relatórios Mensais' },
     { to: '/admin/exports', icon: Download, label: 'Exportações' },
+    { to: '/admin/contracts', icon: FileText, label: 'Contratos' },
     { to: '/admin/billing', icon: CreditCard, label: 'Cobranças' },
   ];
 

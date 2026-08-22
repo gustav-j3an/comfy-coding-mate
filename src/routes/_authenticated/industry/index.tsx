@@ -67,7 +67,7 @@ function IndustryPortal() {
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800 bg-slate-800">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Relatórios Mensais
           </Button>
-          <Link to="/industry/billing">
+          <Link to="/industry/billing" as={Link}>
             <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
               <CreditCard className="mr-2 h-4 w-4" /> Financeiro
             </Button>
