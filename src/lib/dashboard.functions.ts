@@ -15,11 +15,12 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     
+    // Explicitly casting status to any to avoid TS mismatch with enum if it exists
     const { count: pendingVisits } = await supabaseAdmin
       .from('visits')
       .select('*', { count: 'exact', head: true })
       .eq('scheduled_date', today)
-      .eq('status', 'submitted');
+      .eq('status', 'submitted' as any);
 
     return {
       criticalOccurrences: criticalOccurrences || 0,
