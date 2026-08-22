@@ -143,11 +143,13 @@ function UserManagement() {
     setInviting(true);
     try {
       await inviteUser({
-        email: inviteEmail,
-        fullName: inviteName,
-        role: inviteRole,
-        promoterId: selectedPromoterId || undefined,
-        industryId: selectedIndustryId || undefined,
+        data: {
+          email: inviteEmail,
+          fullName: inviteName,
+          role: inviteRole,
+          promoterId: selectedPromoterId || undefined,
+          industryId: selectedIndustryId || undefined,
+        }
       });
 
       toast.success('Convite enviado com sucesso!');
