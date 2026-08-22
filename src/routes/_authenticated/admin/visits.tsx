@@ -94,6 +94,8 @@ function VisitsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
   const fetchEvidences = async (visitId: string) => {
     try {
       setLoadingEvidences(true);
