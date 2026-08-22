@@ -205,9 +205,9 @@ function AutomationPage() {
                       <Input 
                         id="retention"
                         type="number"
-                        min="1"
+                        min="90"
                         value={settings.retention_days}
-                        onChange={e => setSettings({...settings, retention_days: Number(e.target.value)})}
+                        onChange={e => setSettings({...settings, retention_days: Math.max(90, Number(e.target.value))})}
                       />
                     </div>
                     <div className="flex flex-col justify-end space-y-2 text-left">
