@@ -79,7 +79,7 @@ function VisitsPage() {
       const todayStr = format(new Date(), 'yyyy-MM-dd');
 
       if (search.filter === 'predicted-today') {
-        query = query.eq('scheduled_date', todayStr).eq('status', 'pending');
+        query = query.eq('scheduled_date', todayStr).eq('status', 'planned' as any);
       } else if (search.filter === 'sent-today') {
         query = query.eq('scheduled_date', todayStr).eq('status', 'submitted');
       } else if (search.filter === 'pending') {
