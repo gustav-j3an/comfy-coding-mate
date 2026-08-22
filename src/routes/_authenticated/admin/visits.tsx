@@ -321,25 +321,39 @@ function VisitsPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-slate-500 text-xs font-bold uppercase">Promotor</p>
-                        <p className="font-semibold">{selectedVisit.profiles?.full_name}</p>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Promotor</p>
+                        <p className="font-bold text-slate-900">{selectedVisit.profiles?.full_name}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs font-bold uppercase">Indústria</p>
-                        <p className="font-semibold">{selectedVisit.industries?.name}</p>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Indústria</p>
+                        <p className="font-bold text-slate-900">{selectedVisit.industries?.name}</p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs font-bold uppercase">Check-in</p>
-                        <p className="font-semibold">
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Check-in</p>
+                        <p className="font-bold text-slate-900">
                           {selectedVisit.checkin_at ? format(new Date(selectedVisit.checkin_at), 'HH:mm', { locale: ptBR }) : '--:--'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-slate-500 text-xs font-bold uppercase">Check-out</p>
-                        <p className="font-semibold">
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Check-out</p>
+                        <p className="font-bold text-slate-900">
                           {selectedVisit.checkout_at ? format(new Date(selectedVisit.checkout_at), 'HH:mm', { locale: ptBR }) : '--:--'}
                         </p>
                       </div>
+                      {selectedVisit.execution_latitude && (
+                        <div className="col-span-2">
+                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Localização GPS</p>
+                          <a 
+                            href={`https://www.google.com/maps?q=${selectedVisit.execution_latitude},${selectedVisit.execution_longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 font-bold hover:underline flex items-center gap-1"
+                          >
+                            <MapPin className="w-3 h-3" />
+                            {selectedVisit.execution_latitude.toFixed(6)}, {selectedVisit.execution_longitude.toFixed(6)}
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
 

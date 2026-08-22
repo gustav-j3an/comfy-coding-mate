@@ -1,97 +1,100 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
-  Search, Filter, AlertTriangle, 
-  ChevronRight, Store, Factory, Loader2
+  Search, 
+  AlertCircle, 
+  CheckCircle2, 
+  Clock, 
+  Filter,
+  MessageSquare,
+  Building2,
+  MapPin
 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { z } from 'zod';
-
-const occurrencesSearchSchema = z.object({
-  status: z.string().optional(),
-});
 
 export const Route = createFileRoute('/_authenticated/admin/occurrences')({
-  validateSearch: (search) => occurrencesSearchSchema.parse(search),
   component: OccurrencesPage,
 });
 
 function OccurrencesPage() {
-  const search = Route.useSearch();
   const [loading, setLoading] = useState(true);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState(search.status || 'all');
 
   useEffect(() => {
     fetchOccurrences();
-  }, [search.status]);
+  }, []);
 
   const fetchOccurrences = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from('occurrences')
         .select(`
           *,
           visit:visit_id(
-            stores:store_id(name),
+            id,
+            stores:store_id(name, city),
             industries:industry_id(name)
           )
-        `);
-
-      if (search.status === 'open') {
-        query = query.eq('status', 'open');
-      } else if (search.status === 'resolved') {
-        query = query.eq('status', 'resolved');
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setOccurrences(data || []);
-    } catch (error: any) {
-      toast.error('Erro ao carregar ocorrências: ' + error.message);
+    } catch (e: any) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'resolved':
-        return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none font-bold">Resolvida</Badge>;
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return <Badge className="bg-red-100 text-red-700 border-none font-bold">Crítica</Badge>;
+      case 'attention':
+        return <Badge className="bg-amber-100 text-amber-700 border-none font-bold">Atenção</Badge>;
       default:
-        return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none font-bold">Aberta</Badge>;
+        return <Badge variant="outline">{severity}</Badge>;
     }
   };
 
-  const filteredOccurrences = occurrences.filter(o => 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'open':
+        return <Badge className="bg-blue-100 text-blue-700 border-none font-bold">Aberta</Badge>;
+      case 'resolved':
+        return <Badge className="bg-green-100 text-green-700 border-none font-bold">Resolvida</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const filtered = occurrences.filter(o => 
     o.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.visit?.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.visit?.industries?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    o.visit?.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-screen bg-slate-50/50">
       <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Ocorrências</h2>
-          <p className="text-sm text-slate-500">Gestão de incidentes e rupturas</p>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Ocorrências em Campo</h2>
+          <p className="text-sm text-slate-500">Gestão de rupturas e incidentes</p>
         </div>
       </header>
 
@@ -100,87 +103,59 @@ function OccurrencesPage() {
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
-              placeholder="Buscar por tipo, loja ou indústria..." 
-              className="pl-10"
+              placeholder="Buscar por tipo ou loja..." 
+              className="pl-10 bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
-          >
-            <option value="all">Todos os Status</option>
-            <option value="open">Abertas</option>
-            <option value="resolved">Resolvidas</option>
-          </select>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="font-bold text-slate-700">Ocorrência</TableHead>
-                <TableHead className="font-bold text-slate-700">Local e Indústria</TableHead>
-                <TableHead className="font-bold text-slate-700">Data / Status</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
+                <TableHead className="font-bold text-slate-700">Tipo / Severidade</TableHead>
+                <TableHead className="font-bold text-slate-700">Loja / Indústria</TableHead>
+                <TableHead className="font-bold text-slate-700">Data</TableHead>
+                <TableHead className="font-bold text-slate-700">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                      Carregando ocorrências...
-                    </div>
-                  </TableCell>
+                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">Carregando...</TableCell>
                 </TableRow>
-              ) : filteredOccurrences.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Nenhuma ocorrência encontrada.
-                  </TableCell>
+                  <TableCell colSpan={4} className="h-24 text-center text-slate-500">Nenhuma ocorrência encontrada.</TableCell>
                 </TableRow>
               ) : (
-                filteredOccurrences.map((occ) => (
-                  <TableRow key={occ.id} className="hover:bg-slate-50 transition-colors group">
+                filtered.map((occ) => (
+                  <TableRow key={occ.id} className="hover:bg-slate-50 transition-colors">
                     <TableCell>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1 p-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{occ.type}</p>
-                          <p className="text-xs text-slate-500 line-clamp-1">{occ.description || 'Sem descrição detalhada'}</p>
-                        </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-bold text-slate-900">{occ.type}</span>
+                        {getSeverityBadge(occ.severity)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
-                          <Store className="w-3 h-3 text-slate-400" />
+                        <div className="flex items-center gap-1 text-sm font-bold text-slate-700">
+                          <MapPin className="w-3 h-3 text-slate-400" />
                           {occ.visit?.stores?.name}
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                          <Factory className="w-3 h-3 text-slate-400" />
+                        <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                          <Building2 className="w-3 h-3" />
                           {occ.visit?.industries?.name}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase">
-                          {format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </div>
-                        {getStatusBadge(occ.status || 'open')}
-                      </div>
+                    <TableCell className="text-xs text-slate-500 font-bold uppercase">
+                      {occ.created_at ? format(new Date(occ.created_at), "dd MMM, HH:mm", { locale: ptBR }) : '—'}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        VER DETALHES <ChevronRight className="w-4 h-4" />
-                      </Button>
+                      {getStatusBadge(occ.status)}
                     </TableCell>
                   </TableRow>
                 ))

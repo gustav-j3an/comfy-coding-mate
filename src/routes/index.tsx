@@ -18,7 +18,7 @@ export const Route = createFileRoute('/')({
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="max-w-md w-full text-center space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Rota do Promotor</h1>
-        <p className="text-slate-600 italic">
+        <p className="text-slate-600 italic whitespace-pre-wrap">
           Muito bom. Há só um ponto técnico que precisa ser confirmado antes da próxima missão: na Missão 0 o vínculo de `visits.promoter_id` foi descrito como ligado a `profiles`, mas agora a Missão 3 fala em `promoters.id`. O Lovable precisa manter **um padrão único** e, se houver os dois conceitos, usar uma relação explícita entre `promoters` e `profiles`. A Missão 4 vai exigir isso para registrar corretamente quem executou cada visita.
           {"\n\n"}
           Agora vem o módulo mais importante para o promotor: envio de provas e conferência.

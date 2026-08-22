@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
+import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
 import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
 import { Route as AuthenticatedPromoterVisitVisitIdRouteImport } from './routes/_authenticated/promoter/visit.$visitId'
 
@@ -136,6 +137,11 @@ const AuthenticatedPromoterIndexRoute =
     path: '/promoter/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicWebhookRoute = ApiPublicWebhookRouteImport.update({
+  id: '/api/public/webhook',
+  path: '/api/public/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoutesNewRoute =
   AuthenticatedAdminRoutesNewRouteImport.update({
     id: '/new',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/api/public/webhook'
     | '/admin/'
     | '/industry/'
     | '/promoter/'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/api/public/webhook'
     | '/admin'
     | '/industry'
     | '/promoter'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
+    | '/api/public/webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
@@ -291,6 +303,7 @@ export interface RootRouteChildren {
   PrimeiroAcessoRoute: typeof PrimeiroAcessoRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  ApiPublicWebhookRoute: typeof ApiPublicWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPromoterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/webhook': {
+      id: '/api/public/webhook'
+      path: '/api/public/webhook'
+      fullPath: '/api/public/webhook'
+      preLoaderRoute: typeof ApiPublicWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/routes/new': {
       id: '/_authenticated/admin/routes/new'
       path: '/new'
@@ -517,6 +537,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrimeiroAcessoRoute: PrimeiroAcessoRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  ApiPublicWebhookRoute: ApiPublicWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
