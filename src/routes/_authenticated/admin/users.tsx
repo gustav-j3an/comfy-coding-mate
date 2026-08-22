@@ -123,9 +123,48 @@ function UserManagement() {
           <h1 className="text-2xl font-bold text-slate-900">Usuários e Acessos</h1>
           <p className="text-slate-500 text-sm">Gerencie permissões e convites do sistema.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200">
-          <UserPlus className="w-4 h-4 mr-2" /> Convidar Usuário
-        </Button>
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200">
+              <UserPlus className="w-4 h-4 mr-2" /> Convidar Usuário
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Convidar Novo Usuário</DialogTitle>
+              <DialogDescription>
+                Envie um convite por e-mail para um novo membro da equipe.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input id="name" placeholder="Ex: João Silva" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" type="email" placeholder="joao@exemplo.com" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role">Perfil</Label>
+                <Select>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Selecione um perfil" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="promoter">Promotor</SelectItem>
+                    <SelectItem value="industry">Indústria</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">Enviar Convite</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden">
