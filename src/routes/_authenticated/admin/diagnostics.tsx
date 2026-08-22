@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_authenticated/admin/diagnostics')({
   component: DiagnosticsPage,
 });
 
-function StatusIndicator({ status, message }: { status: string; message?: string }) {
+function StatusIndicator({ status, message }: { status: string; message: string | null | undefined }) {
   if (status === 'ok') {
     return (
       <div className="flex items-center gap-2 text-green-500">
@@ -108,7 +108,7 @@ function DiagnosticsPage() {
                   <span className="font-medium text-sm">Ativo</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Última execução: {new Date(status.cleanup.last_run).toLocaleString('pt-BR')}
+                  Última execução: {new Date(status.cleanup.last_run as string).toLocaleString('pt-BR')}
                 </div>
               </div>
             ) : (

@@ -5,7 +5,7 @@ import {
   LogOut, Users, Store, Factory, FileCheck, 
   AlertCircle, BarChart3, Map, Calendar, 
   FileText, Download, CreditCard, ChevronRight,
-  Menu, X, Zap
+  Menu, X, Zap, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -66,6 +66,7 @@ export function AdminSidebar({ className }: { className?: string }) {
     { to: '/admin/contracts', icon: FileText, label: 'Contratos' },
     { to: '/admin/billing', icon: CreditCard, label: 'Cobranças' },
     { to: '/admin/automation', icon: Zap, label: 'Automação n8n' },
+    { to: '/admin/diagnostics', icon: Activity, label: 'Diagnóstico' },
   ];
 
   const SidebarContent = () => (
