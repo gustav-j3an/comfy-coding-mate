@@ -19,11 +19,11 @@ export const Route = createFileRoute('/')({
       <div className="max-w-md w-full text-center space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Rota do Promotor</h1>
         <p className="text-slate-600 italic whitespace-pre-wrap">
-          Muito bom. Há só um ponto técnico que precisa ser confirmado antes da próxima missão: na Missão 0 o vínculo de `visits.promoter_id` foi descrito como ligado a `profiles`, mas agora a Missão 3 fala em `promoters.id`. O Lovable precisa manter **um padrão único** e, se houver os dois conceitos, usar uma relação explícita entre `promoters` e `profiles`. A Missão 4 vai exigir isso para registrar corretamente quem executou cada visita.
+          Excelente. As correções de integridade entre `promoters` e `profiles` foram aplicadas, e as políticas de RLS garantem que evidências e auditorias sejam privadas.
           {"\n\n"}
-          Agora vem o módulo mais importante para o promotor: envio de provas e conferência.
+          MISSÃO 5 — Dashboard Executivo e Alertas Críticos
           {"\n\n"}
-          MISSÃO 4 — Registro de visitas, evidências e ocorrências
+          Agora vamos conectar as pontas: o administrador precisa de uma visão executiva em tempo real. Implemente alertas automáticos no dashboard administrativo para rupturas críticas e crie o módulo de exportação PDF para relatórios de visita.
         </p>
       </div>
     </div>

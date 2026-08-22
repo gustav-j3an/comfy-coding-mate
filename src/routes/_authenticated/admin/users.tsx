@@ -125,7 +125,7 @@ function UserManagement() {
             setInviteEmail(i.email || '');
           }
         } else {
-          const { data } = await supabase.from('industries').select('*').eq('id', searchParams.id).single();
+          const { data } = await supabase.from('industries').select('*').eq('id', searchParams.id).maybeSingle();
           if (data) {
             setInviteName(data.contact_name || data.name || '');
             setInviteEmail(data.email || '');
