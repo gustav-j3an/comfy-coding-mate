@@ -163,16 +163,30 @@ function PromotersPage() {
       const validated = promoterSchema.parse(formData);
       
       if (editingPromoter) {
-        const { error } = await supabase
-          .from('promoters')
-          .update(validated)
-          .eq('id', editingPromoter.id);
+          const payload = {
+            name: validated.name,
+            phone: validated.phone,
+            email: validated.email || null,
+            region: validated.region || null,
+            active: validated.active
+          };
+          const { error } = await supabase
+            .from('promoters')
+            .update(payload)
+            .eq('id', editingPromoter.id);
         if (error) throw error;
         toast.success('Promotor atualizado com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('promoters')
-          .insert([validated]);
+          const payload = {
+            name: validated.name,
+            phone: validated.phone,
+            email: validated.email || null,
+            region: validated.region || null,
+            active: validated.active
+          };
+          const { error } = await supabase
+            .from('promoters')
+            .insert([payload]);
         if (error) throw error;
         toast.success('Promotor cadastrado com sucesso!');
       }
