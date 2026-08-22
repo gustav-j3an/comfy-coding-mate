@@ -17,11 +17,14 @@ export const createExportTask = createServerFn({ method: "POST" })
     filters: exportFiltersSchema,
     industryId: z.string().optional()
   }).parse(data))
-  .handler(async ({ data, request }) => {
+  .handler(async ({ data }) => {
+    const { getWebRequest } = await import("@tanstack/react-start/server");
+    const request = getWebRequest();
     const { user } = await requireSupabaseAuth({ request });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const userId = user.id;
+
 
 
     const { data: task, error } = await (supabaseAdmin
