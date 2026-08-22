@@ -29,7 +29,6 @@ export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')(
 function VisitExecution() {
   const { visitId } = Route.useParams();
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { coords, loading: loadingGeo } = useGeolocation();
   
