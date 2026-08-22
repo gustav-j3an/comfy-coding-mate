@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { requireSupabaseAuth } from '@/lib/auth/supabase-auth.functions';
+import { requireSupabaseAuth } from '@/lib/auth/supabase-auth.server';
 
 export const Route = createFileRoute('/api/reports/pdf')({
   server: {
