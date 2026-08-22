@@ -12,10 +12,20 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as PrimeiroAcessoRouteImport } from './routes/primeiro-acesso'
+import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
+import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
+import { Route as AuthenticatedAdminIndustriesRouteImport } from './routes/_authenticated/admin/industries'
+import { Route as AuthenticatedAdminOccurrencesRouteImport } from './routes/_authenticated/admin/occurrences'
+import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
+import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
+import { Route as AuthenticatedAdminRoutesRouteImport } from './routes/_authenticated/admin/routes'
+import { Route as AuthenticatedAdminStoresRouteImport } from './routes/_authenticated/admin/stores'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 
@@ -33,6 +43,11 @@ const PrimeiroAcessoRoute = PrimeiroAcessoRouteImport.update({
   path: '/primeiro-acesso',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/auth/forgot-password',
   path: '/auth/forgot-password',
@@ -44,15 +59,69 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminExportsRoute =
+  AuthenticatedAdminExportsRouteImport.update({
+    id: '/exports',
+    path: '/exports',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminIndustriesRoute =
+  AuthenticatedAdminIndustriesRouteImport.update({
+    id: '/industries',
+    path: '/industries',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminOccurrencesRoute =
+  AuthenticatedAdminOccurrencesRouteImport.update({
+    id: '/occurrences',
+    path: '/occurrences',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminPromotersRoute =
+  AuthenticatedAdminPromotersRouteImport.update({
+    id: '/promoters',
+    path: '/promoters',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminReportsRoute =
+  AuthenticatedAdminReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminRoutesRoute =
+  AuthenticatedAdminRoutesRouteImport.update({
+    id: '/routes',
+    path: '/routes',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminStoresRoute =
+  AuthenticatedAdminStoresRouteImport.update({
+    id: '/stores',
+    path: '/stores',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminVisitsRoute =
+  AuthenticatedAdminVisitsRouteImport.update({
+    id: '/visits',
+    path: '/visits',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedIndustryIndexRoute =
   AuthenticatedIndustryIndexRouteImport.update({
     id: '/industry/',
@@ -69,9 +138,19 @@ const AuthenticatedPromoterIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
+  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/industries': typeof AuthenticatedAdminIndustriesRoute
+  '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
+  '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
@@ -81,7 +160,16 @@ export interface FileRoutesByTo {
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/industries': typeof AuthenticatedAdminIndustriesRoute
+  '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
+  '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
@@ -91,9 +179,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/_authenticated/admin/industries': typeof AuthenticatedAdminIndustriesRoute
+  '/_authenticated/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
+  '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/_authenticated/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
@@ -103,9 +201,19 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/primeiro-acesso'
+    | '/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/billing'
+    | '/admin/exports'
+    | '/admin/industries'
+    | '/admin/occurrences'
+    | '/admin/promoters'
+    | '/admin/reports'
+    | '/admin/routes'
+    | '/admin/stores'
     | '/admin/users'
+    | '/admin/visits'
     | '/admin/'
     | '/industry/'
     | '/promoter/'
@@ -115,7 +223,16 @@ export interface FileRouteTypes {
     | '/primeiro-acesso'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/billing'
+    | '/admin/exports'
+    | '/admin/industries'
+    | '/admin/occurrences'
+    | '/admin/promoters'
+    | '/admin/reports'
+    | '/admin/routes'
+    | '/admin/stores'
     | '/admin/users'
+    | '/admin/visits'
     | '/admin'
     | '/industry'
     | '/promoter'
@@ -124,9 +241,19 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/primeiro-acesso'
+    | '/_authenticated/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/exports'
+    | '/_authenticated/admin/industries'
+    | '/_authenticated/admin/occurrences'
+    | '/_authenticated/admin/promoters'
+    | '/_authenticated/admin/reports'
+    | '/_authenticated/admin/routes'
+    | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
+    | '/_authenticated/admin/visits'
     | '/_authenticated/admin/'
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
@@ -163,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrimeiroAcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
       path: '/auth/forgot-password'
@@ -179,17 +313,80 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/billing': {
+      id: '/_authenticated/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/exports': {
+      id: '/_authenticated/admin/exports'
+      path: '/exports'
+      fullPath: '/admin/exports'
+      preLoaderRoute: typeof AuthenticatedAdminExportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/industries': {
+      id: '/_authenticated/admin/industries'
+      path: '/industries'
+      fullPath: '/admin/industries'
+      preLoaderRoute: typeof AuthenticatedAdminIndustriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/occurrences': {
+      id: '/_authenticated/admin/occurrences'
+      path: '/occurrences'
+      fullPath: '/admin/occurrences'
+      preLoaderRoute: typeof AuthenticatedAdminOccurrencesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/promoters': {
+      id: '/_authenticated/admin/promoters'
+      path: '/promoters'
+      fullPath: '/admin/promoters'
+      preLoaderRoute: typeof AuthenticatedAdminPromotersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/reports': {
+      id: '/_authenticated/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/routes': {
+      id: '/_authenticated/admin/routes'
+      path: '/routes'
+      fullPath: '/admin/routes'
+      preLoaderRoute: typeof AuthenticatedAdminRoutesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/stores': {
+      id: '/_authenticated/admin/stores'
+      path: '/stores'
+      fullPath: '/admin/stores'
+      preLoaderRoute: typeof AuthenticatedAdminStoresRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
-      path: '/admin/users'
+      path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/visits': {
+      id: '/_authenticated/admin/visits'
+      path: '/visits'
+      fullPath: '/admin/visits'
+      preLoaderRoute: typeof AuthenticatedAdminVisitsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/industry/': {
       id: '/_authenticated/industry/'
@@ -208,16 +405,48 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
+interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
+  AuthenticatedAdminIndustriesRoute: typeof AuthenticatedAdminIndustriesRoute
+  AuthenticatedAdminOccurrencesRoute: typeof AuthenticatedAdminOccurrencesRoute
+  AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
+  AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
+  AuthenticatedAdminRoutesRoute: typeof AuthenticatedAdminRoutesRoute
+  AuthenticatedAdminStoresRoute: typeof AuthenticatedAdminStoresRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminVisitsRoute: typeof AuthenticatedAdminVisitsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+  {
+    AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+    AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
+    AuthenticatedAdminIndustriesRoute: AuthenticatedAdminIndustriesRoute,
+    AuthenticatedAdminOccurrencesRoute: AuthenticatedAdminOccurrencesRoute,
+    AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
+    AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
+    AuthenticatedAdminRoutesRoute: AuthenticatedAdminRoutesRoute,
+    AuthenticatedAdminStoresRoute: AuthenticatedAdminStoresRoute,
+    AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+    AuthenticatedAdminVisitsRoute: AuthenticatedAdminVisitsRoute,
+    AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  }
+
+const AuthenticatedAdminRouteRouteWithChildren =
+  AuthenticatedAdminRouteRoute._addFileChildren(
+    AuthenticatedAdminRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedIndustryIndexRoute: typeof AuthenticatedIndustryIndexRoute
   AuthenticatedPromoterIndexRoute: typeof AuthenticatedPromoterIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
-  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedIndustryIndexRoute: AuthenticatedIndustryIndexRoute,
   AuthenticatedPromoterIndexRoute: AuthenticatedPromoterIndexRoute,
 }
