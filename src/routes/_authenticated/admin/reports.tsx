@@ -228,6 +228,8 @@ function ReportsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
       </header>
 
       <div className="p-6 space-y-6">
