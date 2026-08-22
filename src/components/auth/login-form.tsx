@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,17 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hasAdmins, setHasAdmins] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAdmins = async () => {
+      const { data, error } = await (supabase as any).rpc('get_admin_count');
+      if (!error) {
+        setHasAdmins(Number(data) > 0);
+      }
+    };
+    checkAdmins();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,13 +148,24 @@ export function LoginForm() {
         </form>
       </Card>
 
-      <div className="text-center">
+      <div className="text-center space-y-4">
         <p className="text-sm text-slate-500">
           Não possui acesso?{' '}
           <span className="text-slate-900 font-semibold underline decoration-blue-500 underline-offset-4">
             Solicite seu cadastro ao administrador.
           </span>
         </p>
+
+        {hasAdmins === false && (
+          <div className="pt-2">
+            <Link 
+              to="/primeiro-acesso" 
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Primeiro acesso? Criar conta do administrador inicial
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
