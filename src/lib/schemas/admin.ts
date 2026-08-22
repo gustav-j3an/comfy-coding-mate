@@ -28,3 +28,29 @@ export const industrySchema = z.object({
   phone: z.string().optional(),
   active: z.boolean().default(true),
 });
+
+export const contractSchema = z.object({
+  industry_id: z.string().uuid("Indústria é obrigatória"),
+  contract_number: z.string().min(1, "Número do contrato é obrigatório"),
+  start_date: z.string().min(1, "Data de início é obrigatória"),
+  end_date: z.string().optional().nullable(),
+  status: z.enum(["draft", "active", "terminated"]),
+  value_per_visit: z.number().min(0, "Valor deve ser maior ou igual a zero"),
+  min_monthly_visits: z.number().int().min(0).optional().nullable(),
+  billing_day: z.number().int().min(1).max(31, "Dia inválido"),
+  billing_details: z.string().optional(),
+  commercial_responsible: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const billingSchema = z.object({
+  industry_id: z.string().uuid("Indústria é obrigatória"),
+  competence_month: z.number().int().min(1).max(12),
+  competence_year: z.number().int().min(2000),
+  due_date: z.string().min(1, "Vencimento é obrigatório"),
+  discount: z.number().min(0).default(0),
+  increase: z.number().min(0).default(0),
+  notes: z.string().optional(),
+  adjustment_reason: z.string().optional(),
+});
+

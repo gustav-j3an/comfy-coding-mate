@@ -22,7 +22,7 @@ interface SidebarItemProps {
 
 function SidebarItem({ to, icon: Icon, label, active, onClick, className }: SidebarItemProps) {
   return (
-    <Link to={to} onClick={onClick} className="block w-full">
+    <Link to={to as any} onClick={onClick} className="block w-full">
       <Button 
         variant="ghost" 
         className={cn(
@@ -63,6 +63,7 @@ export function AdminSidebar({ className }: { className?: string }) {
     { to: '/admin/users', icon: Users, label: 'Usuários e Acessos' },
     { to: '/admin/reports', icon: FileText, label: 'Relatórios Mensais' },
     { to: '/admin/exports', icon: Download, label: 'Exportações' },
+    { to: '/admin/contracts', icon: FileText, label: 'Contratos' },
     { to: '/admin/billing', icon: CreditCard, label: 'Cobranças' },
   ];
 

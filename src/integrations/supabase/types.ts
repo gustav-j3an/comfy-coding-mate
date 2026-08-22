@@ -49,6 +49,210 @@ export type Database = {
           },
         ]
       }
+      billing_items: {
+        Row: {
+          approved_at: string
+          billing_id: string
+          created_at: string
+          id: string
+          promoter_name: string
+          store_name: string
+          visit_date: string
+          visit_id: string
+        }
+        Insert: {
+          approved_at: string
+          billing_id: string
+          created_at?: string
+          id?: string
+          promoter_name: string
+          store_name: string
+          visit_date: string
+          visit_id: string
+        }
+        Update: {
+          approved_at?: string
+          billing_id?: string
+          created_at?: string
+          id?: string
+          promoter_name?: string
+          store_name?: string
+          visit_date?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_items_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_items_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billings: {
+        Row: {
+          adjustment_reason: string | null
+          admin_id: string | null
+          approved_visits_count: number
+          attachment_url: string | null
+          billing_number: string
+          cancellation_reason: string | null
+          competence_month: number
+          competence_year: number
+          contract_id: string
+          created_at: string
+          discount: number
+          due_date: string
+          id: string
+          increase: number
+          industry_id: string
+          issued_at: string | null
+          payment_link: string | null
+          status: Database["public"]["Enums"]["billing_status"]
+          subtotal: number
+          total_value: number
+          unit_value: number
+          updated_at: string
+        }
+        Insert: {
+          adjustment_reason?: string | null
+          admin_id?: string | null
+          approved_visits_count?: number
+          attachment_url?: string | null
+          billing_number: string
+          cancellation_reason?: string | null
+          competence_month: number
+          competence_year: number
+          contract_id: string
+          created_at?: string
+          discount?: number
+          due_date: string
+          id?: string
+          increase?: number
+          industry_id: string
+          issued_at?: string | null
+          payment_link?: string | null
+          status?: Database["public"]["Enums"]["billing_status"]
+          subtotal?: number
+          total_value?: number
+          unit_value?: number
+          updated_at?: string
+        }
+        Update: {
+          adjustment_reason?: string | null
+          admin_id?: string | null
+          approved_visits_count?: number
+          attachment_url?: string | null
+          billing_number?: string
+          cancellation_reason?: string | null
+          competence_month?: number
+          competence_year?: number
+          contract_id?: string
+          created_at?: string
+          discount?: number
+          due_date?: string
+          id?: string
+          increase?: number
+          industry_id?: string
+          issued_at?: string | null
+          payment_link?: string | null
+          status?: Database["public"]["Enums"]["billing_status"]
+          subtotal?: number
+          total_value?: number
+          unit_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billings_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billings_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billings_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          billing_day: number
+          billing_details: string | null
+          commercial_responsible: string | null
+          contract_number: string
+          created_at: string
+          end_date: string | null
+          id: string
+          industry_id: string
+          min_monthly_visits: number | null
+          notes: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["contract_status"]
+          updated_at: string
+          value_per_visit: number
+        }
+        Insert: {
+          billing_day?: number
+          billing_details?: string | null
+          commercial_responsible?: string | null
+          contract_number: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          industry_id: string
+          min_monthly_visits?: number | null
+          notes?: string | null
+          start_date: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          updated_at?: string
+          value_per_visit?: number
+        }
+        Update: {
+          billing_day?: number
+          billing_details?: string | null
+          commercial_responsible?: string | null
+          contract_number?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          industry_id?: string
+          min_monthly_visits?: number | null
+          notes?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["contract_status"]
+          updated_at?: string
+          value_per_visit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_tasks: {
         Row: {
           created_at: string
@@ -890,6 +1094,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
+      billing_status:
+        | "draft"
+        | "issued"
+        | "sent"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+      contract_status: "draft" | "active" | "terminated"
       export_format: "xlsx" | "csv" | "json" | "pdf" | "zip"
       export_status:
         | "solicitada"
@@ -1038,6 +1250,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "industry"],
+      billing_status: [
+        "draft",
+        "issued",
+        "sent",
+        "paid",
+        "overdue",
+        "cancelled",
+      ],
+      contract_status: ["draft", "active", "terminated"],
       export_format: ["xlsx", "csv", "json", "pdf", "zip"],
       export_status: [
         "solicitada",
