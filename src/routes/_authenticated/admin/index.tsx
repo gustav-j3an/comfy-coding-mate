@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2 } from 'lucide-react';
+import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2, Factory, Store, MapPin, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { seedTestData } from '@/lib/data/seed';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+
 
 export const Route = createFileRoute('/_authenticated/admin/')({
   component: AdminDashboard,
@@ -24,7 +26,8 @@ function AdminDashboard() {
     predicted: 0,
     sent: 0,
     pending: 0,
-    occurrences: 0
+    occurrences: 0,
+    critical: 0
   });
   const [latestVisits, setLatestVisits] = useState<any[]>([]);
   const [recentOccurrences, setRecentOccurrences] = useState<any[]>([]);
@@ -64,25 +67,33 @@ function AdminDashboard() {
         .from('visits')
         .select('*', { count: 'exact', head: true })
         .eq('scheduled_date', todayStr)
-        .eq('status', 'submitted');
+        .eq('status', 'submitted' as any);
 
       // Pending (all submitted visits)
       const { count: pending } = await supabase
         .from('visits')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'submitted');
+        .eq('status', 'submitted' as any);
 
       // Occurrences (open)
       const { count: occurrences } = await supabase
         .from('occurrences')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'open');
+        .eq('status', 'open' as any);
+
+      // Critical Occurrences
+      const { count: critical } = await supabase
+        .from('occurrences')
+        .select('*', { count: 'exact', head: true })
+        .eq('severity', 'critical')
+        .eq('status', 'open' as any);
 
       setRealStats({
         predicted: predicted || 0,
         sent: sent || 0,
         pending: pending || 0,
-        occurrences: occurrences || 0
+        occurrences: occurrences || 0,
+        critical: critical || 0
       });
     } catch (e) {
       console.error(e);
@@ -102,7 +113,7 @@ function AdminDashboard() {
           stores:store_id(name),
           industries:industry_id(name)
         `)
-        .eq('status', 'submitted')
+        .eq('status', 'submitted' as any)
         .order('created_at', { ascending: false })
         .limit(4);
       
@@ -170,9 +181,9 @@ function AdminDashboard() {
     { 
       label: 'Ocorrências Abertas', 
       value: loading ? '...' : realStats.occurrences.toString(), 
-      color: 'text-red-600', 
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-100',
+      color: realStats.critical > 0 ? 'text-red-600' : 'text-amber-600', 
+      bgColor: realStats.critical > 0 ? 'bg-red-50' : 'bg-amber-50',
+      borderColor: realStats.critical > 0 ? 'border-red-100' : 'border-amber-100',
       to: '/admin/occurrences' as const,
       search: { status: 'open' }
     },
@@ -206,7 +217,7 @@ function AdminDashboard() {
           {stats.map((stat, i) => (
             <Link key={i} to={stat.to} search={stat.search} className="group">
               <Card className={cn(
-                "border-2 transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md cursor-pointer",
+                "border-2 transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md cursor-pointer relative",
                 stat.borderColor,
                 stat.bgColor
               )}>
@@ -221,7 +232,11 @@ function AdminDashboard() {
                 <CardContent>
                   <div className="flex items-baseline gap-2">
                     <div className={cn("text-3xl font-black tabular-nums", stat.color)}>{stat.value}</div>
-                    <span className="text-[10px] font-bold text-slate-400">+12% vs ontem</span>
+                    {stat.label === 'Ocorrências Abertas' && realStats.critical > 0 && (
+                      <Badge className="bg-red-600 text-white border-none animate-pulse">
+                        {realStats.critical} CRÍTICAS
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>

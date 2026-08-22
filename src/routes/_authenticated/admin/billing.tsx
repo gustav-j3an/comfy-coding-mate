@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,8 @@ import {
   Plus, Search, Filter, CreditCard, 
   Download, ExternalLink, Calendar,
   TrendingUp, Wallet, ArrowUpRight,
-  MoreVertical, Factory, CheckCircle2
+  MoreVertical, Factory, CheckCircle2,
+  FileDown
 } from 'lucide-react';
 import {
   Table,
@@ -34,6 +35,7 @@ export const Route = createFileRoute('/_authenticated/admin/billing')({
 });
 
 function BillingPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [billings, setBillings] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -213,8 +215,11 @@ function BillingPage() {
                           <DropdownMenuItem>
                             <ExternalLink className="mr-2 h-4 w-4" /> Ver Detalhes
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/reports' })}>
+                            <FileDown className="mr-2 h-4 w-4" /> Relatório de Visitas
+                          </DropdownMenuItem>
                           <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" /> Baixar PDF
+                            <Download className="mr-2 h-4 w-4" /> Baixar PDF Fatura
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-blue-600 font-bold">
