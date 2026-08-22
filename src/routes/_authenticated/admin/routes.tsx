@@ -70,7 +70,7 @@ function RoutesPage() {
 
       const mappedRoutes: RouteItem[] = (routesData || []).map(r => ({
         ...r,
-        promoter_name: promotersData?.find(p => p.id === r.promoter_id)?.name || 'Desconhecido',
+        promoter_name: promotersData?.find((p: any) => p.id === r.promoter_id)?.name || 'Desconhecido',
         stop_count: Math.floor(Math.random() * 10) + 1, // Mock
       }));
 
