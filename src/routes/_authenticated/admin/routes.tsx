@@ -73,6 +73,8 @@ function RoutesPage() {
         ...r,
         promoter_name: promotersData?.find((p: any) => p.id === r.promoter_id)?.name || 'Desconhecido',
         stop_count: (r as any).route_stops?.length || 0,
+        status: (r as any).status || 'draft',
+        version: (r as any).version || 1
       }));
 
       setRoutes(mappedRoutes);
@@ -159,8 +161,11 @@ function RoutesPage() {
                 <CardHeader className="pb-3 bg-slate-50/50">
                   <div className="flex justify-between items-start">
                     <div>
-                      <Badge variant={route.active ? 'default' : 'secondary'} className="mb-2">
-                        {route.active ? 'Publicado' : 'Rascunho'}
+                      <Badge variant={(route as any).status === 'published' ? 'default' : 'secondary'} className={cn(
+                        "mb-2",
+                        (route as any).status === 'published' ? "bg-green-600 hover:bg-green-700" : ""
+                      )}>
+                        {(route as any).status === 'published' ? 'Publicado' : 'Rascunho'}
                       </Badge>
                       <CardTitle className="text-lg text-slate-900">{route.name}</CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1 font-bold">
