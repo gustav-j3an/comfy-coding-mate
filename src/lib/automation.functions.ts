@@ -115,10 +115,13 @@ export const updateAutomationSettings = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
+    const { data: currentSettings } = await supabaseAdmin.from('automation_settings' as any).select('id').maybeSingle();
+    const settingsId = (currentSettings as any)?.id;
+    
     const { data: settings, error } = await supabaseAdmin
       .from('automation_settings' as any)
       .update(data)
-      .eq('id', (await supabaseAdmin.from('automation_settings' as any).select('id').single()).data?.id)
+      .eq('id', settingsId)
       .select()
       .single();
 

@@ -90,7 +90,7 @@ function VisitExecution() {
       const { error: uploadError } = await supabase.storage
         .from('visit-evidences')
         .upload(filePath, file, {
-          onUploadProgress: (progress) => {
+          onUploadProgress: (progress: any) => {
             setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
           }
         } as any);
