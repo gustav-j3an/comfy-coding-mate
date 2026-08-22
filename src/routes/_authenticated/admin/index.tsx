@@ -4,21 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2, Bell, Factory, Store, MapPin, Map, AlertTriangle, ArrowUpRight, ArrowDownRight, Filter, FileText } from 'lucide-react';
+import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2, Factory, Store, MapPin, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { seedTestData } from '@/lib/data/seed';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getDashboardStats } from '@/lib/dashboard.functions';
+
 
 export const Route = createFileRoute('/_authenticated/admin/')({
   component: AdminDashboard,
@@ -75,26 +67,26 @@ function AdminDashboard() {
         .from('visits')
         .select('*', { count: 'exact', head: true })
         .eq('scheduled_date', todayStr)
-        .eq('status', 'submitted');
+        .eq('status', 'submitted' as any);
 
       // Pending (all submitted visits)
       const { count: pending } = await supabase
         .from('visits')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'submitted');
+        .eq('status', 'submitted' as any);
 
       // Occurrences (open)
       const { count: occurrences } = await supabase
         .from('occurrences')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'open');
+        .eq('status', 'open' as any);
 
       // Critical Occurrences
       const { count: critical } = await supabase
         .from('occurrences')
         .select('*', { count: 'exact', head: true })
         .eq('severity', 'critical')
-        .eq('status', 'open');
+        .eq('status', 'open' as any);
 
       setRealStats({
         predicted: predicted || 0,
@@ -121,7 +113,7 @@ function AdminDashboard() {
           stores:store_id(name),
           industries:industry_id(name)
         `)
-        .eq('status', 'submitted')
+        .eq('status', 'submitted' as any)
         .order('created_at', { ascending: false })
         .limit(4);
       
