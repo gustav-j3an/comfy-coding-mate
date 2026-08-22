@@ -117,7 +117,7 @@ function PromoterDashboard() {
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
                   <Link 
                     to={"/promoter/visit/$visitId" as any} 
-                    params={{ visitId: nextStop.id }}
+                    params={{ visitId: nextStop.id } as any}
                   >
                     Iniciar Visita
                     <ChevronRight className="ml-2 h-4 w-4" />
