@@ -132,6 +132,8 @@ export type Database = {
           full_name: string | null
           id: string
           industry_id: string | null
+          last_access: string | null
+          status: Database["public"]["Enums"]["user_status"] | null
         }
         Insert: {
           created_at?: string | null
@@ -139,6 +141,8 @@ export type Database = {
           full_name?: string | null
           id: string
           industry_id?: string | null
+          last_access?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
         }
         Update: {
           created_at?: string | null
@@ -146,6 +150,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           industry_id?: string | null
+          last_access?: string | null
+          status?: Database["public"]["Enums"]["user_status"] | null
         }
         Relationships: [
           {
@@ -458,6 +464,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
+      user_status: "pending" | "active" | "blocked"
       visit_status: "pending" | "submitted" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -587,6 +594,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "industry"],
+      user_status: ["pending", "active", "blocked"],
       visit_status: ["pending", "submitted", "approved", "rejected"],
     },
   },
