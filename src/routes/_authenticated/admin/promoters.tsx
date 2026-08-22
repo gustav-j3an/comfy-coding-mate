@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Plus, Search, Filter, MoreVertical, 
   UserPlus, MapPin, Calendar, ExternalLink,
-  Edit, ShieldAlert, Clock
+  Edit, Trash2, Phone, Mail, Globe, Clock
 } from 'lucide-react';
 import {
   Table,
@@ -26,28 +26,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 export const Route = createFileRoute('/_authenticated/admin/promoters')({
   component: PromotersPage,
 });
 
-interface Promoter {
+interface PromoterItem {
   id: string;
-  full_name: string | null;
+  name: string;
+  phone: string | null;
   email: string | null;
-  status: 'pending' | 'active' | 'blocked';
-  last_access: string | null;
-  phone?: string;
-  region?: string;
+  region: string | null;
+  active: boolean | null;
   visits_this_week?: number;
+  last_activity?: string | null;
 }
 
 function PromotersPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [promoters, setPromoters] = useState<Promoter[]>([]);
+  const [promoters, setPromoters] = useState<PromoterItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -58,34 +56,22 @@ function PromotersPage() {
     try {
       setLoading(true);
       
-      // Get all users with 'promoter' role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'promoter');
+      const { data, error } = await (supabase as any)
+        .from('promoters')
+        .select('*');
 
-      if (roleError) throw roleError;
+      if (error) throw error;
 
-      if (!roleData || roleData.length === 0) {
-        setPromoters([]);
-        return;
-      }
-
-      const userIds = roleData.map(r => r.user_id);
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', userIds);
-
-      if (profileError) throw profileError;
-
-      // In a real app, we'd join with visits to get 'visits_this_week'
-      // For now, we'll map the profiles
-      const mappedPromoters: Promoter[] = (profileData || []).map(p => ({
-        ...p,
-        status: p.status as any,
-        visits_this_week: Math.floor(Math.random() * 15), // Mock for now
+      // In a real app, we'd join with visits to get 'visits_this_week' and 'last_activity'
+      const mappedPromoters: PromoterItem[] = (data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        phone: p.phone,
+        email: p.email,
+        region: p.region,
+        active: p.active,
+        visits_this_week: Math.floor(Math.random() * 15),
+        last_activity: new Date().toISOString(), // Mock
       }));
 
       setPromoters(mappedPromoters);
@@ -97,19 +83,35 @@ function PromotersPage() {
   };
 
   const filteredPromoters = promoters.filter(p => 
-    p.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const toggleStatus = async (promoter: PromoterItem) => {
+    try {
+      const { error } = await (supabase as any)
+        .from('promoters')
+        .update({ active: !promoter.active })
+        .eq('id', promoter.id);
+
+      if (error) throw error;
+      
+      setPromoters(promoters.map(p => p.id === promoter.id ? { ...p, active: !p.active } : p));
+      toast.success(`Promotor ${!promoter.active ? 'ativado' : 'inativado'} com sucesso!`);
+    } catch (error: any) {
+      toast.error('Erro ao atualizar status: ' + error.message);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Promotores</h2>
-          <p className="text-sm text-slate-500">Gerenciamento de equipe de campo</p>
+          <p className="text-sm text-slate-500">Equipe de campo e execução</p>
         </div>
-        <Button onClick={() => navigate({ to: '/admin/users' })} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
-          <UserPlus className="mr-2 h-4 w-4" /> Novo Promotor
+        <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
+          <Plus className="mr-2 h-4 w-4" /> Novo Promotor
         </Button>
       </header>
 
@@ -134,9 +136,9 @@ function PromotersPage() {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="font-bold text-slate-700">Promotor</TableHead>
-                <TableHead className="font-bold text-slate-700">Status</TableHead>
+                <TableHead className="font-bold text-slate-700">Contato / Região</TableHead>
                 <TableHead className="font-bold text-slate-700">Visitas/Semana</TableHead>
-                <TableHead className="font-bold text-slate-700">Último Acesso</TableHead>
+                <TableHead className="font-bold text-slate-700">Status</TableHead>
                 <TableHead className="w-[80px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -158,19 +160,35 @@ function PromotersPage() {
                   <TableRow key={promoter.id} className="hover:bg-slate-50 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
-                          {promoter.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                          {promoter.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{promoter.full_name || 'Sem nome'}</p>
-                          <p className="text-xs text-slate-500">{promoter.email}</p>
-                        </div>
+                        <div className="font-bold text-slate-900">{promoter.name}</div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={promoter.status === 'active' ? 'default' : promoter.status === 'pending' ? 'outline' : 'destructive'} className="capitalize font-bold">
-                        {promoter.status === 'active' ? 'Ativo' : promoter.status === 'pending' ? 'Pendente' : 'Bloqueado'}
-                      </Badge>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          {promoter.phone && (
+                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                              <Phone className="h-3 w-3" />
+                              {promoter.phone}
+                            </div>
+                          )}
+                          {promoter.email && (
+                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                              <Mail className="h-3 w-3" />
+                              {promoter.email}
+                            </div>
+                          )}
+                        </div>
+                        {promoter.region && (
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            <Globe className="h-3 w-3" />
+                            {promoter.region}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -179,14 +197,9 @@ function PromotersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-xs">
-                          {promoter.last_access 
-                            ? format(new Date(promoter.last_access), "dd/MM 'às' HH:mm", { locale: ptBR }) 
-                            : 'Nunca'}
-                        </span>
-                      </div>
+                      <Badge variant={promoter.active ? 'default' : 'secondary'} className="font-bold">
+                        {promoter.active ? 'Ativo' : 'Inativo'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -195,20 +208,30 @@ function PromotersPage() {
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => navigate({ to: `/admin/routes` })}>
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/routes' })}>
                             <MapPin className="mr-2 h-4 w-4" /> Ver Roteiro
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate({ to: `/admin/routes` })}>
+                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/routes' })}>
                             <Plus className="mr-2 h-4 w-4" /> Criar Rota
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" /> Editar Perfil
+                            <Edit className="mr-2 h-4 w-4" /> Editar Cadastro
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            <ShieldAlert className="mr-2 h-4 w-4" /> Bloquear Acesso
+                          <DropdownMenuItem onClick={() => toggleStatus(promoter)}>
+                            {promoter.active ? (
+                              <>
+                                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                <span className="text-red-600">Inativar Promotor</span>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="mr-2 h-4 w-4 text-green-500" />
+                                <span className="text-green-600">Ativar Promotor</span>
+                              </>
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
