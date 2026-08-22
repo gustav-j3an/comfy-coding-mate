@@ -20,8 +20,14 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { z } from 'zod';
+
+const visitsSearchSchema = z.object({
+  filter: z.string().optional(),
+});
 
 export const Route = createFileRoute('/_authenticated/admin/visits')({
+  validateSearch: (search) => visitsSearchSchema.parse(search),
   component: VisitsPage,
 });
 
