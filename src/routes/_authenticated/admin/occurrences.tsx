@@ -4,9 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Search, Filter, AlertTriangle, Clock, 
-  CheckCircle2, AlertCircle, Eye, ChevronRight,
-  MessageSquare, Store, Factory
+  Search, Filter, AlertTriangle, 
+  ChevronRight, Store, Factory, Loader2
 } from 'lucide-react';
 import {
   Table,
@@ -20,31 +19,48 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { z } from 'zod';
+
+const occurrencesSearchSchema = z.object({
+  status: z.string().optional(),
+});
 
 export const Route = createFileRoute('/_authenticated/admin/occurrences')({
+  validateSearch: (search) => occurrencesSearchSchema.parse(search),
   component: OccurrencesPage,
 });
 
 function OccurrencesPage() {
+  const search = Route.useSearch();
   const [loading, setLoading] = useState(true);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState(search.status || 'all');
 
   useEffect(() => {
     fetchOccurrences();
-  }, []);
+  }, [search.status]);
 
   const fetchOccurrences = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('occurrences')
         .select(`
           *,
-          stores:store_id(name),
-          industries:industry_id(name)
-        `)
-        .order('created_at', { ascending: false });
+          visit:visit_id(
+            stores:store_id(name),
+            industries:industry_id(name)
+          )
+        `);
+
+      if (search.status === 'open') {
+        query = query.eq('status', 'open');
+      } else if (search.status === 'resolved') {
+        query = query.eq('status', 'resolved');
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setOccurrences(data || []);
@@ -66,8 +82,8 @@ function OccurrencesPage() {
 
   const filteredOccurrences = occurrences.filter(o => 
     o.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.industries?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    o.visit?.stores?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    o.visit?.industries?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -90,9 +106,15 @@ function OccurrencesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2 font-bold">
-            <Filter className="h-4 w-4" /> Filtros
-          </Button>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 px-3 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+          >
+            <option value="all">Todos os Status</option>
+            <option value="open">Abertas</option>
+            <option value="resolved">Resolvidas</option>
+          </select>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -109,7 +131,10 @@ function OccurrencesPage() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Carregando ocorrências...
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                      Carregando ocorrências...
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : filteredOccurrences.length === 0 ? (
@@ -136,11 +161,11 @@ function OccurrencesPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-xs font-bold text-slate-700">
                           <Store className="w-3 h-3 text-slate-400" />
-                          {occ.stores?.name}
+                          {occ.visit?.stores?.name}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-slate-500">
                           <Factory className="w-3 h-3 text-slate-400" />
-                          {occ.industries?.name}
+                          {occ.visit?.industries?.name}
                         </div>
                       </div>
                     </TableCell>
