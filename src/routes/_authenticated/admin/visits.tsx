@@ -428,23 +428,27 @@ function VisitsPage() {
             >
               Cancelar
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => handleAudit('rejected')}
-              disabled={isAuditing}
-              className="font-bold"
-            >
-              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
-              Reprovar
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700 font-bold"
-              onClick={() => handleAudit('approved')}
-              disabled={isAuditing}
-            >
-              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-              Aprovar Visita
-            </Button>
+            {selectedVisit?.status === 'submitted' && (
+              <>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleAudit('rejected')}
+                  disabled={isAuditing}
+                  className="font-bold"
+                >
+                  {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                  Reprovar
+                </Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 font-bold"
+                  onClick={() => handleAudit('approved')}
+                  disabled={isAuditing}
+                >
+                  {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                  Aprovar Visita
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
