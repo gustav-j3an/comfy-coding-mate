@@ -87,9 +87,11 @@ function AdminDashboard() {
           <p className="text-sm text-slate-500">Bem-vindo ao centro de operações</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" onClick={handleSeed} className="hidden sm:flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Dados de Teste
-          </Button>
+          {!hasData && (
+            <Button variant="outline" size="sm" onClick={handleSeed} className="hidden sm:flex items-center gap-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold">
+              <Plus className="h-4 w-4" /> Gerar Dados de Teste
+            </Button>
+          )}
           <Button size="sm" onClick={() => navigate({ to: '/admin/reports' })} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200">
             Novo Relatório
           </Button>
