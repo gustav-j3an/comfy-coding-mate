@@ -335,36 +335,48 @@ export type Database = {
           address: string
           cep: string | null
           city: string | null
+          complement: string | null
           created_at: string | null
           id: string
           latitude: number | null
           longitude: number | null
           name: string
+          neighborhood: string | null
+          number: string | null
           state: string | null
+          zip_code: string | null
         }
         Insert: {
           active?: boolean | null
           address: string
           cep?: string | null
           city?: string | null
+          complement?: string | null
           created_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name: string
+          neighborhood?: string | null
+          number?: string | null
           state?: string | null
+          zip_code?: string | null
         }
         Update: {
           active?: boolean | null
           address?: string
           cep?: string | null
           city?: string | null
+          complement?: string | null
           created_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name?: string
+          neighborhood?: string | null
+          number?: string | null
           state?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -525,6 +537,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_delete_industry: { Args: { i_id: string }; Returns: boolean }
+      can_delete_promoter: { Args: { p_id: string }; Returns: boolean }
+      can_delete_store: { Args: { s_id: string }; Returns: boolean }
       get_admin_count: { Args: never; Returns: number }
       has_role: {
         Args: {
