@@ -166,7 +166,7 @@ function UserManagement() {
 
   const handleUpdateStatus = async (userId: string, status: 'active' | 'blocked' | 'pending') => {
     try {
-      await updateUserStatus({ userId, status });
+      await updateUserStatus({ data: { userId, status } });
       toast.success('Status atualizado!');
       fetchData();
     } catch (error: any) {
