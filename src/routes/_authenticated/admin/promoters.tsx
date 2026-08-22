@@ -388,7 +388,7 @@ function PromotersPage() {
                             <Plus className="mr-2 h-4 w-4" /> Criar Rota
                           </DropdownMenuItem>
                           {(!promoter.profiles || promoter.profiles.length === 0) && (
-                            <DropdownMenuItem onClick={() => navigate({ to: '/admin/users' })}>
+                            <DropdownMenuItem onClick={() => navigate({ to: '/admin/users', search: { invite: 'promoter', id: promoter.id } })}>
                               <UserPlus className="mr-2 h-4 w-4 text-blue-600" /> 
                               <span className="text-blue-600 font-bold">Convidar para acesso</span>
                             </DropdownMenuItem>

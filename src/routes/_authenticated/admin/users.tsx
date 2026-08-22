@@ -74,6 +74,8 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 });
 
 function UserManagement() {
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch() as any;
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
@@ -88,6 +90,29 @@ function UserManagement() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviting, setInviting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.invite === 'promoter' && searchParams.id) {
+      setInviteRole('promoter');
+      setSelectedPromoterId(searchParams.id);
+      setIsInviteOpen(true);
+      // Try to find the name/email from promoters list if already loaded
+      const p = promoters.find(item => item.id === searchParams.id);
+      if (p) {
+        setInviteName(p.name || '');
+        setInviteEmail(p.email || '');
+      }
+    } else if (searchParams.invite === 'industry' && searchParams.id) {
+      setInviteRole('industry');
+      setSelectedIndustryId(searchParams.id);
+      setIsInviteOpen(true);
+      const i = industries.find(item => item.id === searchParams.id);
+      if (i) {
+        setInviteName(i.contact_name || i.name || '');
+        setInviteEmail(i.email || '');
+      }
+    }
+  }, [searchParams, promoters, industries]);
 
   // Action states
   const [userToDelete, setUserToDelete] = useState<any>(null);
