@@ -1,9 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { requireSupabaseAuth } from '@/lib/auth/supabase-auth.server';
 
-export const Route = createFileRoute('/api/public/reports/pdf')({
+export const Route = createFileRoute('/api/reports/pdf')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        // Authenticate the user
+        let session;
+        try {
+          const auth = await requireSupabaseAuth({ request });
+          session = auth.session;
+        } catch (error) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+
         const url = new URL(request.url);
         const industryId = url.searchParams.get('industryId');
         const month = url.searchParams.get('month');
@@ -29,8 +39,26 @@ export const Route = createFileRoute('/api/public/reports/pdf')({
           return new Response('Report not found or not published', { status: 404 });
         }
 
+        // 2. Authorization check: Industry user can only see their own reports
+        const { data: roleData } = await (supabaseAdmin
+          .from('user_roles' as any) as any)
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (roleData?.role === 'industry') {
+          const { data: industry } = await (supabaseAdmin
+            .from('industries' as any) as any)
+            .select('id')
+            .eq('contact_email', session.user.email)
+            .single();
+          
+          if (!industry || industry.id !== industryId) {
+            return new Response('Forbidden', { status: 403 });
+          }
+        }
+
         // Mock PDF response - in a real implementation we would use a PDF generation lib
-        // but since we are in a worker environment, we might use a lightweight template
         const html = `
           <html>
             <body style="font-family: sans-serif; padding: 40px; color: #333;">
@@ -84,8 +112,6 @@ export const Route = createFileRoute('/api/public/reports/pdf')({
         return new Response(html, {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
-            // To trigger download in a real app:
-            // 'Content-Disposition': `attachment; filename="Relatorio_${report.industry.name}_${month}_${year}.pdf"`,
           }
         });
       }

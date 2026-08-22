@@ -83,7 +83,7 @@ function ReportsPage() {
   };
 
   const handleDownloadPDF = (report: any) => {
-    const url = `/api/public/reports/pdf?industryId=${report.industry_id}&month=${report.month}&year=${report.year}`;
+    const url = `/api/reports/pdf?industryId=${report.industry_id}&month=${report.month}&year=${report.year}`;
     window.open(url, '_blank');
   };
 

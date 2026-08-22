@@ -29,9 +29,9 @@ import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
+import { Route as ApiReportsPdfRouteImport } from './routes/api/reports.pdf'
 import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
 import { Route as AuthenticatedPromoterVisitVisitIdRouteImport } from './routes/_authenticated/promoter/visit.$visitId'
-import { Route as ApiPublicReportsPdfRouteImport } from './routes/api/public/reports.pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -143,6 +143,11 @@ const ApiPublicWebhookRoute = ApiPublicWebhookRouteImport.update({
   path: '/api/public/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReportsPdfRoute = ApiReportsPdfRouteImport.update({
+  id: '/api/reports/pdf',
+  path: '/api/reports/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoutesNewRoute =
   AuthenticatedAdminRoutesNewRouteImport.update({
     id: '/new',
@@ -155,11 +160,6 @@ const AuthenticatedPromoterVisitVisitIdRoute =
     path: '/promoter/visit/$visitId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicReportsPdfRoute = ApiPublicReportsPdfRouteImport.update({
-  id: '/api/public/reports/pdf',
-  path: '/api/public/reports/pdf',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -178,12 +178,12 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
+  '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
-  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -201,12 +201,12 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
+  '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
-  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -227,12 +227,12 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
+  '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/_authenticated/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/_authenticated/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
-  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -253,12 +253,12 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/visits'
     | '/api/public/webhook'
+    | '/api/reports/pdf'
     | '/admin/'
     | '/industry/'
     | '/promoter/'
     | '/admin/routes/new'
     | '/promoter/visit/$visitId'
-    | '/api/public/reports/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,12 +276,12 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/visits'
     | '/api/public/webhook'
+    | '/api/reports/pdf'
     | '/admin'
     | '/industry'
     | '/promoter'
     | '/admin/routes/new'
     | '/promoter/visit/$visitId'
-    | '/api/public/reports/pdf'
   id:
     | '__root__'
     | '/'
@@ -301,12 +301,12 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
     | '/api/public/webhook'
+    | '/api/reports/pdf'
     | '/_authenticated/admin/'
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
     | '/_authenticated/admin/routes/new'
     | '/_authenticated/promoter/visit/$visitId'
-    | '/api/public/reports/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -316,7 +316,7 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   ApiPublicWebhookRoute: typeof ApiPublicWebhookRoute
-  ApiPublicReportsPdfRoute: typeof ApiPublicReportsPdfRoute
+  ApiReportsPdfRoute: typeof ApiReportsPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -461,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reports/pdf': {
+      id: '/api/reports/pdf'
+      path: '/api/reports/pdf'
+      fullPath: '/api/reports/pdf'
+      preLoaderRoute: typeof ApiReportsPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/routes/new': {
       id: '/_authenticated/admin/routes/new'
       path: '/new'
@@ -474,13 +481,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/promoter/visit/$visitId'
       preLoaderRoute: typeof AuthenticatedPromoterVisitVisitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/reports/pdf': {
-      id: '/api/public/reports/pdf'
-      path: '/api/public/reports/pdf'
-      fullPath: '/api/public/reports/pdf'
-      preLoaderRoute: typeof ApiPublicReportsPdfRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -558,7 +558,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   ApiPublicWebhookRoute: ApiPublicWebhookRoute,
-  ApiPublicReportsPdfRoute: ApiPublicReportsPdfRoute,
+  ApiReportsPdfRoute: ApiReportsPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
