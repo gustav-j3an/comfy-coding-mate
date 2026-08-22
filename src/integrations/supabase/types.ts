@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          n8n_secret: string | null
+          n8n_webhook_url: string | null
+          retention_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          n8n_secret?: string | null
+          n8n_webhook_url?: string | null
+          retention_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          n8n_secret?: string | null
+          n8n_webhook_url?: string | null
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       billing: {
         Row: {
           amount: number
@@ -1064,6 +1094,39 @@ export type Database = {
           },
         ]
       }
+      webhook_logs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          status_code: number | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          status_code?: number | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          status_code?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1076,6 +1139,7 @@ export type Database = {
       can_delete_industry: { Args: { i_id: string }; Returns: boolean }
       can_delete_promoter: { Args: { p_id: string }; Returns: boolean }
       can_delete_store: { Args: { s_id: string }; Returns: boolean }
+      cleanup_expired_data: { Args: never; Returns: undefined }
       cleanup_expired_exports: { Args: never; Returns: undefined }
       delete_user_safely: { Args: { _user_id: string }; Returns: undefined }
       get_admin_count: { Args: never; Returns: number }
