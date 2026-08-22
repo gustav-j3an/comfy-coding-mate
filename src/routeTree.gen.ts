@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminStoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
+import { Route as AuthenticatedIndustryExportsRouteImport } from './routes/_authenticated/industry/exports'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
 import { Route as ApiReportsPdfRouteImport } from './routes/api/reports.pdf'
@@ -132,6 +133,12 @@ const AuthenticatedIndustryIndexRoute =
     path: '/industry/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedIndustryExportsRoute =
+  AuthenticatedIndustryExportsRouteImport.update({
+    id: '/industry/exports',
+    path: '/industry/exports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPromoterIndexRoute =
   AuthenticatedPromoterIndexRouteImport.update({
     id: '/promoter/',
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -226,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/_authenticated/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
     | '/admin/'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
     | '/admin'
@@ -300,6 +312,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
+    | '/_authenticated/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
     | '/_authenticated/admin/'
@@ -447,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndustryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/industry/exports': {
+      id: '/_authenticated/industry/exports'
+      path: '/industry/exports'
+      fullPath: '/industry/exports'
+      preLoaderRoute: typeof AuthenticatedIndustryExportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/promoter/': {
       id: '/_authenticated/promoter/'
       path: '/promoter'
@@ -535,6 +555,7 @@ const AuthenticatedAdminRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
+  AuthenticatedIndustryExportsRoute: typeof AuthenticatedIndustryExportsRoute
   AuthenticatedIndustryIndexRoute: typeof AuthenticatedIndustryIndexRoute
   AuthenticatedPromoterIndexRoute: typeof AuthenticatedPromoterIndexRoute
   AuthenticatedPromoterVisitVisitIdRoute: typeof AuthenticatedPromoterVisitVisitIdRoute
@@ -542,6 +563,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
+  AuthenticatedIndustryExportsRoute: AuthenticatedIndustryExportsRoute,
   AuthenticatedIndustryIndexRoute: AuthenticatedIndustryIndexRoute,
   AuthenticatedPromoterIndexRoute: AuthenticatedPromoterIndexRoute,
   AuthenticatedPromoterVisitVisitIdRoute:

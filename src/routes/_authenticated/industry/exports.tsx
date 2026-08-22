@@ -39,17 +39,21 @@ function IndustryExportsPage() {
   const getDownloadUrlFn = useServerFn(getDownloadUrl);
 
   useEffect(() => {
+    let interval: any;
     if (profile?.industry_id) {
       loadTasks();
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         const hasPending = tasks.some(t => ['solicitada', 'processando'].includes(t.status));
         if (hasPending) {
           loadTasks();
         }
       }, 10000);
-      return () => clearInterval(interval);
     }
-  }, [profile?.industry_id, tasks]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [profile?.industry_id, tasks.some(t => ['solicitada', 'processando'].includes(t.status))]);
+
 
   const loadTasks = async () => {
     if (!profile?.industry_id) return;
