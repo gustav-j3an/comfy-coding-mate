@@ -46,7 +46,7 @@ export const inviteUser = createServerFn({ method: "POST" })
         email: data.email,
         promoter_id: data.promoterId || null,
         industry_id: data.industryId || null,
-        status: 'pending'
+        status: 'pending' as any
       }]);
 
     if (profileError) throw profileError;
