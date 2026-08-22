@@ -58,15 +58,21 @@ function IndustriesPage() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('industries')
         .select('*');
 
       if (error) throw error;
 
       // In a real app, we'd join with stop_tasks, routes, and visits
-      const mappedIndustries: IndustryItem[] = (data || []).map(i => ({
-        ...i,
+      const mappedIndustries: IndustryItem[] = (data || []).map((i: any) => ({
+        id: i.id,
+        name: i.name,
+        active: i.active,
+        cnpj: i.cnpj || null,
+        contact_name: i.contact_name || null,
+        email: i.email || null,
+        phone: i.phone || null,
         stores_count: Math.floor(Math.random() * 20),
         promoters_count: Math.floor(Math.random() * 8),
         visits_this_month: Math.floor(Math.random() * 150),
