@@ -12,10 +12,10 @@ export const publishRoute = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { routeId, summary } = data;
-    const { supabase } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Fetch route with stops and tasks
-    const { data: route, error: routeError } = await supabase
+    const { data: route, error: routeError } = await supabaseAdmin
       .from('routes')
       .select(`
         *,
@@ -38,7 +38,7 @@ export const publishRoute = createServerFn({ method: "POST" })
 
     // 3. Update route status and version
     const newVersion = (route.version || 0) + 1;
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('routes')
       .update({ 
         status: 'published' as any, 
@@ -50,7 +50,7 @@ export const publishRoute = createServerFn({ method: "POST" })
     if (updateError) throw updateError;
 
     // 4. Create version record
-    await supabase.from('route_versions' as any).insert({
+    await supabaseAdmin.from('route_versions' as any).insert({
       route_id: routeId,
       version: newVersion,
       changes_summary: summary || `Versão ${newVersion} publicada`
@@ -58,7 +58,7 @@ export const publishRoute = createServerFn({ method: "POST" })
 
     // 5. Cancel future unexecuted visits from old version
     const today = format(new Date(), 'yyyy-MM-dd');
-    await supabase
+    await supabaseAdmin
       .from('visits')
       .delete()
       .eq('promoter_id', route.promoter_id)
@@ -98,7 +98,7 @@ export const publishRoute = createServerFn({ method: "POST" })
     }
 
     if (visitsToInsert.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('visits')
         .insert(visitsToInsert as any);
       
@@ -124,10 +124,10 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
     }))
   }).parse(data))
   .handler(async ({ data }) => {
-    const { supabase } = await import("@/integrations/supabase/client.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Create extraordinary route
-    const { data: er, error: erError } = await supabase
+    const { data: er, error: erError } = await supabaseAdmin
       .from('extraordinary_routes' as any)
       .insert({
         promoter_id: data.promoterId,
@@ -141,7 +141,7 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
 
     // 2. Create stops and tasks
     for (const stopData of data.stops) {
-      const { data: stop, error: stopError } = await supabase
+      const { data: stop, error: stopError } = await supabaseAdmin
         .from('extraordinary_route_stops' as any)
         .insert({
           extraordinary_route_id: er.id,
@@ -159,7 +159,7 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
         industry_id: iid
       }));
 
-      await supabase.from('extraordinary_stop_tasks' as any).insert(tasks);
+      await supabaseAdmin.from('extraordinary_stop_tasks' as any).insert(tasks);
 
       // 3. Generate immediate visits for this extraordinary route
       const visits = stopData.industryIds.map(iid => ({
@@ -171,14 +171,14 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
       }));
 
       // Cancel existing planned visits for this promoter/date first
-      await supabase
+      await supabaseAdmin
         .from('visits')
         .delete()
         .eq('promoter_id', data.promoterId)
         .eq('scheduled_date', data.date)
         .eq('status', 'planned' as any);
 
-      await supabase.from('visits').insert(visits as any);
+      await supabaseAdmin.from('visits').insert(visits as any);
     }
 
     return { success: true };
