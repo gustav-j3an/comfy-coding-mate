@@ -191,7 +191,7 @@ function ReportsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="text-sm font-medium text-slate-600">Janeiro / 2026</div>
+                      <div className="text-sm font-medium text-slate-600">Agosto / 2026</div>
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge className="bg-green-100 text-green-700 border-none font-bold hover:bg-green-100">Consolidado</Badge>
