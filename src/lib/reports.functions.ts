@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { triggerAutomationEvent } from "./automation.server";
 
 export const getReports = createServerFn({ method: "GET" })
   .handler(async () => {
