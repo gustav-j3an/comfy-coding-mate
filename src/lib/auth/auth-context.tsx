@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -18,6 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,9 +39,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchRole(session.user.id);
+        await Promise.all([
+          fetchRole(session.user.id),
+          fetchProfile(session.user.id)
+        ]);
       } else {
         setRole(null);
+        setProfile(null);
         setLoading(false);
       }
     });
@@ -53,23 +59,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setRole(data?.role as AppRole);
     } catch (error) {
       console.error('Error fetching user role:', error);
-    } finally {
-      setLoading(false);
     }
   }
+
+  async function fetchProfile(userId: string) {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      Promise.all([
+        fetchRole(user.id),
+        fetchProfile(user.id)
+      ]).finally(() => setLoading(false));
+    }
+  }, [user]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
