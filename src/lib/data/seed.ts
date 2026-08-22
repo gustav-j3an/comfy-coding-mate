@@ -63,7 +63,7 @@ export async function seedTestData() {
     const { data: route, error: routeError } = await (supabase as any)
       .from('routes')
       .insert({
-        promoter_id: user.id, // Linked to profile.id
+        promoter_id: promoterRecord.id, // Linked to promoters.id
         name: 'Rota Brasília Norte (Teste)',
         active: true,
         valid_from: format(new Date(), 'yyyy-MM-dd')
@@ -99,7 +99,7 @@ export async function seedTestData() {
     const { error: visitError } = await (supabase as any)
       .from('visits')
       .insert({
-        promoter_id: user.id,
+        promoter_id: promoterRecord.id,
         store_id: store.id,
         industry_id: industry.id,
         scheduled_date: format(new Date(), 'yyyy-MM-dd'),
