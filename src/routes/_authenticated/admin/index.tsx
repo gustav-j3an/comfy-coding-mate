@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp } from 'lucide-react';
+import { AlertCircle, Plus, Calendar, Clock, CheckCircle2, ChevronRight, TrendingUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { seedTestData } from '@/lib/data/seed';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export const Route = createFileRoute('/_authenticated/admin/')({
   component: AdminDashboard,
@@ -99,35 +100,39 @@ function AdminDashboard() {
   const stats = [
     { 
       label: 'Visitas Previstas Hoje', 
-      value: '24', 
+      value: loading ? '...' : realStats.predicted.toString(), 
       color: 'text-blue-600', 
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-100',
-      to: '/admin/visits?filter=predicted-today'
+      to: '/admin/visits',
+      search: { filter: 'predicted-today' }
     },
     { 
       label: 'Visitas Enviadas Hoje', 
-      value: '18', 
+      value: loading ? '...' : realStats.sent.toString(), 
       color: 'text-green-600', 
       bgColor: 'bg-green-50',
       borderColor: 'border-green-100',
-      to: '/admin/visits?filter=sent-today'
+      to: '/admin/visits',
+      search: { filter: 'sent-today' }
     },
     { 
       label: 'Pendentes de Conferência', 
-      value: '6', 
+      value: loading ? '...' : realStats.pending.toString(), 
       color: 'text-amber-600', 
       bgColor: 'bg-amber-50',
       borderColor: 'border-amber-100',
-      to: '/admin/visits?filter=pending'
+      to: '/admin/visits',
+      search: { filter: 'pending' }
     },
     { 
       label: 'Ocorrências Abertas', 
-      value: '2', 
+      value: loading ? '...' : realStats.occurrences.toString(), 
       color: 'text-red-600', 
       bgColor: 'bg-red-50',
       borderColor: 'border-red-100',
-      to: '/admin/occurrences?status=open'
+      to: '/admin/occurrences',
+      search: { status: 'open' }
     },
   ];
 
@@ -154,7 +159,7 @@ function AdminDashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
-            <Link key={i} to={stat.to} className="group">
+            <Link key={i} to={stat.to} search={stat.search} className="group">
               <Card className={cn(
                 "border-2 transition-all duration-200 group-hover:scale-[1.02] group-hover:shadow-md cursor-pointer",
                 stat.borderColor,
