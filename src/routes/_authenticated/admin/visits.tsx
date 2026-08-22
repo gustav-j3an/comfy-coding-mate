@@ -45,15 +45,26 @@ function VisitsPage() {
   const fetchVisits = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('visits')
         .select(`
           *,
           profiles:promoter_id(full_name),
           stores:store_id(name, city),
           industries:industry_id(name)
-        `)
-        .order('scheduled_date', { ascending: false });
+        `);
+
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+      if (search.filter === 'predicted-today') {
+        query = query.eq('scheduled_date', todayStr).eq('status', 'pending');
+      } else if (search.filter === 'sent-today') {
+        query = query.eq('scheduled_date', todayStr).eq('status', 'submitted');
+      } else if (search.filter === 'pending') {
+        query = query.eq('status', 'submitted');
+      }
+
+      const { data, error } = await query.order('scheduled_date', { ascending: false });
 
       if (error) throw error;
       setVisits(data || []);
