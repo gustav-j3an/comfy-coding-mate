@@ -32,7 +32,7 @@ export const Route = createFileRoute('/_authenticated/admin/visits')({
 });
 
 function VisitsPage() {
-  const search = Route.useSearch<{ filter?: string }>();
+  const search = Route.useSearch();
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
