@@ -1,12 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   LogOut, LayoutDashboard, Image, AlertCircle, 
   FileText, CreditCard, Loader2, BarChart3,
-  Calendar, Factory, TrendingUp, Download
+  Calendar, Factory, TrendingUp, Download,
+  Package
 } from 'lucide-react';
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getIndustryReports } from '@/lib/reports.functions';
