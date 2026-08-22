@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { triggerAutomationEvent } from "./automation.server";
 
 export const getContracts = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -187,6 +188,15 @@ export const createBilling = createServerFn({ method: "POST" })
 
     if (snapshotError) throw snapshotError;
 
+    // Trigger automation
+    await triggerAutomationEvent('billing.created', {
+      billingId: billing.id,
+      industryId: billing.industry_id,
+      billingNumber: billing.billing_number,
+      totalValue: billing.total_value,
+      dueDate: billing.due_date
+    });
+
     return billing;
   });
 
@@ -219,6 +229,14 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
       .single();
 
     if (error) throw error;
+
+    // Trigger automation
+    await triggerAutomationEvent('billing.status_updated', {
+      billingId: data.id,
+      status: data.status,
+      cancellationReason: data.cancellation_reason
+    });
+
     return billing;
   });
 
