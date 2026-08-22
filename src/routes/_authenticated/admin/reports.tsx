@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, Download, 
   ChevronRight, Calendar, BarChart3,
-  TrendingUp, TrendingDown, Factory, Loader2
+  TrendingUp, TrendingDown, Factory, Loader2,
+  FileText
 } from 'lucide-react';
+import { format } from 'date-fns';
 import {
   Table,
   TableBody,
