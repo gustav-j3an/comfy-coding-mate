@@ -26,14 +26,15 @@ export const Route = createFileRoute('/_authenticated/admin/visits')({
 });
 
 function VisitsPage() {
+  const search = Route.useSearch<{ filter?: string }>();
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(search.filter || 'all');
 
   useEffect(() => {
     fetchVisits();
-  }, []);
+  }, [search.filter]);
 
   const fetchVisits = async () => {
     try {
