@@ -45,7 +45,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
-      <PWAUpdateNotification />
+      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/')} />
       <Outlet />
     </>
   );
