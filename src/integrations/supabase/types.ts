@@ -882,6 +882,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_export_download: {
+        Args: { task_id: string }
+        Returns: undefined
+      }
       is_last_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
