@@ -98,7 +98,7 @@ function AdminDashboard() {
         .from('visits')
         .select(`
           *,
-          profiles:promoter_id(full_name),
+          profiles:executor_id(full_name),
           stores:store_id(name),
           industries:industry_id(name)
         `)
