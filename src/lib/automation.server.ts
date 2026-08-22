@@ -8,15 +8,17 @@ export async function triggerAutomationEvent(eventType: string, data: any) {
 
   // 1. Get settings
   const { data: settings, error: settingsError } = await supabaseAdmin
-    .from('automation_settings')
+    .from('automation_settings' as any)
     .select('*')
     .eq('is_active', true)
     .single();
 
-  if (settingsError || !settings?.n8n_webhook_url) {
+  if (settingsError || !(settings as any)?.n8n_webhook_url) {
     console.warn(`[Automation] No active webhook configured for event: ${eventType}`);
     return;
   }
+
+  const automationSettings = settings as any;
 
   // 2. Prepare payload (Sanitized - no media URLs, just IDs and metadata)
   const timestamp = new Date().toISOString();
@@ -28,15 +30,15 @@ export async function triggerAutomationEvent(eventType: string, data: any) {
 
   // 3. Generate signature if secret exists
   let signature = '';
-  if (settings.n8n_secret) {
-    signature = createHmac('sha256', settings.n8n_secret)
+  if (automationSettings.n8n_secret) {
+    signature = createHmac('sha256', automationSettings.n8n_secret)
       .update(JSON.stringify(payload))
       .digest('hex');
   }
 
   // 4. Send to n8n
   try {
-    const response = await fetch(settings.n8n_webhook_url, {
+    const response = await fetch(automationSettings.n8n_webhook_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +51,7 @@ export async function triggerAutomationEvent(eventType: string, data: any) {
     const responseText = await response.text();
 
     // 5. Log attempt
-    await supabaseAdmin.from('webhook_logs').insert({
+    await supabaseAdmin.from('webhook_logs' as any).insert({
       event_type: eventType,
       payload,
       status_code: response.status,
@@ -61,7 +63,7 @@ export async function triggerAutomationEvent(eventType: string, data: any) {
     console.error(`[Automation] Webhook failed for ${eventType}:`, error);
 
     // Log failure
-    await supabaseAdmin.from('webhook_logs').insert({
+    await supabaseAdmin.from('webhook_logs' as any).insert({
       event_type: eventType,
       payload,
       error_message: error.message
