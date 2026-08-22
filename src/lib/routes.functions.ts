@@ -134,28 +134,28 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
         date: data.date,
         name: data.name
       })
-      .select()
+      .select('id')
       .single();
 
-    if (erError) throw erError;
+    if (erError || !er) throw new Error("Erro ao criar rota extraordinária");
 
     // 2. Create stops and tasks
     for (const stopData of data.stops) {
       const { data: stop, error: stopError } = await supabaseAdmin
         .from('extraordinary_route_stops' as any)
         .insert({
-          extraordinary_route_id: er.id,
+          extraordinary_route_id: (er as any).id,
           store_id: stopData.storeId,
           visit_order: stopData.order,
           observation: stopData.observation
         })
-        .select()
+        .select('id')
         .single();
       
-      if (stopError) throw stopError;
+      if (stopError || !stop) throw new Error("Erro ao criar parada extraordinária");
 
       const tasks = stopData.industryIds.map(iid => ({
-        extraordinary_stop_id: stop.id,
+        extraordinary_stop_id: (stop as any).id,
         industry_id: iid
       }));
 

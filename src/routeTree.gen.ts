@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
+import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -134,6 +135,12 @@ const AuthenticatedPromoterIndexRoute =
     path: '/promoter/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminRoutesNewRoute =
+  AuthenticatedAdminRoutesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminRoutesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -147,13 +154,14 @@ export interface FileRoutesByFullPath {
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
+  '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,13 +174,14 @@ export interface FileRoutesByTo {
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
+  '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,13 +197,14 @@ export interface FileRoutesById {
   '/_authenticated/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/_authenticated/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/_authenticated/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
+  '/_authenticated/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/industry/'
     | '/promoter/'
+    | '/admin/routes/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/industry'
     | '/promoter'
+    | '/admin/routes/new'
   id:
     | '__root__'
     | '/'
@@ -257,6 +269,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
+    | '/_authenticated/admin/routes/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -402,8 +415,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPromoterIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/routes/new': {
+      id: '/_authenticated/admin/routes/new'
+      path: '/new'
+      fullPath: '/admin/routes/new'
+      preLoaderRoute: typeof AuthenticatedAdminRoutesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminRoutesRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRoutesRouteChildren {
+  AuthenticatedAdminRoutesNewRoute: typeof AuthenticatedAdminRoutesNewRoute
+}
+
+const AuthenticatedAdminRoutesRouteChildren: AuthenticatedAdminRoutesRouteChildren =
+  {
+    AuthenticatedAdminRoutesNewRoute: AuthenticatedAdminRoutesNewRoute,
+  }
+
+const AuthenticatedAdminRoutesRouteWithChildren =
+  AuthenticatedAdminRoutesRoute._addFileChildren(
+    AuthenticatedAdminRoutesRouteChildren,
+  )
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
@@ -412,7 +446,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminOccurrencesRoute: typeof AuthenticatedAdminOccurrencesRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
-  AuthenticatedAdminRoutesRoute: typeof AuthenticatedAdminRoutesRoute
+  AuthenticatedAdminRoutesRoute: typeof AuthenticatedAdminRoutesRouteWithChildren
   AuthenticatedAdminStoresRoute: typeof AuthenticatedAdminStoresRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVisitsRoute: typeof AuthenticatedAdminVisitsRoute
@@ -427,7 +461,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminOccurrencesRoute: AuthenticatedAdminOccurrencesRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
-    AuthenticatedAdminRoutesRoute: AuthenticatedAdminRoutesRoute,
+    AuthenticatedAdminRoutesRoute: AuthenticatedAdminRoutesRouteWithChildren,
     AuthenticatedAdminStoresRoute: AuthenticatedAdminStoresRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
     AuthenticatedAdminVisitsRoute: AuthenticatedAdminVisitsRoute,
