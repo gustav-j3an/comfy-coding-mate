@@ -13,19 +13,14 @@ export const Route = createFileRoute('/primeiro-acesso')({
   loader: async () => {
     try {
       const { data, error } = await (supabase as any).rpc('get_admin_count');
-      console.log('Loader check admin count:', data, error);
       
       if (data !== null && Number(data) > 0) {
-        console.log('Admins found, redirecting...');
         throw redirect({ to: '/' });
       }
       return { adminCount: Number(data) };
     } catch (err) {
       if (err instanceof Error && err.name === 'Invariant Violation') throw err;
-      // If it's a redirect, re-throw it
       if (err && typeof err === 'object' && 'status' in err) throw err;
-      
-      console.error('Loader error:', err);
       return { adminCount: 0 };
     }
   },
