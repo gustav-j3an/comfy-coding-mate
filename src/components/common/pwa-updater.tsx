@@ -1,27 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-// This is a simplified way to track global upload state
-// In a real app, this would be in a Context or State Management
 export const usePWAUpdater = (isUploading: boolean = false) => {
   const {
-    offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegistered(r) {
+    onRegistered(r: ServiceWorkerRegistration | undefined) {
       console.log('SW Registered');
     },
-    onRegisterError(error) {
+    onRegisterError(error: any) {
       console.error('SW registration error', error);
     },
   });
 
   const close = () => {
-    setOfflineReady(false);
     setNeedRefresh(false);
   };
 
@@ -47,11 +41,10 @@ export const usePWAUpdater = (isUploading: boolean = false) => {
     }
   }, [needRefresh, isUploading]);
 
-  return { offlineReady, needRefresh, updateServiceWorker, close };
+  return { needRefresh, updateServiceWorker, close };
 };
 
 export function PWAUpdateNotification({ isUploading = false }: { isUploading?: boolean }) {
-  // The logic is handled by the hook above, but we can render a custom UI if needed
   usePWAUpdater(isUploading);
   return null;
 }
