@@ -27,7 +27,8 @@ import {
   updateAutomationSettings, 
   getWebhookLogs, 
   testWebhook,
-  runRetentionCleanup 
+  getCleanupPreview,
+  executeManualCleanup 
 } from '@/lib/automation.functions';
 import {
   Table,
@@ -56,7 +57,7 @@ function AutomationPage() {
   const updateSettingsFn = useServerFn(updateAutomationSettings);
   const getLogsFn = useServerFn(getWebhookLogs);
   const testWebhookFn = useServerFn(testWebhook);
-  const cleanupFn = useServerFn(runRetentionCleanup);
+  const cleanupFn = useServerFn(executeManualCleanup);
 
   useEffect(() => {
     fetchData();
@@ -70,10 +71,9 @@ function AutomationPage() {
         getLogsFn()
       ]);
       setSettings(settingsData || {
-        n8n_webhook_url: '',
-        n8n_secret: '',
+        is_active: false,
         retention_days: 90,
-        is_active: true
+        is_configured: false
       });
       setLogs(logsData || []);
     } catch (error: any) {
@@ -114,12 +114,29 @@ function AutomationPage() {
     }
   };
 
+  const getPreviewFn = useServerFn(getCleanupPreview);
+
   const handleCleanup = async () => {
-    if (!confirm("Isso irá remover permanentemente evidências e dados expirados (90 dias). Continuar?")) return;
     try {
       setIsCleaning(true);
-      await cleanupFn();
+      const preview = await getPreviewFn();
+      
+      const message = `Prévia de Limpeza:\n` +
+                      `- Visitas: ${(preview as any).visits}\n` +
+                      `- Evidências: ${(preview as any).evidences}\n` +
+                      `- Logs: ${(preview as any).logs}\n\n` +
+                      `Para confirmar a exclusão destes dados expirados, digite exatamente:\nEXCLUIR DADOS EXPIRADOS`;
+      
+      const confirmation = prompt(message);
+      
+      if (confirmation !== 'EXCLUIR DADOS EXPIRADOS') {
+        if (confirmation !== null) toast.error("Confirmação incorreta.");
+        return;
+      }
+
+      await cleanupFn({ data: { confirmation } });
       toast.success("Limpeza executada com sucesso!");
+      fetchData();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -143,7 +160,7 @@ function AutomationPage() {
           <p className="text-sm text-slate-500 text-left">Conecte o sistema ao n8n e gerencie a retenção de dados.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTestWebhook} disabled={isTesting || !settings?.n8n_webhook_url}>
+          <Button variant="outline" onClick={handleTestWebhook} disabled={isTesting || !settings?.is_configured}>
             {isTesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
             Testar Webhook
           </Button>
@@ -168,30 +185,28 @@ function AutomationPage() {
               <form onSubmit={handleSaveSettings} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2 text-left">
-                    <Label htmlFor="webhook_url" className="text-slate-700">URL do Webhook n8n</Label>
+                    <Label htmlFor="webhook_url" className="text-slate-700">URL do Webhook n8n (Configurado via ENV)</Label>
                     <div className="relative">
                       <Webhook className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
                         id="webhook_url"
-                        placeholder="https://n8n.seu-dominio.com/webhook/..."
-                        className="pl-10"
-                        value={settings.n8n_webhook_url || ''}
-                        onChange={e => setSettings({...settings, n8n_webhook_url: e.target.value})}
+                        disabled={true}
+                        className="pl-10 bg-slate-100"
+                        value={settings.is_configured ? '************' : 'Não configurado'}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2 text-left">
-                    <Label htmlFor="secret" className="text-slate-700">Segredo do Webhook (HMAC Secret)</Label>
+                    <Label htmlFor="secret" className="text-slate-700">Segredo do Webhook (HMAC Secret - ENV)</Label>
                     <div className="relative">
                       <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input 
                         id="secret"
                         type="password"
-                        placeholder="Chave para assinatura dos payloads"
-                        className="pl-10"
-                        value={settings.n8n_secret || ''}
-                        onChange={e => setSettings({...settings, n8n_secret: e.target.value})}
+                        disabled={true}
+                        className="pl-10 bg-slate-100"
+                        value={settings.is_configured ? '************' : 'Não configurado'}
                       />
                     </div>
                   </div>
@@ -202,9 +217,9 @@ function AutomationPage() {
                       <Input 
                         id="retention"
                         type="number"
-                        min="1"
+                        min="90"
                         value={settings.retention_days}
-                        onChange={e => setSettings({...settings, retention_days: Number(e.target.value)})}
+                        onChange={e => setSettings({...settings, retention_days: Math.max(90, Number(e.target.value))})}
                       />
                     </div>
                     <div className="flex flex-col justify-end space-y-2 text-left">
@@ -245,10 +260,11 @@ function AutomationPage() {
                 </p>
               </div>
               <ul className="text-xs text-slate-600 space-y-3 list-disc pl-4 font-medium">
-                <li>Use o HMAC secret para validar a origem das requisições no n8n.</li>
-                <li>Os webhooks são disparados em segundo plano para não afetar o tempo de resposta do app.</li>
-                <li>Falhas temporárias no n8n são registradas no log histórico abaixo.</li>
-                <li>A retenção automática remove arquivos privados do storage após o prazo definido.</li>
+                <li>A URL do n8n e o Segredo HMAC devem ser configurados via variáveis de ambiente (N8N_WEBHOOK_URL, N8N_HMAC_SECRET).</li>
+                <li>Cada webhook é assinado com HMAC-SHA256 e timestamp para evitar ataques de repetição.</li>
+                <li>A retenção mínima é de 90 dias conforme política de compliance.</li>
+                <li>A limpeza manual exige confirmação por texto e registra auditoria.</li>
+                <li>Os arquivos físicos do storage são excluídos permanentemente na rotina.</li>
               </ul>
             </CardContent>
           </Card>
