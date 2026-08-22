@@ -26,11 +26,51 @@ function AdminDashboard() {
     pending: 0,
     occurrences: 0
   });
+  const [latestVisits, setLatestVisits] = useState<any[]>([]);
+  const [recentOccurrences, setRecentOccurrences] = useState<any[]>([]);
 
   useEffect(() => {
     checkData();
     fetchRealStats();
+    fetchRecentData();
   }, []);
+
+  const fetchRecentData = async () => {
+    try {
+      // Latest Visits
+      const { data: visits } = await supabase
+        .from('visits')
+        .select(`
+          *,
+          profiles:promoter_id(full_name),
+          stores:store_id(name),
+          industries:industry_id(name)
+        `)
+        .eq('status', 'submitted')
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      setLatestVisits(visits || []);
+
+      // Recent Occurrences
+      const { data: occs } = await supabase
+        .from('occurrences')
+        .select(`
+          *,
+          visit:visit_id(
+            id,
+            stores:store_id(name),
+            industries:industry_id(name)
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      setRecentOccurrences(occs || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchRealStats = async () => {
     try {
