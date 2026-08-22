@@ -23,15 +23,26 @@ export const createContract = createServerFn({ method: "POST" })
     value_per_visit: z.number(),
     min_monthly_visits: z.number().optional().nullable(),
     billing_day: z.number(),
-    billing_details: z.string().optional(),
-    commercial_responsible: z.string().optional(),
-    notes: z.string().optional(),
+    billing_details: z.string().optional().nullable(),
+    commercial_responsible: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
   }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    // Explicitly handle undefined -> null for Supabase
+    const insertData = {
+      ...data,
+      end_date: data.end_date ?? null,
+      min_monthly_visits: data.min_monthly_visits ?? null,
+      billing_details: data.billing_details ?? null,
+      commercial_responsible: data.commercial_responsible ?? null,
+      notes: data.notes ?? null,
+    };
+
     const { data: contract, error } = await supabaseAdmin
       .from('contracts')
-      .insert([data])
+      .insert([insertData as any])
       .select()
       .single();
 
@@ -48,7 +59,7 @@ export const updateContract = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: contract, error } = await supabaseAdmin
       .from('contracts')
-      .update(data.updates)
+      .update(data.updates as any)
       .filter('id', 'eq', data.id)
       .select()
       .single();
@@ -97,7 +108,7 @@ export const calculateBillingPreview = createServerFn({ method: "POST" })
     // 2. Count approved visits
     const { data: visits, error: visitsError } = await supabaseAdmin
       .from('visits')
-      .select('id, stores(name), promoters(name), scheduled_date, approved_at')
+      .select('id, store_id, stores(name), promoter_id, promoters(name), scheduled_date, approved_at')
       .filter('industry_id', 'eq', data.industry_id)
       .filter('status', 'eq', 'approved')
       .filter('scheduled_date', 'gte', startDate)
@@ -114,7 +125,7 @@ export const calculateBillingPreview = createServerFn({ method: "POST" })
       approvedCount,
       unitValue,
       subtotal,
-      visits: visits || [],
+      visits: (visits as any[]) || [],
     };
   });
 
@@ -131,8 +142,8 @@ export const createBilling = createServerFn({ method: "POST" })
     increase: z.number(),
     total_value: z.number(),
     due_date: z.string(),
-    notes: z.string().optional(),
-    adjustment_reason: z.string().optional(),
+    notes: z.string().optional().nullable(),
+    adjustment_reason: z.string().optional().nullable(),
     visits: z.array(z.any()), // For snapshot
   }).parse(data))
   .handler(async ({ data }) => {
@@ -144,13 +155,17 @@ export const createBilling = createServerFn({ method: "POST" })
     const { visits, ...billingData } = data;
 
     // 1. Create billing record
+    const insertData = {
+      ...billingData,
+      billing_number: billingNumber,
+      status: 'draft',
+      notes: billingData.notes ?? null,
+      adjustment_reason: billingData.adjustment_reason ?? null,
+    };
+
     const { data: billing, error: billingError } = await supabaseAdmin
       .from('billings')
-      .insert([{
-        ...billingData,
-        billing_number: billingNumber,
-        status: 'draft'
-      }])
+      .insert([insertData as any])
       .select()
       .single();
 
@@ -190,7 +205,7 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString()
     };
 
-    if (data.status === 'issued' && !updates.issued_at) {
+    if (data.status === 'issued') {
       updates.issued_at = new Date().toISOString();
     }
     if (data.cancellation_reason) updates.cancellation_reason = data.cancellation_reason;
