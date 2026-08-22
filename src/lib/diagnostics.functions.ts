@@ -2,19 +2,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const getDiagnosticStatus = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
+  .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Check Supabase connection
-    const { data: supabaseTest, error: supabaseError } = await supabaseAdmin
+    const { error: supabaseError } = await supabaseAdmin
       .from('profiles' as any)
-      .select('count', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
 
     // Check Automation Settings
     const { data: automationSettings } = await supabaseAdmin
       .from('automation_settings' as any)
       .select('*')
-      .single();
+      .maybeSingle();
 
     // Check Storage
     const { data: buckets, error: storageError } = await supabaseAdmin.storage.listBuckets();
@@ -26,10 +27,10 @@ export const getDiagnosticStatus = createServerFn({ method: "GET" })
       .select('created_at')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     // Environment variables status
-    const n8nConfigured = !!process.env.N8N_WEBHOOK_URL && !!process.env.N8N_HMAC_SECRET;
+    const n8nConfigured = !!process.env['N8N_WEBHOOK_URL'] && !!process.env['N8N_HMAC_SECRET'];
 
     return {
       supabase: {
@@ -38,14 +39,14 @@ export const getDiagnosticStatus = createServerFn({ method: "GET" })
       },
       automation: {
         status: n8nConfigured ? 'ok' : 'missing_env',
-        last_event: automationSettings?.last_communication_at
+        last_event: (automationSettings as any)?.last_communication_at
       },
       storage: {
         status: evidenceBucket ? 'ok' : 'error',
         message: storageError?.message
       },
       cleanup: {
-        last_run: lastCleanup?.created_at
+        last_run: (lastCleanup as any)?.created_at
       },
       version: '1.0.0-mission9'
     };
