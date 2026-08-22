@@ -7,7 +7,7 @@ export async function seedTestData() {
     const { data: industry, error: indError } = await (supabase as any)
       .from('industries')
       .insert({ 
-        name: 'Indústria King', 
+        name: 'Indústria King (Teste)', 
         active: true,
         cnpj: '12.345.678/0001-90',
         contact_name: 'Marcos Silva',
@@ -22,7 +22,7 @@ export async function seedTestData() {
     const { data: store, error: storeError } = await (supabase as any)
       .from('stores')
       .insert({ 
-        name: 'Atacadão QNL', 
+        name: 'Atacadão QNL (Teste)', 
         address: 'St. L Norte QNL 1 - Taguatinga, Brasília - DF',
         city: 'Brasília',
         state: 'DF',
@@ -64,7 +64,7 @@ export async function seedTestData() {
       .from('routes')
       .insert({
         promoter_id: user.id, // Linked to profile.id
-        name: 'Rota Brasília Norte',
+        name: 'Rota Brasília Norte (Teste)',
         active: true,
         valid_from: format(new Date(), 'yyyy-MM-dd')
       })
