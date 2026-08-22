@@ -54,15 +54,19 @@ function StoresPage() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('stores')
         .select('*');
 
       if (error) throw error;
 
       // In a real app, we'd join with stop_tasks to count industries
-      const mappedStores: StoreItem[] = (data || []).map(s => ({
-        ...s,
+      const mappedStores: StoreItem[] = (data || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        address: s.address,
+        city: s.city || null,
+        active: s.active,
         industry_count: Math.floor(Math.random() * 5), // Mock
       }));
 
