@@ -229,8 +229,8 @@ function ReportsPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </header>
 
-      </header>
 
       <div className="p-6 space-y-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
