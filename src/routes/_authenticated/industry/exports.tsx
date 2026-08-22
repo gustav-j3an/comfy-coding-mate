@@ -5,7 +5,7 @@ import {
   Download, Loader2, 
   FileSpreadsheet, FileArchive, 
   History, Clock, CheckCircle2, AlertCircle,
-  ExternalLink
+  ExternalLink, RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
