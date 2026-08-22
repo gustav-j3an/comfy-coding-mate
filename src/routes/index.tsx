@@ -16,133 +16,124 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   /*
-  Perfeito. Agora falta o módulo comercial: transformar visitas aprovadas em cobrança mensal por indústria.
+  Ótimo. A Missão 7 fecha o ciclo financeiro, mas antes de colocar em produção faça um teste real: crie uma visita aprovada, gere uma cobrança, altere o valor do contrato e confirme que a cobrança já emitida não muda.
 
-  A regra mais segura para começar é: **só contar para cobrança visitas aprovadas**. O valor fica definido no contrato da indústria, por visita aprovada. Depois podemos criar regras mais avançadas por loja, região ou tipo de serviço.
+  A próxima missão é a automação com n8n e a exclusão após 90 dias. O n8n receberá apenas eventos e metadados — nunca fotos, vídeos ou PDFs.
 
-  MISSÃO 7 — Contratos, cobranças e faturamento por indústria.
+  MISSÃO 8 — Integração n8n, alertas e retenção automática de 90 dias.
 
   OBJETIVO:
-  Criar módulo financeiro para calcular a cobrança mensal de cada indústria com base nas visitas aprovadas.
+  Preparar e implementar integração segura entre o sistema e n8n para alertas, relatórios, cobranças e exclusão automática de dados expirados.
 
-  REGRA FINANCEIRA PADRÃO:
-  - Cobrar somente visitas com status “aprovada”.
-  - Cada indústria deve possuir contrato comercial com valor por visita aprovada.
-  - A cobrança deve usar os dados do mês como snapshot, para que alterações posteriores não mudem uma fatura já emitida.
-  - Não implementar gateway de pagamento nesta missão.
-  - Permitir anexar boleto, fatura em PDF ou link externo de pagamento.
+  SEGURANÇA:
+  - Não enviar fotos, vídeos ou PDFs pelo webhook.
+  - Enviar apenas IDs, tipo de evento e metadados necessários.
+  - Configurar URL do webhook e segredo somente em variáveis de ambiente do backend.
+  - Nunca expor URL secreta, token ou chave no frontend.
+  - Implementar autenticação entre sistema e n8n usando segredo de webhook.
+  - Registrar tentativas, sucesso e falha de cada evento.
+  - Implementar nova tentativa automática para falhas temporárias.
 
-  MÓDULO “CONTRATOS”:
+  EVENTOS PARA N8N:
+  Criar webhooks de saída para:
 
-  Criar cadastro de contrato por indústria com:
+  1. Visita enviada:
+  - ID da visita;
+  - promotor;
+  - loja;
   - indústria;
-  - nome ou número do contrato;
-  - data de início;
-  - data de fim opcional;
-  - status: rascunho, ativo, encerrado;
-  - valor padrão por visita aprovada;
-  - quantidade mínima mensal de visitas, opcional;
-  - observações;
-  - dia de vencimento da cobrança;
-  - dados de cobrança da indústria;
-  - responsável comercial.
+  - data/hora;
+  - status;
+  - tipo de ocorrência, se houver.
 
-  Permitir:
-  - criar;
-  - editar;
-  - encerrar;
-  - duplicar contrato;
-  - visualizar histórico;
-  - nunca alterar valores de faturas já emitidas.
-
-  MÓDULO “COBRANÇAS”:
-
-  Criar painel com:
-  - total a faturar no mês;
-  - total faturado;
-  - total pago;
-  - total vencido;
-  - ticket médio por indústria;
-  - gráfico de faturamento por indústria;
-  - lista de cobranças pendentes.
-
-  Criar botão “Nova cobrança”:
-  1. Selecionar indústria.
-  2. Selecionar competência mês/ano.
-  3. Carregar contrato ativo para o período.
-  4. Calcular visitas aprovadas no período.
-  5. Exibir:
-     - visitas aprovadas;
-     - valor por visita;
-     - subtotal;
-     - desconto;
-     - acréscimo;
-     - valor final;
-     - vencimento.
-  6. Permitir ajuste manual com justificativa obrigatória.
-  7. Gerar cobrança como rascunho.
-  8. Permitir emitir.
-
-  Estrutura da fatura/cobrança:
-  - número único;
+  2. Visita aprovada:
+  - ID da visita;
   - indústria;
-  - contrato;
-  - competência;
-  - quantidade de visitas aprovadas;
-  - valor unitário;
-  - descontos;
-  - acréscimos;
-  - valor total;
-  - vencimento;
-  - status: rascunho, emitida, enviada, paga, vencida, cancelada;
-  - link de pagamento opcional;
-  - anexo de boleto ou PDF opcional;
-  - observações;
+  - promotor;
+  - loja;
   - administrador responsável;
-  - data/hora de emissão.
+  - data/hora da aprovação.
 
-  Ao emitir:
-  - criar snapshot das visitas aprovadas que compõem a cobrança;
-  - criar checklist financeiro com loja, data, promotor e visita aprovada;
-  - vincular cobrança ao relatório mensal da indústria;
-  - não permitir remover uma visita já incluída em cobrança emitida;
-  - permitir cancelamento com justificativa e trilha de auditoria.
+  3. Visita reprovada:
+  - ID da visita;
+  - promotor;
+  - motivo da reprovação;
+  - administrador responsável.
 
-  PORTAL DA INDÚSTRIA:
-  Criar área “Financeiro” dentro de `/industry`.
+  4. Ocorrência criada:
+  - indústria;
+  - loja;
+  - promotor;
+  - tipo;
+  - status;
+  - data/hora.
 
-  A indústria deve visualizar somente:
-  - próprias cobranças;
+  5. Relatório mensal publicado:
+  - indústria;
+  - competência;
+  - ID do relatório;
+  - indicadores principais;
+  - link seguro para visualização.
+
+  6. Cobrança emitida:
+  - indústria;
   - competência;
   - valor;
   - vencimento;
-  - status;
-  - relatório mensal relacionado;
-  - checklist de visitas cobradas;
-  - boleto/PDF/link de pagamento;
-  - botão para baixar documentos.
+  - ID da cobrança;
+  - link seguro para portal financeiro.
 
-  Não permitir que a indústria edite valores, status ou dados de outras indústrias.
+  7. Cobrança vencida:
+  - indústria;
+  - número da cobrança;
+  - valor;
+  - dias em atraso.
 
-  RETENÇÃO:
-  - Respeitar a política de 90 dias configurada no sistema.
-  - Antes da exclusão, permitir exportar cobranças, documentos e checklist financeiro.
-  - Exibir alerta de expiração.
-  - Não manter evidências de visita após o prazo de retenção.
-  - Manter ou excluir o resumo financeiro conforme configuração administrativa de retenção, sem alterar a política existente silenciosamente.
+  AUTOMAÇÕES AGENDADAS:
+  Preparar chamadas para n8n executar:
 
-  SEGURANÇA E TESTES:
-  - Aplicar RLS para impedir acesso entre indústrias.
-  - Registrar criação, edição, emissão, envio, pagamento, cancelamento e download.
-  - Criar contrato de teste para King com valor por visita aprovada.
-  - Criar visitas aprovadas de teste.
-  - Gerar cobrança de competência mensal.
-  - Validar cálculo.
-  - Entrar como indústria King e confirmar acesso somente à própria cobrança.
-  - Testar alteração de valor contratual após emissão e confirmar que a fatura antiga não muda.
+  - aviso diário ao administrador sobre visitas pendentes de conferência;
+  - resumo diário de visitas previstas, enviadas, aprovadas e reprovadas;
+  - alerta de roteiro do dia para cada promotor;
+  - alerta de ocorrência aberta;
+  - aviso de relatório mensal disponível;
+  - aviso de cobrança próxima do vencimento;
+  - aviso de cobrança vencida;
+  - aviso de retenção de dados 15 dias antes;
+  - aviso de retenção de dados 3 dias antes.
 
-  Após essa missão, o sistema terá o fluxo completo: planejamento → execução → prova → aprovação → relatório → exportação → cobrança.
+  RETENÇÃO DE 90 DIAS:
+  Criar rotina agendada e auditável para:
+  - identificar evidências, ocorrências e detalhes operacionais expirados;
+  - avisar usuários antes da exclusão;
+  - garantir que exportações em processamento sejam concluídas antes da exclusão;
+  - excluir arquivos privados do bucket;
+  - excluir ou anonimizar detalhes operacionais conforme política atual;
+  - manter snapshots mensais apenas conforme configuração de retenção;
+  - registrar log de exclusão com quantidade de visitas, arquivos e dados removidos;
+  - nunca excluir arquivos antes do prazo de 90 dias;
+  - nunca excluir dados de outra indústria por erro de filtro.
+
+  CONFIGURAÇÃO ADMINISTRATIVA:
+  Criar área “Integrações e Automação” acessível apenas a administradores:
+  - status da conexão n8n;
+  - última execução;
+  - lista de eventos;
+  - histórico de falhas;
+  - botão de teste de webhook;
+  - configuração de alertas ativos/inativos;
+  - prazo de retenção, inicialmente definido como 90 dias.
+
+  TESTES:
+  - testar webhook de visita enviada;
+  - testar aprovação e reprovação;
+  - testar publicação de relatório;
+  - testar emissão de cobrança;
+  - testar evento de retenção com dado de teste expirado;
+  - confirmar que o payload não contém mídia, senha, token ou dados de outras indústrias;
+  - confirmar que falha de webhook não impede envio de visita ou aprovação.
+
+  Depois disso, faremos a última missão: PWA instalável, testes em celular, permissões de câmera/GPS e publicação segura do aplicativo.
   */
   return <Navigate to="/admin" />;
 }
-
