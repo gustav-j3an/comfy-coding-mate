@@ -16,29 +16,35 @@ export type Database = {
     Tables: {
       automation_settings: {
         Row: {
+          active_events: string[] | null
+          authorized_domain: string | null
           created_at: string
           id: string
           is_active: boolean
-          n8n_secret: string | null
-          n8n_webhook_url: string | null
+          last_communication_at: string | null
+          last_test_result: string | null
           retention_days: number
           updated_at: string
         }
         Insert: {
+          active_events?: string[] | null
+          authorized_domain?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
-          n8n_secret?: string | null
-          n8n_webhook_url?: string | null
+          last_communication_at?: string | null
+          last_test_result?: string | null
           retention_days?: number
           updated_at?: string
         }
         Update: {
+          active_events?: string[] | null
+          authorized_domain?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
-          n8n_secret?: string | null
-          n8n_webhook_url?: string | null
+          last_communication_at?: string | null
+          last_test_result?: string | null
           retention_days?: number
           updated_at?: string
         }
@@ -223,6 +229,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cleanup_audit: {
+        Row: {
+          admin_id: string | null
+          confirmation_text: string | null
+          execution_date: string | null
+          id: string
+          records_count: Json | null
+          result: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          confirmation_text?: string | null
+          execution_date?: string | null
+          id?: string
+          records_count?: Json | null
+          result?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          confirmation_text?: string | null
+          execution_date?: string | null
+          id?: string
+          records_count?: Json | null
+          result?: string | null
+        }
+        Relationships: []
       }
       contracts: {
         Row: {
@@ -701,6 +734,44 @@ export type Database = {
           region?: string | null
         }
         Relationships: []
+      }
+      retention_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          data_snapshot: Json | null
+          id: string
+          industry_id: string | null
+          processed_at: string | null
+          scheduled_for: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          data_snapshot?: Json | null
+          id?: string
+          industry_id?: string | null
+          processed_at?: string | null
+          scheduled_for: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          data_snapshot?: Json | null
+          id?: string
+          industry_id?: string | null
+          processed_at?: string | null
+          scheduled_for?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retention_alerts_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       route_stops: {
         Row: {
