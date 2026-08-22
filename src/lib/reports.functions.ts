@@ -92,15 +92,26 @@ export const publishReport = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin
+    const { data: report, error } = await (supabaseAdmin
       .from('monthly_reports' as any) as any)
       .update({
         status: 'publicado',
         published_at: new Date().toISOString()
       })
-      .filter('id', 'eq', data.reportId);
+      .filter('id', 'eq', data.reportId)
+      .select()
+      .single();
 
     if (error) throw error;
+
+    // Trigger automation
+    await triggerAutomationEvent('report.published', {
+      reportId: data.reportId,
+      industryId: (report as any).industry_id,
+      month: (report as any).month,
+      year: (report as any).year
+    });
+
     return { success: true };
   });
 
