@@ -22,37 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRole(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await Promise.all([
-          fetchRole(session.user.id),
-          fetchProfile(session.user.id)
-        ]);
-      } else {
-        setRole(null);
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   async function fetchRole(userId: string) {
     try {
       const { data, error } = await (supabase as any)
@@ -84,14 +53,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    if (user) {
-      setLoading(true);
-      Promise.all([
-        fetchRole(user.id),
-        fetchProfile(user.id)
-      ]).finally(() => setLoading(false));
-    }
-  }, [user]);
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        Promise.all([
+          fetchRole(session.user.id),
+          fetchProfile(session.user.id)
+        ]).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for changes on auth state (sign in, sign out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setLoading(true);
+        await Promise.all([
+          fetchRole(session.user.id),
+          fetchProfile(session.user.id)
+        ]);
+        setLoading(false);
+      } else {
+        setRole(null);
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();

@@ -23,7 +23,7 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 });
 
 function PromoterDashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile } = useAuth() as any;
   const today = new Date().toISOString().split('T')[0];
 
   const { data: visits } = useSuspenseQuery({
@@ -40,7 +40,7 @@ function PromoterDashboard() {
           store:stores(name, address),
           industry:industries(name)
         `)
-        .eq('scheduled_date', today as string);
+        .eq('scheduled_date', today as any);
 
       if (currentPromoterId) {
         query = query.eq('promoter_id', currentPromoterId);
