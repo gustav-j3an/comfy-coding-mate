@@ -16,7 +16,9 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminAutomationRouteImport } from './routes/_authenticated/admin/automation'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
+import { Route as AuthenticatedAdminContractsRouteImport } from './routes/_authenticated/admin/contracts'
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminIndustriesRouteImport } from './routes/_authenticated/admin/industries'
 import { Route as AuthenticatedAdminOccurrencesRouteImport } from './routes/_authenticated/admin/occurrences'
@@ -27,6 +29,7 @@ import { Route as AuthenticatedAdminStoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
+import { Route as AuthenticatedIndustryBillingRouteImport } from './routes/_authenticated/industry/billing'
 import { Route as AuthenticatedIndustryExportsRouteImport } from './routes/_authenticated/industry/exports'
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
@@ -68,10 +71,22 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminAutomationRoute =
+  AuthenticatedAdminAutomationRouteImport.update({
+    id: '/automation',
+    path: '/automation',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
     path: '/billing',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminContractsRoute =
+  AuthenticatedAdminContractsRouteImport.update({
+    id: '/contracts',
+    path: '/contracts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminExportsRoute =
@@ -133,6 +148,12 @@ const AuthenticatedIndustryIndexRoute =
     path: '/industry/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedIndustryBillingRoute =
+  AuthenticatedIndustryBillingRouteImport.update({
+    id: '/industry/billing',
+    path: '/industry/billing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIndustryExportsRoute =
   AuthenticatedIndustryExportsRouteImport.update({
     id: '/industry/exports',
@@ -174,7 +195,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/contracts': typeof AuthenticatedAdminContractsRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/industries': typeof AuthenticatedAdminIndustriesRoute
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
@@ -184,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
@@ -198,7 +222,9 @@ export interface FileRoutesByTo {
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/contracts': typeof AuthenticatedAdminContractsRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/industries': typeof AuthenticatedAdminIndustriesRoute
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
@@ -208,6 +234,7 @@ export interface FileRoutesByTo {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
@@ -225,7 +252,9 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/contracts': typeof AuthenticatedAdminContractsRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/_authenticated/admin/industries': typeof AuthenticatedAdminIndustriesRoute
   '/_authenticated/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
@@ -235,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/_authenticated/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/_authenticated/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
   '/api/reports/pdf': typeof ApiReportsPdfRoute
@@ -252,7 +282,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/automation'
     | '/admin/billing'
+    | '/admin/contracts'
     | '/admin/exports'
     | '/admin/industries'
     | '/admin/occurrences'
@@ -262,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/industry/billing'
     | '/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
@@ -276,7 +309,9 @@ export interface FileRouteTypes {
     | '/primeiro-acesso'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/automation'
     | '/admin/billing'
+    | '/admin/contracts'
     | '/admin/exports'
     | '/admin/industries'
     | '/admin/occurrences'
@@ -286,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/industry/billing'
     | '/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
@@ -302,7 +338,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/_authenticated/admin/automation'
     | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/contracts'
     | '/_authenticated/admin/exports'
     | '/_authenticated/admin/industries'
     | '/_authenticated/admin/occurrences'
@@ -312,6 +350,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
+    | '/_authenticated/industry/billing'
     | '/_authenticated/industry/exports'
     | '/api/public/webhook'
     | '/api/reports/pdf'
@@ -383,11 +422,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/automation': {
+      id: '/_authenticated/admin/automation'
+      path: '/automation'
+      fullPath: '/admin/automation'
+      preLoaderRoute: typeof AuthenticatedAdminAutomationRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/billing': {
       id: '/_authenticated/admin/billing'
       path: '/billing'
       fullPath: '/admin/billing'
       preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/contracts': {
+      id: '/_authenticated/admin/contracts'
+      path: '/contracts'
+      fullPath: '/admin/contracts'
+      preLoaderRoute: typeof AuthenticatedAdminContractsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/exports': {
@@ -460,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndustryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/industry/billing': {
+      id: '/_authenticated/industry/billing'
+      path: '/industry/billing'
+      fullPath: '/industry/billing'
+      preLoaderRoute: typeof AuthenticatedIndustryBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/industry/exports': {
       id: '/_authenticated/industry/exports'
       path: '/industry/exports'
@@ -520,7 +580,9 @@ const AuthenticatedAdminRoutesRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAutomationRoute: typeof AuthenticatedAdminAutomationRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminContractsRoute: typeof AuthenticatedAdminContractsRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
   AuthenticatedAdminIndustriesRoute: typeof AuthenticatedAdminIndustriesRoute
   AuthenticatedAdminOccurrencesRoute: typeof AuthenticatedAdminOccurrencesRoute
@@ -535,7 +597,9 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAutomationRoute: AuthenticatedAdminAutomationRoute,
     AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+    AuthenticatedAdminContractsRoute: AuthenticatedAdminContractsRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
     AuthenticatedAdminIndustriesRoute: AuthenticatedAdminIndustriesRoute,
     AuthenticatedAdminOccurrencesRoute: AuthenticatedAdminOccurrencesRoute,
@@ -555,6 +619,7 @@ const AuthenticatedAdminRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
+  AuthenticatedIndustryBillingRoute: typeof AuthenticatedIndustryBillingRoute
   AuthenticatedIndustryExportsRoute: typeof AuthenticatedIndustryExportsRoute
   AuthenticatedIndustryIndexRoute: typeof AuthenticatedIndustryIndexRoute
   AuthenticatedPromoterIndexRoute: typeof AuthenticatedPromoterIndexRoute
@@ -563,6 +628,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
+  AuthenticatedIndustryBillingRoute: AuthenticatedIndustryBillingRoute,
   AuthenticatedIndustryExportsRoute: AuthenticatedIndustryExportsRoute,
   AuthenticatedIndustryIndexRoute: AuthenticatedIndustryIndexRoute,
   AuthenticatedPromoterIndexRoute: AuthenticatedPromoterIndexRoute,
