@@ -187,6 +187,77 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          industry_id: string
+          month: number
+          occurrences_by_type: Json | null
+          occurrences_count: number | null
+          published_at: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          stores_planned: number | null
+          stores_served: number | null
+          total_visits_approved: number | null
+          total_visits_pending: number | null
+          total_visits_planned: number | null
+          total_visits_rejected: number | null
+          total_visits_sent: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          industry_id: string
+          month: number
+          occurrences_by_type?: Json | null
+          occurrences_count?: number | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          stores_planned?: number | null
+          stores_served?: number | null
+          total_visits_approved?: number | null
+          total_visits_pending?: number | null
+          total_visits_planned?: number | null
+          total_visits_rejected?: number | null
+          total_visits_sent?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          industry_id?: string
+          month?: number
+          occurrences_by_type?: Json | null
+          occurrences_count?: number | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          stores_planned?: number | null
+          stores_served?: number | null
+          total_visits_approved?: number | null
+          total_visits_pending?: number | null
+          total_visits_planned?: number | null
+          total_visits_rejected?: number | null
+          total_visits_sent?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_reports_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occurrences: {
         Row: {
           batch: string | null
@@ -758,6 +829,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
+      report_status:
+        | "em_montagem"
+        | "pronto_revisao"
+        | "publicado"
+        | "arquivado"
       route_status: "draft" | "published" | "archived"
       user_status: "pending" | "active" | "blocked"
       visit_status:
@@ -894,6 +970,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "industry"],
+      report_status: [
+        "em_montagem",
+        "pronto_revisao",
+        "publicado",
+        "arquivado",
+      ],
       route_status: ["draft", "published", "archived"],
       user_status: ["pending", "active", "blocked"],
       visit_status: ["pending", "submitted", "approved", "rejected", "planned"],
