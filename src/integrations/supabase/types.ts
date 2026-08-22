@@ -49,6 +49,111 @@ export type Database = {
           },
         ]
       }
+      extraordinary_route_stops: {
+        Row: {
+          created_at: string | null
+          extraordinary_route_id: string
+          id: string
+          observation: string | null
+          store_id: string
+          visit_order: number
+        }
+        Insert: {
+          created_at?: string | null
+          extraordinary_route_id: string
+          id?: string
+          observation?: string | null
+          store_id: string
+          visit_order: number
+        }
+        Update: {
+          created_at?: string | null
+          extraordinary_route_id?: string
+          id?: string
+          observation?: string | null
+          store_id?: string
+          visit_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraordinary_route_stops_extraordinary_route_id_fkey"
+            columns: ["extraordinary_route_id"]
+            isOneToOne: false
+            referencedRelation: "extraordinary_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraordinary_route_stops_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extraordinary_routes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          id: string
+          name: string
+          promoter_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          id?: string
+          name: string
+          promoter_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          id?: string
+          name?: string
+          promoter_id?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      extraordinary_stop_tasks: {
+        Row: {
+          extraordinary_stop_id: string
+          id: string
+          industry_id: string
+        }
+        Insert: {
+          extraordinary_stop_id: string
+          id?: string
+          industry_id: string
+        }
+        Update: {
+          extraordinary_stop_id?: string
+          id?: string
+          industry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraordinary_stop_tasks_extraordinary_stop_id_fkey"
+            columns: ["extraordinary_stop_id"]
+            isOneToOne: false
+            referencedRelation: "extraordinary_route_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extraordinary_stop_tasks_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industries: {
         Row: {
           active: boolean | null
@@ -220,28 +325,34 @@ export type Database = {
       }
       route_stops: {
         Row: {
+          biweekly_start_date: string | null
           created_at: string | null
           day_of_week: number
           frequency: string | null
           id: string
+          observation: string | null
           route_id: string
           store_id: string
           visit_order: number
         }
         Insert: {
+          biweekly_start_date?: string | null
           created_at?: string | null
           day_of_week: number
           frequency?: string | null
           id?: string
+          observation?: string | null
           route_id: string
           store_id: string
           visit_order: number
         }
         Update: {
+          biweekly_start_date?: string | null
           created_at?: string | null
           day_of_week?: number
           frequency?: string | null
           id?: string
+          observation?: string | null
           route_id?: string
           store_id?: string
           visit_order?: number
@@ -263,32 +374,79 @@ export type Database = {
           },
         ]
       }
+      route_versions: {
+        Row: {
+          changes_summary: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          route_id: string
+          version: number
+        }
+        Insert: {
+          changes_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          route_id: string
+          version: number
+        }
+        Update: {
+          changes_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          route_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_versions_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           active: boolean | null
           created_at: string | null
+          created_by: string | null
           id: string
           name: string
           promoter_id: string
+          status: Database["public"]["Enums"]["route_status"] | null
+          updated_at: string | null
           valid_from: string | null
+          valid_until: string | null
           version: number | null
         }
         Insert: {
           active?: boolean | null
           created_at?: string | null
+          created_by?: string | null
           id?: string
           name: string
           promoter_id: string
+          status?: Database["public"]["Enums"]["route_status"] | null
+          updated_at?: string | null
           valid_from?: string | null
+          valid_until?: string | null
           version?: number | null
         }
         Update: {
           active?: boolean | null
           created_at?: string | null
+          created_by?: string | null
           id?: string
           name?: string
           promoter_id?: string
+          status?: Database["public"]["Enums"]["route_status"] | null
+          updated_at?: string | null
           valid_from?: string | null
+          valid_until?: string | null
           version?: number | null
         }
         Relationships: []
@@ -553,6 +711,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "promoter" | "industry"
+      route_status: "draft" | "published" | "archived"
       user_status: "pending" | "active" | "blocked"
       visit_status: "pending" | "submitted" | "approved" | "rejected"
     }
@@ -683,6 +842,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "industry"],
+      route_status: ["draft", "published", "archived"],
       user_status: ["pending", "active", "blocked"],
       visit_status: ["pending", "submitted", "approved", "rejected"],
     },
