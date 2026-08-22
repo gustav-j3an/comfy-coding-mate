@@ -53,24 +53,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        Promise.all([
-          fetchRole(session.user.id),
-          fetchProfile(session.user.id)
-        ]).finally(() => setLoading(false));
-      } else {
+    // Initial check
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await Promise.all([
+            fetchRole(session.user.id),
+            fetchProfile(session.user.id)
+          ]);
+        }
+      } catch (e) {
+        console.error('Session check error:', e);
+      } finally {
         setLoading(false);
       }
-    });
+    };
 
-    // Listen for changes on auth state (sign in, sign out, etc.)
+    checkSession();
+
+    // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
         setLoading(true);
         await Promise.all([
