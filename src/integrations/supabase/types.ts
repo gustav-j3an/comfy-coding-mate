@@ -145,6 +145,7 @@ export type Database = {
           id: string
           industry_id: string | null
           last_access: string | null
+          promoter_id: string | null
           status: Database["public"]["Enums"]["user_status"] | null
         }
         Insert: {
@@ -154,6 +155,7 @@ export type Database = {
           id: string
           industry_id?: string | null
           last_access?: string | null
+          promoter_id?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
         }
         Update: {
@@ -163,6 +165,7 @@ export type Database = {
           id?: string
           industry_id?: string | null
           last_access?: string | null
+          promoter_id?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
         }
         Relationships: [
@@ -173,7 +176,47 @@ export type Database = {
             referencedRelation: "industries"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_promoter_id_fkey"
+            columns: ["promoter_id"]
+            isOneToOne: false
+            referencedRelation: "promoters"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      promoters: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          observation: string | null
+          phone: string | null
+          region: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          observation?: string | null
+          phone?: string | null
+          region?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          observation?: string | null
+          phone?: string | null
+          region?: string | null
+        }
+        Relationships: []
       }
       route_stops: {
         Row: {
