@@ -276,7 +276,12 @@ function VisitsPage() {
                       {getStatusBadge(visit.status)}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleOpenAudit(visit)}
+                        className="font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                      >
                         AUDITAR <ChevronRight className="w-4 h-4" />
                       </Button>
                     </TableCell>
