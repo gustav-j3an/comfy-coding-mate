@@ -48,7 +48,8 @@ function ExportsPage() {
       }
     }, 10000);
     return () => clearInterval(interval);
-  }, [tasks]);
+  }, [tasks.some(t => ['solicitada', 'processando'].includes(t.status))]);
+
 
   const loadData = async () => {
     try {
