@@ -11,18 +11,23 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/primeiro-acesso')({
   loader: async () => {
-    // We use a regular query since get_admin_count might not be in the generated types yet
-    const { data, error } = await (supabase as any).rpc('get_admin_count');
-    if (error) {
-      console.error('Error checking admin count:', error);
-      // If the function doesn't exist, we assume no admins (though in production we should handle this)
+    try {
+      const { data, error } = await (supabase as any).rpc('get_admin_count');
+      console.log('Loader check admin count:', data, error);
+      
+      if (data !== null && Number(data) > 0) {
+        console.log('Admins found, redirecting...');
+        throw redirect({ to: '/' });
+      }
+      return { adminCount: Number(data) };
+    } catch (err) {
+      if (err instanceof Error && err.name === 'Invariant Violation') throw err;
+      // If it's a redirect, re-throw it
+      if (err && typeof err === 'object' && 'status' in err) throw err;
+      
+      console.error('Loader error:', err);
+      return { adminCount: 0 };
     }
-    
-    // Explicitly check if data is null or 0. If it's > 0, redirect.
-    if (data !== null && Number(data) > 0) {
-      throw redirect({ to: '/' }); // Redirect to home/login
-    }
-    return { adminCount: Number(data) };
   },
   component: FirstAdminPage,
 });
