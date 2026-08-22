@@ -18,10 +18,62 @@ function AdminDashboard() {
   const navigate = useNavigate();
 
   const [hasData, setHasData] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [realStats, setRealStats] = useState({
+    predicted: 0,
+    sent: 0,
+    pending: 0,
+    occurrences: 0
+  });
 
   useEffect(() => {
     checkData();
+    fetchRealStats();
   }, []);
+
+  const fetchRealStats = async () => {
+    try {
+      setLoading(true);
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+      // Predictions (pending visits today)
+      const { count: predicted } = await supabase
+        .from('visits')
+        .select('*', { count: 'exact', head: true })
+        .eq('scheduled_date', todayStr)
+        .eq('status', 'pending');
+
+      // Sent (submitted visits today)
+      const { count: sent } = await supabase
+        .from('visits')
+        .select('*', { count: 'exact', head: true })
+        .eq('scheduled_date', todayStr)
+        .eq('status', 'submitted');
+
+      // Pending (all submitted visits)
+      const { count: pending } = await supabase
+        .from('visits')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'submitted');
+
+      // Occurrences (open)
+      const { count: occurrences } = await supabase
+        .from('occurrences')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open');
+
+      setRealStats({
+        predicted: predicted || 0,
+        sent: sent || 0,
+        pending: pending || 0,
+        occurrences: occurrences || 0
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkData = async () => {
     try {
