@@ -13,17 +13,21 @@ function Index() {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        navigate({ to: '/_authenticated' });
+        // Redirect to a path that is covered by the _authenticated layout
+        // Since it's a pathless layout, we can try to navigate to any of its children
+        // or just wait for the router to handle it if we are at / and it matches.
+        // Actually, if we are at / and user is null, _authenticated layout will handle the redirect if we set it up.
+        // But for now, let's just go to /admin and let it trigger the login.
+        navigate({ to: '/admin' });
       } else {
         if (role === 'admin') {
-          navigate({ to: '/_authenticated/admin' });
+          navigate({ to: '/admin' });
         } else if (role === 'promoter') {
-          navigate({ to: '/_authenticated/promoter' });
+          navigate({ to: '/promoter' });
         } else if (role === 'industry') {
-          navigate({ to: '/_authenticated/industry' });
+          navigate({ to: '/industry' });
         } else {
-          // Default or error
-          navigate({ to: '/_authenticated' });
+          navigate({ to: '/admin' });
         }
       }
     }
