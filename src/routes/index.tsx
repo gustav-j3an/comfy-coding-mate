@@ -52,152 +52,37 @@ function Briefing() {
       </div>
 
       <div className="mt-20 p-8 max-w-4xl mx-auto font-sans whitespace-pre-wrap leading-relaxed text-slate-300 text-[10px] border-t border-slate-200 opacity-50">
-Ótimo — a Missão 0 resolveu exatamente o bloqueio principal. Agora o dashboard e as telas passam a usar relações reais, não apenas cartões visuais.
+Excelente trabalho na Missão 1! Os cadastros fundamentais estão agora totalmente funcionais e seguros.
 
-Vamos para a Missão 1: fazer os três cadastros fundamentais funcionarem de ponta a ponta. Sem isso, não há como montar rotas reais.
+Vamos para a Missão 2: Conectar esses cadastros aos usuários reais através de convites. O sistema deve permitir convidar um usuário para se tornar um Promotor ou um representante de Indústria.
 
 Envie este comando ao Lovable:
 
-MISSÃO 1 — Cadastros reais de Promotores, Lojas e Indústrias.
+MISSÃO 2 — Convites de Usuários e Vínculos Reais.
 
 Objetivo:
-Fazer os módulos de cadastro funcionarem completamente com Supabase: criar, listar, pesquisar, editar, inativar e excluir com segurança.
-
-Não criar ainda roteiros, cobranças ou exportações nesta missão.
+Implementar o fluxo de convite de novos usuários para os perfis de Promotor e Indústria, garantindo que o vínculo seja criado corretamente no Supabase.
 
 REGRAS GERAIS:
-- Todos os formulários devem gravar dados reais no Supabase.
-- Após criar ou editar, atualizar a lista automaticamente.
-- Exibir mensagem clara de sucesso ou erro.
-- Usar confirmação antes de excluir.
-- Nunca usar dados falsos quando já existirem dados reais.
-- Dados de teste devem permanecer identificados e não podem ser apagados acidentalmente por ações normais.
-- Proteger todos os módulos para acesso exclusivo de administradores.
+- Administradores convidam usuários por e-mail ou link de WhatsApp.
+- O convite deve conter o papel (role) e o ID da entidade (promotor_id ou industry_id).
+- Ao aceitar o convite (primeiro acesso), o perfil deve ser criado com o status correto.
 
-1. MÓDULO PROMOTORES
+1. MÓDULO DE USUÁRIOS E ACESSOS (REVISÃO)
+- Listar todos os usuários do sistema com seus papéis e status.
+- Botão "Convidar Usuário" com seleção de papel (Admin, Promotor, Indústria).
+- Se papel = Promotor, exibir lista de promotores cadastrados para vínculo.
+- Se papel = Indústria, exibir lista de indústrias cadastradas para vínculo.
 
-Criar tela funcional de listagem com:
-- nome;
-- telefone;
-- e-mail;
-- região;
-- status ativo/inativo;
-- usuário de login vinculado, quando existir;
-- quantidade de visitas da semana;
-- última atividade.
+2. FLUXO DE CONVITE (BACKEND/SUPABASE)
+- Usar `supabase.auth.admin.inviteUserByEmail` (via server functions se necessário).
+- Gerar link de convite manual (WhatsApp) que aponte para a tela de cadastro.
 
-Criar botão “Novo promotor” com formulário:
-- nome completo obrigatório;
-- telefone obrigatório;
-- e-mail;
-- região/cidade;
-- observação;
-- status ativo/inativo.
+3. TELA DE ACEITE DE CONVITE
+- Tela personalizada para o usuário convidado definir sua senha e confirmar dados.
+- Vinculação automática do `auth.uid()` com a linha correspondente em `promoters` ou `industries` via tabela `profiles`.
 
-Ações por promotor:
-- visualizar detalhes;
-- editar;
-- inativar/reativar;
-- excluir;
-- criar rota;
-- visualizar roteiro;
-- convidar para acesso, caso ainda não possua usuário vinculado.
-
-Regras:
-- Promotor pode ser cadastrado antes de ter login.
-- O login será vinculado posteriormente no módulo Usuários e Acessos.
-- Se o promotor já possuir visitas, roteiros ou evidências, bloquear exclusão definitiva e oferecer inativação.
-- Se o promotor não possuir vínculos, permitir exclusão definitiva após confirmação.
-
-2. MÓDULO LOJAS
-
-Criar listagem funcional com:
-- nome da loja;
-- endereço resumido;
-- cidade/UF;
-- status;
-- quantidade de indústrias vinculadas;
-- quantidade de visitas no mês.
-
-Botão “Nova loja” com formulário:
-- nome da loja obrigatório;
-- endereço;
-- número;
-- complemento;
-- bairro;
-- cidade;
-- estado;
-- CEP;
-- latitude;
-- longitude;
-- observação;
-- status ativo/inativo.
-
-Ações:
-- visualizar detalhes;
-- editar;
-- inativar/reativar;
-- excluir com confirmação.
-
-Regras:
-- Se houver visitas ou roteiros associados, bloquear exclusão definitiva e oferecer inativação.
-- Exibir motivo claro quando a exclusão for bloqueada.
-
-3. MÓDULO INDÚSTRIAS
-
-Criar listagem funcional com:
-- nome;
-- CNPJ, quando informado;
-- contato principal;
-- e-mail;
-- telefone;
-- status;
-- quantidade de lojas atendidas;
-- quantidade de visitas no mês.
-
-Botão “Nova indústria” com formulário:
-- nome obrigatório;
-- CNPJ opcional;
-- nome do contato principal;
-- e-mail;
-- telefone;
-- observação;
-- status ativo/inativo.
-
-Ações:
-- visualizar detalhes;
-- editar todos os dados;
-- inativar/reativar;
-- excluir com confirmação;
-- acessar visão da indústria;
-- convidar usuário da indústria.
-
-Regras:
-- Se houver visitas, roteiros, ocorrências, relatórios ou cobranças vinculadas, bloquear exclusão definitiva e oferecer inativação.
-- Não limitar a ação a somente ativar/inativar: a edição completa deve funcionar.
-
-4. QUALIDADE E TESTES
-
-Implementar:
-- pesquisa por nome;
-- filtros por status;
-- paginação ou carregamento progressivo, caso necessário;
-- formulário com validação de campos obrigatórios;
-- evitar e-mails duplicados quando houver vínculo de usuário;
-- tratamento amigável de erro;
-- estado vazio com botão para criar o primeiro registro.
-
-Teste obrigatório:
-- criar, editar e inativar um promotor;
-- criar, editar e inativar uma loja;
-- criar, editar e inativar uma indústria;
-- testar exclusão de registro sem vínculos;
-- testar bloqueio de exclusão de registro com visita ou roteiro vinculado;
-- confirmar que tudo persiste após recarregar a página.
-
-Ao finalizar, informe quais ações foram testadas e quais regras de exclusão foram implementadas.
-
-Quando ele concluir, teste você mesmo criando uma loja, uma indústria e um promotor reais. Depois seguimos para a Missão 2, que vai ligar esses cadastros aos logins, aos convites por e-mail e ao convite compartilhável por WhatsApp.
+Ao finalizar, teste o convite de um novo promotor e verifique se ele consegue logar e ver apenas os dados permitidos para o seu papel.
       </div>
     </div>
   );
