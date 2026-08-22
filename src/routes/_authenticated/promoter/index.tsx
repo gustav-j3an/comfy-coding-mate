@@ -41,7 +41,7 @@ function PromoterDashboard() {
           industry:industries(name)
         `)
         .eq('promoter_id', currentPromoterId)
-        .eq('scheduled_date', today)
+        .eq('scheduled_date', today as string)
         .order('visit_order', { ascending: true });
 
       if (error) throw error;
