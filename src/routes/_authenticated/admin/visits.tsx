@@ -292,6 +292,157 @@ function VisitsPage() {
           </Table>
         </div>
       </div>
+
+      <Dialog open={isAuditModalOpen} onOpenChange={setIsAuditModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex justify-between items-center">
+              <span>Auditoria de Visita</span>
+              {selectedVisit && (
+                <Badge variant="outline" className="ml-4 font-bold">
+                  {selectedVisit.stores?.name}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedVisit && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-slate-50 p-4 rounded-lg space-y-3">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <User className="w-4 h-4 text-blue-600" /> Detalhes da Execução
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Promotor</p>
+                        <p className="font-semibold">{selectedVisit.profiles?.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Indústria</p>
+                        <p className="font-semibold">{selectedVisit.industries?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Check-in</p>
+                        <p className="font-semibold">
+                          {selectedVisit.checkin_at ? format(new Date(selectedVisit.checkin_at), 'HH:mm', { locale: ptBR }) : '--:--'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase">Check-out</p>
+                        <p className="font-semibold">
+                          {selectedVisit.checkout_at ? format(new Date(selectedVisit.checkout_at), 'HH:mm', { locale: ptBR }) : '--:--'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-blue-600" /> Observações do Promotor
+                    </h3>
+                    <div className="bg-white border p-3 rounded-lg text-sm text-slate-600 min-h-[60px]">
+                      {selectedVisit.observation || 'Nenhuma observação informada.'}
+                    </div>
+                  </div>
+
+                  {selectedVisit.status === 'rejected' && (
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                      <h3 className="font-bold text-red-700 text-sm flex items-center gap-2 mb-1">
+                        <X className="w-4 h-4" /> Motivo da Reprovação
+                      </h3>
+                      <p className="text-sm text-red-600">{selectedVisit.rejection_reason}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-blue-600" /> Evidências
+                  </h3>
+                  
+                  {loadingEvidences ? (
+                    <div className="flex justify-center py-10">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    </div>
+                  ) : evidences.length === 0 ? (
+                    <div className="bg-slate-50 border-dashed border-2 p-8 text-center text-slate-500 rounded-lg">
+                      Nenhuma evidência anexada.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {evidences.map((ev, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden border bg-slate-100 aspect-square">
+                          {ev.file_type?.startsWith('image/') ? (
+                            <img 
+                              src={ev.signedUrl} 
+                              alt="evidencia" 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                              <FileText className="h-8 w-8 text-slate-400 mb-2" />
+                              <span className="text-[10px] font-bold text-slate-500 truncate w-full">
+                                {ev.evidence_type}
+                              </span>
+                            </div>
+                          )}
+                          <a 
+                            href={ev.signedUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          >
+                            <ExternalLink className="text-white h-6 w-6" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t space-y-4">
+                <h3 className="font-bold text-slate-800">Decisão da Auditoria</h3>
+                <Textarea 
+                  placeholder="Descreva o motivo caso deseje reprovar esta visita..."
+                  value={auditReason}
+                  onChange={(e) => setAuditReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAuditModalOpen(false)}
+              disabled={isAuditing}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleAudit('rejected')}
+              disabled={isAuditing}
+              className="font-bold"
+            >
+              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+              Reprovar
+            </Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700 font-bold"
+              onClick={() => handleAudit('approved')}
+              disabled={isAuditing}
+            >
+              {isAuditing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+              Aprovar Visita
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
