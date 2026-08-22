@@ -713,7 +713,12 @@ export type Database = {
       app_role: "admin" | "promoter" | "industry"
       route_status: "draft" | "published" | "archived"
       user_status: "pending" | "active" | "blocked"
-      visit_status: "pending" | "submitted" | "approved" | "rejected"
+      visit_status:
+        | "pending"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "planned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -844,7 +849,7 @@ export const Constants = {
       app_role: ["admin", "promoter", "industry"],
       route_status: ["draft", "published", "archived"],
       user_status: ["pending", "active", "blocked"],
-      visit_status: ["pending", "submitted", "approved", "rejected"],
+      visit_status: ["pending", "submitted", "approved", "rejected", "planned"],
     },
   },
 } as const
