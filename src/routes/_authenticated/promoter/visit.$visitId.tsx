@@ -155,9 +155,9 @@ function VisitExecution() {
       {/* Header */}
       <div className="bg-white border-b p-4 sticky top-0 z-10 flex items-center justify-between">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/promoter">
+          <button onClick={() => navigate({ to: '/promoter' })}>
             <ChevronLeft className="h-6 w-6" />
-          </Link>
+          </button>
         </Button>
         <h1 className="font-bold text-lg">Executar Visita</h1>
         <div className="w-10" />
@@ -303,22 +303,5 @@ function VisitExecution() {
         </Button>
       </div>
     </div>
-  );
-}
-
-// Sub-component Link used in Header
-function Link({ to, params, children, className }: any) {
-  const navigate = useNavigate();
-  return (
-    <a 
-      href={to} 
-      onClick={(e) => { 
-        e.preventDefault(); 
-        navigate({ to, params }); 
-      }}
-      className={className}
-    >
-      {children}
-    </a>
   );
 }

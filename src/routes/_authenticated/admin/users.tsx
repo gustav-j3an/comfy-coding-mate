@@ -92,26 +92,49 @@ function UserManagement() {
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
-    if (searchParams.invite === 'promoter' && searchParams.id) {
-      setInviteRole('promoter');
-      setSelectedPromoterId(searchParams.id);
-      setIsInviteOpen(true);
-      // Try to find the name/email from promoters list if already loaded
-      const p = promoters.find(item => item.id === searchParams.id);
-      if (p) {
-        setInviteName(p.name || '');
-        setInviteEmail(p.email || '');
+    const checkInviteParams = async () => {
+      if (searchParams.invite === 'promoter' && searchParams.id) {
+        setInviteRole('promoter');
+        setSelectedPromoterId(searchParams.id);
+        setIsInviteOpen(true);
+        
+        // If promoters are already loaded, try to find the one
+        if (promoters.length > 0) {
+          const p = promoters.find(item => item.id === searchParams.id);
+          if (p) {
+            setInviteName(p.name || '');
+            setInviteEmail(p.email || '');
+          }
+        } else {
+          // Fetch single promoter data if not loaded
+          const { data } = await supabase.from('promoters').select('*').eq('id', searchParams.id).single();
+          if (data) {
+            setInviteName(data.name || '');
+            setInviteEmail(data.email || '');
+          }
+        }
+      } else if (searchParams.invite === 'industry' && searchParams.id) {
+        setInviteRole('industry');
+        setSelectedIndustryId(searchParams.id);
+        setIsInviteOpen(true);
+        
+        if (industries.length > 0) {
+          const i = industries.find(item => item.id === searchParams.id);
+          if (i) {
+            setInviteName(i.contact_name || i.name || '');
+            setInviteEmail(i.email || '');
+          }
+        } else {
+          const { data } = await supabase.from('industries').select('*').eq('id', searchParams.id).single();
+          if (data) {
+            setInviteName(data.contact_name || data.name || '');
+            setInviteEmail(data.email || '');
+          }
+        }
       }
-    } else if (searchParams.invite === 'industry' && searchParams.id) {
-      setInviteRole('industry');
-      setSelectedIndustryId(searchParams.id);
-      setIsInviteOpen(true);
-      const i = industries.find(item => item.id === searchParams.id);
-      if (i) {
-        setInviteName(i.contact_name || i.name || '');
-        setInviteEmail(i.email || '');
-      }
-    }
+    };
+    
+    checkInviteParams();
   }, [searchParams, promoters, industries]);
 
   // Action states
