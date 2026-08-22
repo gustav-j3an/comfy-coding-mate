@@ -58,7 +58,8 @@ function RoutesPage() {
       
       const { data: routesData, error: routesError } = await supabase
         .from('routes')
-        .select('*');
+        .select('*, route_stops(id)')
+        .order('created_at', { ascending: false });
 
       if (routesError) throw routesError;
 
@@ -71,7 +72,7 @@ function RoutesPage() {
       const mappedRoutes: RouteItem[] = (routesData || []).map(r => ({
         ...r,
         promoter_name: promotersData?.find((p: any) => p.id === r.promoter_id)?.name || 'Desconhecido',
-        stop_count: Math.floor(Math.random() * 10) + 1, // Mock
+        stop_count: (r as any).route_stops?.length || 0,
       }));
 
       setRoutes(mappedRoutes);

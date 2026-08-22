@@ -64,9 +64,14 @@ function RouteEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const searchParams = Route.useSearch() as any;
+
   useEffect(() => {
+    if (searchParams.promoterId) {
+      setSelectedPromoterId(searchParams.promoterId);
+    }
     fetchInitialData();
-  }, []);
+  }, [searchParams.promoterId]);
 
   const fetchInitialData = async () => {
     try {
