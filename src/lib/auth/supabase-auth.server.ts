@@ -6,7 +6,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   
   // 1. Get token from Authorization header (for server functions/API)
-  let token = request.headers.get('Authorization')?.split('Bearer ')[1];
+  let token: string | undefined = request.headers.get('Authorization')?.split('Bearer ')[1];
   
   // 2. Fallback to cookies (for browser requests to API routes)
   if (!token) {
