@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import {
   Search, Download, 
   ChevronRight, Calendar, BarChart3,
   TrendingUp, TrendingDown, Factory, Loader2,
-  FileText, Plus, Eye, Send
+  FileText, Plus, Eye, Send, Package
 } from 'lucide-react';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
