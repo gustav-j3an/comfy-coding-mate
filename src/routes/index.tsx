@@ -52,68 +52,152 @@ function Briefing() {
       </div>
 
       <div className="mt-20 p-8 max-w-4xl mx-auto font-sans whitespace-pre-wrap leading-relaxed text-slate-300 text-[10px] border-t border-slate-200 opacity-50">
-MISSÃO 0 — Corrigir banco de dados, relacionamentos e erros de carregamento.
+Ótimo — a Missão 0 resolveu exatamente o bloqueio principal. Agora o dashboard e as telas passam a usar relações reais, não apenas cartões visuais.
 
-Não criar telas novas nesta missão. Corrigir primeiro todos os erros de dados e garantir que as telas existentes carreguem corretamente.
+Vamos para a Missão 1: fazer os três cadastros fundamentais funcionarem de ponta a ponta. Sem isso, não há como montar rotas reais.
 
-Erro atual a corrigir:
-“Could not find a relationship between 'visits' and 'promoter_id' in the schema cache”.
+Envie este comando ao Lovable:
 
-Tarefas:
+MISSÃO 1 — Cadastros reais de Promotores, Lojas e Indústrias.
 
-1. Inspecionar o schema real já criado no Supabase e identificar:
-- nome real da tabela de visitas;
-- nome real da tabela de promotores;
-- nome real das colunas de vínculo;
-- se o campo está nomeado como `promoter_id`, `promotor_id` ou outro nome;
-- se existe chave estrangeira válida entre visita e promotor.
+Objetivo:
+Fazer os módulos de cadastro funcionarem completamente com Supabase: criar, listar, pesquisar, editar, inativar e excluir com segurança.
 
-2. Corrigir as migrations e consultas sem apagar dados existentes.
-- A tabela de visitas deve ter vínculo válido com o promotor.
-- O vínculo deve ser uma chave estrangeira real no Supabase.
-- Ajustar as consultas do frontend para usar os nomes reais das tabelas e colunas.
-- Se já houver dados de teste incompatíveis, corrigir ou recriar somente os dados de teste.
-- Não apagar usuários, roteiros ou dados reais.
+Não criar ainda roteiros, cobranças ou exportações nesta missão.
 
-3. Validar relacionamentos necessários:
-- visita → promotor;
-- visita → loja;
-- visita → indústria;
-- visita → roteiro/parada, quando existir;
-- ocorrência → visita;
-- usuário → perfil;
-- usuário de indústria → indústria.
+REGRAS GERAIS:
+- Todos os formulários devem gravar dados reais no Supabase.
+- Após criar ou editar, atualizar a lista automaticamente.
+- Exibir mensagem clara de sucesso ou erro.
+- Usar confirmação antes de excluir.
+- Nunca usar dados falsos quando já existirem dados reais.
+- Dados de teste devem permanecer identificados e não podem ser apagados acidentalmente por ações normais.
+- Proteger todos os módulos para acesso exclusivo de administradores.
 
-4. Corrigir as seguintes telas, garantindo que não apresentem erro:
-- Visitas Previstas Hoje;
-- Visitas Enviadas Hoje;
-- Pendentes de Conferência;
-- Últimas Visitas Enviadas;
-- Visitas para Conferência;
-- visão da Indústria;
-- Relatórios Mensais.
+1. MÓDULO PROMOTORES
 
-5. Para cada tela, implementar estados:
-- carregando;
-- sem dados;
-- erro amigável;
-- dados carregados.
+Criar tela funcional de listagem com:
+- nome;
+- telefone;
+- e-mail;
+- região;
+- status ativo/inativo;
+- usuário de login vinculado, quando existir;
+- quantidade de visitas da semana;
+- última atividade.
 
-6. Teste obrigatório antes de finalizar:
-- criar ou usar um promotor de teste;
-- criar uma loja de teste;
-- criar uma indústria de teste;
-- criar uma visita vinculada corretamente aos três;
-- abrir Visitas Previstas Hoje;
-- abrir Visitas para Conferência;
-- abrir a visão da indústria;
-- confirmar que nenhuma tela exibe erro de relacionamento.
+Criar botão “Novo promotor” com formulário:
+- nome completo obrigatório;
+- telefone obrigatório;
+- e-mail;
+- região/cidade;
+- observação;
+- status ativo/inativo.
 
-Ao final, informar claramente:
-- qual era a causa do erro;
-- quais tabelas e campos foram corrigidos;
-- quais telas foram testadas;
-- quais dados de teste foram usados.
+Ações por promotor:
+- visualizar detalhes;
+- editar;
+- inativar/reativar;
+- excluir;
+- criar rota;
+- visualizar roteiro;
+- convidar para acesso, caso ainda não possua usuário vinculado.
+
+Regras:
+- Promotor pode ser cadastrado antes de ter login.
+- O login será vinculado posteriormente no módulo Usuários e Acessos.
+- Se o promotor já possuir visitas, roteiros ou evidências, bloquear exclusão definitiva e oferecer inativação.
+- Se o promotor não possuir vínculos, permitir exclusão definitiva após confirmação.
+
+2. MÓDULO LOJAS
+
+Criar listagem funcional com:
+- nome da loja;
+- endereço resumido;
+- cidade/UF;
+- status;
+- quantidade de indústrias vinculadas;
+- quantidade de visitas no mês.
+
+Botão “Nova loja” com formulário:
+- nome da loja obrigatório;
+- endereço;
+- número;
+- complemento;
+- bairro;
+- cidade;
+- estado;
+- CEP;
+- latitude;
+- longitude;
+- observação;
+- status ativo/inativo.
+
+Ações:
+- visualizar detalhes;
+- editar;
+- inativar/reativar;
+- excluir com confirmação.
+
+Regras:
+- Se houver visitas ou roteiros associados, bloquear exclusão definitiva e oferecer inativação.
+- Exibir motivo claro quando a exclusão for bloqueada.
+
+3. MÓDULO INDÚSTRIAS
+
+Criar listagem funcional com:
+- nome;
+- CNPJ, quando informado;
+- contato principal;
+- e-mail;
+- telefone;
+- status;
+- quantidade de lojas atendidas;
+- quantidade de visitas no mês.
+
+Botão “Nova indústria” com formulário:
+- nome obrigatório;
+- CNPJ opcional;
+- nome do contato principal;
+- e-mail;
+- telefone;
+- observação;
+- status ativo/inativo.
+
+Ações:
+- visualizar detalhes;
+- editar todos os dados;
+- inativar/reativar;
+- excluir com confirmação;
+- acessar visão da indústria;
+- convidar usuário da indústria.
+
+Regras:
+- Se houver visitas, roteiros, ocorrências, relatórios ou cobranças vinculadas, bloquear exclusão definitiva e oferecer inativação.
+- Não limitar a ação a somente ativar/inativar: a edição completa deve funcionar.
+
+4. QUALIDADE E TESTES
+
+Implementar:
+- pesquisa por nome;
+- filtros por status;
+- paginação ou carregamento progressivo, caso necessário;
+- formulário com validação de campos obrigatórios;
+- evitar e-mails duplicados quando houver vínculo de usuário;
+- tratamento amigável de erro;
+- estado vazio com botão para criar o primeiro registro.
+
+Teste obrigatório:
+- criar, editar e inativar um promotor;
+- criar, editar e inativar uma loja;
+- criar, editar e inativar uma indústria;
+- testar exclusão de registro sem vínculos;
+- testar bloqueio de exclusão de registro com visita ou roteiro vinculado;
+- confirmar que tudo persiste após recarregar a página.
+
+Ao finalizar, informe quais ações foram testadas e quais regras de exclusão foram implementadas.
+
+Quando ele concluir, teste você mesmo criando uma loja, uma indústria e um promotor reais. Depois seguimos para a Missão 2, que vai ligar esses cadastros aos logins, aos convites por e-mail e ao convite compartilhável por WhatsApp.
       </div>
     </div>
   );
