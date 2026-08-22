@@ -96,22 +96,6 @@ function AutomationPage() {
     }
   };
 
-  const handleTestWebhook = async () => {
-    try {
-      setIsTesting(true);
-      const result = await testWebhookFn();
-      if ((result as any)?.success) {
-        toast.success("Webhook enviado com sucesso!");
-      } else {
-        toast.error("Falha ao enviar webhook. Verifique os logs.");
-      }
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setIsTesting(false);
-    }
-  };
 
   const getPreviewFn = useServerFn(getCleanupPreview);
 
