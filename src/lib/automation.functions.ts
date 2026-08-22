@@ -15,7 +15,7 @@ export const getAutomationSettings = createServerFn({ method: "GET" })
     // Return connection status based on environment variables (backend only check)
     const isConfigured = !!(process.env['N8N_WEBHOOK_URL']);
     
-    const settings = data || {
+    const settings = (data as any) || {
       retention_days: 90,
       is_active: false
     };
