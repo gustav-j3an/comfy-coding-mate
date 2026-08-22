@@ -217,7 +217,7 @@ function VisitsPage() {
               <option value="submitted">Pendentes de Conferência</option>
               <option value="approved">Aprovadas</option>
               <option value="rejected">Rejeitadas</option>
-              <option value="pending">Agendadas</option>
+              <option value="planned">Agendadas</option>
             </select>
           </div>
           <Button variant="outline" className="flex items-center gap-2">
