@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { 
   Plus, Search, Filter, MoreVertical, 
   MapPin, Calendar, Clock, ArrowRight,
@@ -58,7 +59,8 @@ function RoutesPage() {
       
       const { data: routesData, error: routesError } = await supabase
         .from('routes')
-        .select('*');
+        .select('*, route_stops(id)')
+        .order('created_at', { ascending: false });
 
       if (routesError) throw routesError;
 
@@ -71,7 +73,9 @@ function RoutesPage() {
       const mappedRoutes: RouteItem[] = (routesData || []).map(r => ({
         ...r,
         promoter_name: promotersData?.find((p: any) => p.id === r.promoter_id)?.name || 'Desconhecido',
-        stop_count: Math.floor(Math.random() * 10) + 1, // Mock
+        stop_count: (r as any).route_stops?.length || 0,
+        status: (r as any).status || 'draft',
+        version: (r as any).version || 1
       }));
 
       setRoutes(mappedRoutes);
@@ -87,8 +91,7 @@ function RoutesPage() {
       toast.error('Selecione um promotor primeiro');
       return;
     }
-    toast.info('Navegando para criação de roteiro...');
-    // In a real implementation, we would navigate to /admin/routes/new?promoterId=...
+    navigate({ to: `/admin/routes/new`, search: { promoterId: selectedPromoterId } as any });
   };
 
   return (
@@ -159,8 +162,11 @@ function RoutesPage() {
                 <CardHeader className="pb-3 bg-slate-50/50">
                   <div className="flex justify-between items-start">
                     <div>
-                      <Badge variant={route.active ? 'default' : 'secondary'} className="mb-2">
-                        {route.active ? 'Publicado' : 'Rascunho'}
+                      <Badge variant={(route as any).status === 'published' ? 'default' : 'secondary'} className={cn(
+                        "mb-2",
+                        (route as any).status === 'published' ? "bg-green-600 hover:bg-green-700" : ""
+                      )}>
+                        {(route as any).status === 'published' ? 'Publicado' : 'Rascunho'}
                       </Badge>
                       <CardTitle className="text-lg text-slate-900">{route.name}</CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1 font-bold">
