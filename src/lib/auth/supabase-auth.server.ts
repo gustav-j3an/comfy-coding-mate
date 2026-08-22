@@ -10,7 +10,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
   const authHeader = request.headers.get('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const parts = authHeader.split('Bearer ');
-    if (parts.length > 1) {
+    if (parts.length > 1 && parts[1]) {
       token = parts[1];
     }
   }
