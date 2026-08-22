@@ -20,33 +20,51 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { z } from 'zod';
+
+const visitsSearchSchema = z.object({
+  filter: z.string().optional(),
+});
 
 export const Route = createFileRoute('/_authenticated/admin/visits')({
+  validateSearch: (search) => visitsSearchSchema.parse(search),
   component: VisitsPage,
 });
 
 function VisitsPage() {
+  const search = Route.useSearch();
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(search.filter || 'all');
 
   useEffect(() => {
     fetchVisits();
-  }, []);
+  }, [search.filter]);
 
   const fetchVisits = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('visits')
         .select(`
           *,
           profiles:promoter_id(full_name),
           stores:store_id(name, city),
           industries:industry_id(name)
-        `)
-        .order('scheduled_date', { ascending: false });
+        `);
+
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+      if (search.filter === 'predicted-today') {
+        query = query.eq('scheduled_date', todayStr).eq('status', 'pending');
+      } else if (search.filter === 'sent-today') {
+        query = query.eq('scheduled_date', todayStr).eq('status', 'submitted');
+      } else if (search.filter === 'pending') {
+        query = query.eq('status', 'submitted');
+      }
+
+      const { data, error } = await query.order('scheduled_date', { ascending: false });
 
       if (error) throw error;
       setVisits(data || []);

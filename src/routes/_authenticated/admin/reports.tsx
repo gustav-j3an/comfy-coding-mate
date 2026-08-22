@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, Filter, FileText, Download, 
   ChevronRight, Calendar, BarChart3,
-  TrendingUp, TrendingDown, Factory
+  TrendingUp, TrendingDown, Factory, Loader2
 } from 'lucide-react';
 import {
   Table,
@@ -26,28 +26,57 @@ export const Route = createFileRoute('/_authenticated/admin/reports')({
 
 function ReportsPage() {
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    avgPerformance: 0,
+    ruptureRate: 0,
+    totalVisits: 0
+  });
   const [industries, setIndustries] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchIndustries();
+    fetchData();
   }, []);
 
-  const fetchIndustries = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await (supabase as any)
-        .from('industries')
-        .select('*');
+      
+      const [industriesRes, visitsRes, occurrencesRes] = await Promise.all([
+        supabase.from('industries').select('*'),
+        supabase.from('visits').select('id, status'),
+        supabase.from('occurrences').select('id, type')
+      ]);
 
-      if (error) throw error;
-      setIndustries(data || []);
+      if (industriesRes.error) throw industriesRes.error;
+      
+      setIndustries(industriesRes.data || []);
+
+      const totalVisits = visitsRes.data?.length || 0;
+      const approvedVisits = visitsRes.data?.filter(v => v.status === 'approved').length || 0;
+      const performance = totalVisits > 0 ? (approvedVisits / totalVisits) * 100 : 0;
+      
+      const ruptureOccurrences = occurrencesRes.data?.filter(o => 
+        o.type?.toLowerCase().includes('ruptura') || o.type?.toLowerCase().includes('falta')
+      ).length || 0;
+      const ruptureRate = totalVisits > 0 ? (ruptureOccurrences / totalVisits) * 100 : 0;
+
+      setStats({
+        avgPerformance: performance,
+        ruptureRate: ruptureRate,
+        totalVisits: totalVisits
+      });
+
     } catch (error: any) {
-      toast.error('Erro ao carregar dados: ' + error.message);
+      toast.error('Erro ao carregar dados dos relatórios: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const filteredIndustries = industries.filter(ind => 
+    ind.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -65,37 +94,43 @@ function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold text-slate-500 uppercase">Performance Média</CardTitle>
+              <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">Performance Média</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-2xl font-black text-slate-900">94.8%</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums">
+                  {loading ? '...' : `${stats.avgPerformance.toFixed(1)}%`}
+                </div>
                 <div className="flex items-center text-green-600 text-xs font-bold">
-                  <TrendingUp className="w-3 h-3 mr-1" /> +2.4%
+                  <TrendingUp className="w-3 h-3 mr-1" /> Meta Atingida
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold text-slate-500 uppercase">Ruptura Média</CardTitle>
+              <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Ruptura</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-2xl font-black text-slate-900">3.2%</div>
-                <div className="flex items-center text-red-600 text-xs font-bold">
-                  <TrendingDown className="w-3 h-3 mr-1" /> -0.8%
+                <div className="text-2xl font-black text-slate-900 tabular-nums">
+                  {loading ? '...' : `${stats.ruptureRate.toFixed(1)}%`}
+                </div>
+                <div className="flex items-center text-blue-600 text-xs font-bold">
+                  <TrendingDown className="w-3 h-3 mr-1" /> Sob Controle
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-bold text-slate-500 uppercase">Visitas Realizadas</CardTitle>
+              <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total de Visitas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-2xl font-black text-slate-900">1,284</div>
+                <div className="text-2xl font-black text-slate-900 tabular-nums">
+                  {loading ? '...' : stats.totalVisits.toLocaleString('pt-BR')}
+                </div>
                 <div className="flex items-center text-blue-600 text-xs font-bold">
                   <Calendar className="w-3 h-3 mr-1" /> Mês Atual
                 </div>
@@ -105,17 +140,17 @@ function ReportsPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-            <div className="relative w-72">
+          <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input 
                 placeholder="Filtrar por indústria..." 
-                className="pl-10 h-9"
+                className="pl-10 h-9 bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="sm" className="font-bold">
+            <Button variant="outline" size="sm" className="font-bold w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" /> Exportar Todos
             </Button>
           </div>
@@ -132,18 +167,21 @@ function ReportsPage() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Carregando relatórios...
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                      Carregando relatórios...
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : industries.length === 0 ? (
+              ) : filteredIndustries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                    Nenhuma indústria para gerar relatórios.
+                    Nenhuma indústria encontrada para gerar relatórios.
                   </TableCell>
                 </TableRow>
               ) : (
-                industries.map((ind) => (
-                  <TableRow key={ind.id} className="hover:bg-slate-50 group">
+                filteredIndustries.map((ind) => (
+                  <TableRow key={ind.id} className="hover:bg-slate-50 group transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 shadow-sm">
@@ -153,13 +191,13 @@ function ReportsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="text-sm font-medium text-slate-600">Agosto / 2026</div>
+                      <div className="text-sm font-medium text-slate-600">Janeiro / 2026</div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge className="bg-green-100 text-green-700 border-none font-bold">Consolidado</Badge>
+                      <Badge className="bg-green-100 text-green-700 border-none font-bold hover:bg-green-100">Consolidado</Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" className="text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                         ABRIR <ChevronRight className="w-4 h-4" />
                       </Button>
                     </TableCell>
