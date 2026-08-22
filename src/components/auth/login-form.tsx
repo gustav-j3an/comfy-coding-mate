@@ -148,13 +148,24 @@ export function LoginForm() {
         </form>
       </Card>
 
-      <div className="text-center">
+      <div className="text-center space-y-4">
         <p className="text-sm text-slate-500">
           Não possui acesso?{' '}
           <span className="text-slate-900 font-semibold underline decoration-blue-500 underline-offset-4">
             Solicite seu cadastro ao administrador.
           </span>
         </p>
+
+        {hasAdmins === false && (
+          <div className="pt-2">
+            <Link 
+              to="/primeiro-acesso" 
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Primeiro acesso? Criar conta do administrador inicial
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
