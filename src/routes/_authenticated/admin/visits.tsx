@@ -94,6 +94,69 @@ function VisitsPage() {
     } finally {
       setLoading(false);
     }
+  const fetchEvidences = async (visitId: string) => {
+    try {
+      setLoadingEvidences(true);
+      const { data, error } = await supabase
+        .from('visit_evidence')
+        .select('*')
+        .eq('visit_id', visitId);
+
+      if (error) throw error;
+
+      // Get signed URLs for each evidence
+      const evidencesWithUrls = await Promise.all(
+        (data || []).map(async (ev) => {
+          try {
+            const url = await getSignedUrl({ data: { filePath: ev.file_path } });
+            return { ...ev, signedUrl: url };
+          } catch (e) {
+            console.error('Error getting signed URL:', e);
+            return ev;
+          }
+        })
+      );
+
+      setEvidences(evidencesWithUrls);
+    } catch (error: any) {
+      toast.error('Erro ao carregar evidências: ' + error.message);
+    } finally {
+      setLoadingEvidences(false);
+    }
+  };
+
+  const handleOpenAudit = (visit: any) => {
+    setSelectedVisit(visit);
+    setAuditReason(visit.rejection_reason || '');
+    setIsAuditModalOpen(true);
+    fetchEvidences(visit.id);
+  };
+
+  const handleAudit = async (decision: 'approved' | 'rejected') => {
+    if (decision === 'rejected' && !auditReason) {
+      toast.error('Informe o motivo da reprovação.');
+      return;
+    }
+
+    try {
+      setIsAuditing(true);
+      await auditVisit({
+        data: {
+          visitId: selectedVisit.id,
+          auditorId: authUser!.id,
+          decision,
+          reason: auditReason
+        }
+      });
+
+      toast.success(decision === 'approved' ? 'Visita aprovada!' : 'Visita reprovada.');
+      setIsAuditModalOpen(false);
+      fetchVisits();
+    } catch (error: any) {
+      toast.error('Erro ao auditar visita: ' + error.message);
+    } finally {
+      setIsAuditing(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
