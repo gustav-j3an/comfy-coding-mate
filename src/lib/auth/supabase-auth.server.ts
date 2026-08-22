@@ -6,7 +6,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
   const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
   
   // 1. Get token from Authorization header (for server functions/API)
-  let token: any = '';
+  let token = '';
   const authHeader = request.headers.get('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const parts = authHeader.split('Bearer ');
@@ -38,7 +38,7 @@ export async function requireSupabaseAuth({ request }: { request: Request }) {
     throw new Error('Unauthorized');
   }
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await supabaseAdmin.auth.getUser(token as any);
 
   if (error || !data.user) {
     throw new Error('Unauthorized');
