@@ -52,63 +52,47 @@ function Briefing() {
       </div>
 
       <div className="mt-20 p-8 max-w-4xl mx-auto font-sans whitespace-pre-wrap leading-relaxed text-slate-300 text-[10px] border-t border-slate-200 opacity-50">
-        Melhore a autenticação e a tela de login do sistema.
+        Implemente o processo real de criação da primeira conta de administrador.
 
-Regra de segurança:
-Não permitir cadastro público com escolha de perfil. Nenhuma pessoa pode criar sozinha uma conta de administrador, promotor ou indústria.
+Situação atual:
+A tela de login existe, mas ainda não há nenhum usuário para acessar o sistema.
 
-Modelo de acesso:
-- O primeiro administrador do sistema deve ser criado manualmente na configuração inicial.
-- Depois disso, somente administradores podem criar, convidar, editar, bloquear, reativar ou remover acessos.
-- Promotores e usuários de indústria devem receber um convite por e-mail para criar a própria senha.
-- Após realizar login, cada usuário deve ser redirecionado automaticamente para o painel do seu perfil.
+Criar fluxo de “Primeiro acesso”:
 
-Criar uma área administrativa chamada “Usuários e acessos”.
+- Criar rota `/primeiro-acesso`.
+- Essa rota só pode ficar disponível enquanto não existir nenhuma conta ativa com perfil administrador.
+- Quando já existir um administrador, bloquear essa rota e redirecionar para a tela de login.
+- Não usar conta falsa, login simulado ou dados apenas visuais. Usar Supabase Auth real.
 
-Nesta área, o administrador deve poder:
-- listar todos os usuários;
-- pesquisar por nome, e-mail, perfil e status;
-- criar convite para novo usuário;
-- escolher perfil: administrador, promotor ou indústria;
-- informar nome completo e e-mail;
-- para promotor, vincular ao cadastro de promotor;
-- para indústria, vincular obrigatoriamente a uma indústria específica;
-- reenviar convite;
-- bloquear acesso;
-- reativar acesso;
-- alterar e-mail;
-- redefinir senha por envio de e-mail;
-- visualizar data do último acesso;
-- visualizar status: convite pendente, ativo, bloqueado.
+Tela “Criar conta do administrador inicial”:
+- Nome completo;
+- E-mail;
+- Senha;
+- Confirmar senha;
+- Botão “Criar minha conta de administrador”.
+- Validar senha forte.
+- Criar usuário no Supabase Auth.
+- Criar automaticamente o perfil com função `administrador`.
+- Confirmar e-mail, conforme a configuração do Supabase.
+- Após criar a conta, redirecionar para `/admin`.
+- Exibir mensagem clara de sucesso.
 
-Fluxo de convite:
-- administrador clica em “Convidar usuário”;
-- preenche nome, e-mail e perfil;
-- sistema envia e-mail seguro de convite;
-- usuário abre o link;
-- cria a senha;
-- conta fica ativa;
-- ao entrar, é direcionado conforme o perfil:
-  - promotor: /promotor;
-  - administrador: /admin;
-  - indústria: /industria.
+Na tela de login:
+- Enquanto não existir nenhum administrador, exibir discretamente o link:
+  “Primeiro acesso? Criar conta do administrador inicial”.
+- Depois que o primeiro administrador for criado, remover esse link definitivamente.
+- Manter “Não possui acesso? Solicite seu cadastro ao administrador.” apenas como texto; não criar cadastro público.
 
-Melhorar a tela de login atual:
-- manter título “Rota do Promotor”;
-- usar um visual moderno, profissional e adequado ao celular;
-- incluir ícone/logo simples de rota ou localização;
-- campos E-mail e Senha;
-- botão para mostrar/ocultar senha;
-- checkbox “Lembrar meu acesso”;
-- link “Esqueci minha senha”;
-- botão principal “Entrar”;
-- abaixo, texto: “Não possui acesso? Solicite seu cadastro ao administrador.”
-- não mostrar botão de cadastro público;
-- mostrar mensagens claras para senha inválida, usuário bloqueado, convite pendente e erro de conexão;
-- adicionar tela de criação de senha pelo convite;
-- adicionar tela de recuperação de senha por e-mail.
+Criar uma verificação segura no banco:
+- Só pode existir criação aberta do primeiro administrador quando a contagem de administradores for zero.
+- Assim que o primeiro administrador existir, bloquear permanentemente o cadastro inicial.
+- Somente administradores autenticados podem convidar novos promotores, usuários de indústria ou outros administradores.
 
-Usar Supabase Auth para login, convite, recuperação de senha e gerenciamento de sessão. Garantir que cada usuário só consiga acessar dados permitidos pelo seu perfil.
+Antes de finalizar:
+- Testar o fluxo de criar administrador inicial;
+- testar login com esse administrador;
+- confirmar que ele é redirecionado ao painel `/admin`;
+- confirmar que a rota `/primeiro-acesso` fica bloqueada depois da criação.
       </div>
     </div>
   );
