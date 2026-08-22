@@ -31,6 +31,7 @@ import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authen
 import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
 import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
 import { Route as AuthenticatedPromoterVisitVisitIdRouteImport } from './routes/_authenticated/promoter/visit.$visitId'
+import { Route as ApiPublicReportsPdfRouteImport } from './routes/api/public/reports.pdf'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -154,6 +155,11 @@ const AuthenticatedPromoterVisitVisitIdRoute =
     path: '/promoter/visit/$visitId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicReportsPdfRoute = ApiPublicReportsPdfRouteImport.update({
+  id: '/api/public/reports/pdf',
+  path: '/api/public/reports/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
+  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/promoter': typeof AuthenticatedPromoterIndexRoute
   '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
+  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
   '/_authenticated/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/_authenticated/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
+  '/api/public/reports/pdf': typeof ApiPublicReportsPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/promoter/'
     | '/admin/routes/new'
     | '/promoter/visit/$visitId'
+    | '/api/public/reports/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/promoter'
     | '/admin/routes/new'
     | '/promoter/visit/$visitId'
+    | '/api/public/reports/pdf'
   id:
     | '__root__'
     | '/'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/'
     | '/_authenticated/admin/routes/new'
     | '/_authenticated/promoter/visit/$visitId'
+    | '/api/public/reports/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -304,6 +316,7 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   ApiPublicWebhookRoute: typeof ApiPublicWebhookRoute
+  ApiPublicReportsPdfRoute: typeof ApiPublicReportsPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -462,6 +475,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPromoterVisitVisitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/reports/pdf': {
+      id: '/api/public/reports/pdf'
+      path: '/api/public/reports/pdf'
+      fullPath: '/api/public/reports/pdf'
+      preLoaderRoute: typeof ApiPublicReportsPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -538,6 +558,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   ApiPublicWebhookRoute: ApiPublicWebhookRoute,
+  ApiPublicReportsPdfRoute: ApiPublicReportsPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
