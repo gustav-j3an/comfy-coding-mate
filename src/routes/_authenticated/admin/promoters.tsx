@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Plus, Search, Filter, MoreVertical, 
   UserPlus, MapPin, Calendar, ExternalLink,
-  Edit, ShieldAlert
+  Edit, ShieldAlert, Clock
 } from 'lucide-react';
 import {
   Table,
