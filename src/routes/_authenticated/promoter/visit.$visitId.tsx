@@ -307,12 +307,15 @@ function VisitExecution() {
 }
 
 // Sub-component Link used in Header
-function Link({ to, children, className }: any) {
+function Link({ to, params, children, className }: any) {
   const navigate = useNavigate();
   return (
     <a 
       href={to} 
-      onClick={(e) => { e.preventDefault(); navigate({ to }); }}
+      onClick={(e) => { 
+        e.preventDefault(); 
+        navigate({ to, params }); 
+      }}
       className={className}
     >
       {children}
