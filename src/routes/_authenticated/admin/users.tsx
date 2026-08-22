@@ -156,16 +156,8 @@ function UserManagement() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input id="name" placeholder="Ex: João Silva" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" placeholder="joao@exemplo.com" />
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="role">Perfil</Label>
-                <Select>
+                <Select value={inviteRole} onValueChange={(val: any) => setInviteRole(val)}>
                   <SelectTrigger id="role">
                     <SelectValue placeholder="Selecione um perfil" />
                   </SelectTrigger>
@@ -176,9 +168,50 @@ function UserManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {inviteRole === 'promoter' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="promoter">Vincular a Promotor Cadastrado</Label>
+                  <Select value={selectedPromoterId} onValueChange={setSelectedPromoterId}>
+                    <SelectTrigger id="promoter">
+                      <SelectValue placeholder="Selecione o promotor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {promoters.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {inviteRole === 'industry' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="industry">Vincular a Indústria Cadastrada</Label>
+                  <Select value={selectedIndustryId} onValueChange={setSelectedIndustryId}>
+                    <SelectTrigger id="industry">
+                      <SelectValue placeholder="Selecione a indústria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {industries.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input id="name" placeholder="Ex: João Silva" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input id="email" type="email" placeholder="joao@exemplo.com" />
+              </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">Enviar Convite</Button>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 font-bold">Enviar Convite</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
