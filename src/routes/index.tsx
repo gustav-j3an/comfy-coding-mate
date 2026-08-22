@@ -15,5 +15,6 @@ export const Route = createFileRoute('/')({
 });
 
 function Index() {
-  return <Navigate to="/_authenticated" />;
+  // Using "/admin" as a safe fallback that is part of the valid route set
+  return <Navigate to="/admin" />;
 }
