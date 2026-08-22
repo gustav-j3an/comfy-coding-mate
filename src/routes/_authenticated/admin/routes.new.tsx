@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ChevronLeft, Plus, Trash2, GripVertical, 
-  Save, Calendar, Info
+  Save, Calendar, Info, Building2, Clock, MapPin
 } from 'lucide-react';
 import {
   Select,
@@ -210,7 +210,8 @@ function RouteEditorPage() {
     return <div className="p-8 text-center text-slate-500 font-sans">Carregando editor...</div>;
   }
 
-  const currentDayName = DAYS_OF_WEEK.find(d => d.id === selectedDay)?.name || '';
+  const currentDay = DAYS_OF_WEEK.find(d => d.id === selectedDay);
+  const currentDayName = currentDay ? currentDay.name : '';
   const currentStops = stopsByDay[selectedDay] || [];
 
   return (
