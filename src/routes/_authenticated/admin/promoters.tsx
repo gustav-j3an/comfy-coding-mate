@@ -358,9 +358,14 @@ function PromotersPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       {promoter.profiles && promoter.profiles.length > 0 ? (
-                        <Badge className="bg-green-50 text-green-700 border-green-100 font-bold hover:bg-green-50">
-                          VINCULADO
-                        </Badge>
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge className="bg-green-50 text-green-700 border-green-100 font-bold hover:bg-green-50">
+                            VINCULADO
+                          </Badge>
+                          <span className="text-[10px] text-slate-400">
+                            ID: {promoter.profiles[0].id.substring(0, 8)}...
+                          </span>
+                        </div>
                       ) : (
                         <Badge variant="outline" className="text-[10px] font-bold text-slate-400">
                           NÃO VINCULADO
