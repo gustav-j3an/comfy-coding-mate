@@ -189,9 +189,9 @@ function AdminDashboard() {
     { 
       label: 'Ocorrências Abertas', 
       value: loading ? '...' : realStats.occurrences.toString(), 
-      color: 'text-red-600', 
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-100',
+      color: realStats.critical > 0 ? 'text-red-600' : 'text-amber-600', 
+      bgColor: realStats.critical > 0 ? 'bg-red-50' : 'bg-amber-50',
+      borderColor: realStats.critical > 0 ? 'border-red-100' : 'border-amber-100',
       to: '/admin/occurrences' as const,
       search: { status: 'open' }
     },
