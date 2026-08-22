@@ -15,10 +15,12 @@ export const Route = createFileRoute('/primeiro-acesso')({
     const { data, error } = await (supabase as any).rpc('get_admin_count');
     if (error) {
       console.error('Error checking admin count:', error);
+      // If the function doesn't exist, we assume no admins (though in production we should handle this)
     }
     
+    // Explicitly check if data is null or 0. If it's > 0, redirect.
     if (data !== null && Number(data) > 0) {
-      throw redirect({ to: '/admin' });
+      throw redirect({ to: '/' }); // Redirect to home/login
     }
     return { adminCount: Number(data) };
   },
