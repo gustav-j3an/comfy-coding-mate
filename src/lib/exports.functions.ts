@@ -17,11 +17,12 @@ export const createExportTask = createServerFn({ method: "POST" })
     filters: exportFiltersSchema,
     industryId: z.string().optional()
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, request }) => {
+    const { user } = await requireSupabaseAuth({ request });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    // In a real environment, we'd get this from context
-    const userId = '00000000-0000-0000-0000-000000000000';
+    const userId = user.id;
+
 
     const { data: task, error } = await (supabaseAdmin
       .from('export_tasks' as any) as any)
