@@ -67,12 +67,18 @@ function IndustryPortal() {
           <Button variant="ghost" className="w-full justify-start text-white hover:bg-slate-800 bg-slate-800">
             <LayoutDashboard className="mr-2 h-4 w-4" /> Relatórios Mensais
           </Button>
+          <Link to="/industry/exports">
+            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
+              <Package className="mr-2 h-4 w-4" /> Exportações
+            </Button>
+          </Link>
           <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
             <Image className="mr-2 h-4 w-4" /> Evidências
           </Button>
           <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800">
             <AlertCircle className="mr-2 h-4 w-4" /> Ocorrências
           </Button>
+
         </nav>
         <div className="p-4 border-t border-slate-800">
           <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white" onClick={() => signOut()}>
