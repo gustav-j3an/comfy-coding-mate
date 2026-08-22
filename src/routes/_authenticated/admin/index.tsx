@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
