@@ -30,7 +30,7 @@ function PromoterDashboard() {
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
       const currentUserId = user?.id;
-      const currentPromoterId = profile?.promoter_id;
+      const currentPromoterId = profile?.promoter_id || null;
       if (!currentUserId) return [];
       
       let query = supabase
@@ -123,7 +123,7 @@ function PromoterDashboard() {
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700">
                   <Link 
                     to={"/promoter/visit/$visitId" as any} 
-                    params={{ visitId: nextStop.id } as any}
+                    params={{ visitId: String(nextStop.id) } as any}
                   >
                     Iniciar Visita
                     <ChevronRight className="ml-2 h-4 w-4" />
@@ -153,7 +153,7 @@ function PromoterDashboard() {
                 <Link 
                   key={visit.id} 
                   to={"/promoter/visit/$visitId" as any}
-                  params={{ visitId: visit.id } as any}
+                  params={{ visitId: String(visit.id) } as any}
                   className="block"
                 >
                   <Card className={`overflow-hidden transition-all hover:shadow-md border-none ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
