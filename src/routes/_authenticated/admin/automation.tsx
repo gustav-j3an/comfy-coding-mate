@@ -26,7 +26,6 @@ import {
   getAutomationSettings, 
   updateAutomationSettings, 
   getWebhookLogs, 
-  testWebhook,
   getCleanupPreview,
   executeManualCleanup 
 } from '@/lib/automation.functions';
