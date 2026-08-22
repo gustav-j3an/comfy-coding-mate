@@ -8,7 +8,8 @@ import {
   AlertCircle, Eye, ChevronRight, MapPin,
   Calendar, User, X, Check, Loader2,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import {
   Table,
