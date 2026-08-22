@@ -23,6 +23,16 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { z } from 'zod';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { auditVisit, getSignedUrl } from '@/lib/execution.functions';
+import { useAuth } from '@/lib/auth/auth-context';
+import { Textarea } from '@/components/ui/textarea';
 
 const visitsSearchSchema = z.object({
   filter: z.string().optional(),
