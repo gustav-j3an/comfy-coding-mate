@@ -3,6 +3,109 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
+ * Starts a scheduled visit based on a route stop.
+ * Reuses existing visit if already created for that day/promoter/stop.
+ */
+export const startScheduledVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({
+    routeStopId: z.string(),
+    date: z.string(), // ISO date string (YYYY-MM-DD)
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // 1. Resolve promoter_id
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('promoter_id')
+      .eq('id', userId)
+      .single();
+    
+    if (profileError || !profile?.promoter_id) {
+      throw new Error("Usuário não vinculado a um promotor.");
+    }
+
+    const promoterId = profile.promoter_id;
+    const { routeStopId, date: scheduledDate } = data;
+
+    // Validate that the date is today
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (scheduledDate !== todayStr) {
+      throw new Error("Você só pode iniciar visitas na data programada (hoje).");
+    }
+
+    // 2. Resolve Route Stop details
+    const { data: stop, error: stopError } = await supabaseAdmin
+      .from('route_stops')
+      .select(`
+        *,
+        route:routes(*)
+      `)
+      .eq('id', routeStopId)
+      .single();
+
+    if (stopError || !stop) {
+      throw new Error("Parada de roteiro não encontrada.");
+    }
+
+    // Validate ownership and status
+    if (stop.route.promoter_id !== promoterId) {
+      throw new Error("Esta parada não pertence ao seu roteiro.");
+    }
+    if (!stop.route.active || stop.route.status !== 'published') {
+      throw new Error("O roteiro de origem não está ativo ou publicado.");
+    }
+
+    // 3. Find existing visit for this stop/date/promoter
+    const { data: existingVisit } = await supabaseAdmin
+      .from('visits')
+      .select('id')
+      .eq('promoter_id', promoterId)
+      .eq('store_id', stop.store_id)
+      .eq('scheduled_date', scheduledDate)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingVisit) {
+      return { visitId: existingVisit.id };
+    }
+
+    // 4. Materialize new visit
+    // We get tasks to know if there's a primary industry or just use the first one if multiple
+    const { data: tasks } = await supabaseAdmin
+      .from('stop_tasks')
+      .select('industry_id')
+      .eq('route_stop_id', routeStopId);
+    
+    const industryId = tasks && tasks.length > 0 ? tasks[0].industry_id : null;
+
+    const { data: newVisit, error: insertError } = await supabaseAdmin
+      .from('visits')
+      .insert({
+        promoter_id: promoterId,
+        store_id: stop.store_id,
+        industry_id: industryId, // Note: The app handles multi-industry within a visit via grouped logic
+        scheduled_date: scheduledDate,
+        status: 'pending',
+        route_id: stop.route_id,
+        observation: stop.observation
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      console.error('Error materializing visit:', insertError);
+      throw new Error("Não foi possível iniciar a visita no servidor.");
+    }
+
+    return { visitId: newVisit.id };
+  });
+
+/**
  * Gets the promoter's agenda for a specific date, merging planned route stops and materialized visits.
  */
 export const getPromoterAgenda = createServerFn({ method: "GET" })
@@ -96,9 +199,6 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
       for (const route of activeRoutes) {
         const stopsForDay = (route.route_stops || []).filter((s: any) => {
           const stopDay = Number(s.day_of_week);
-          // Standardize Sunday as 0, Monday as 1...
-          // If the DB stores Monday as 0, we need to adjust.
-          // Let's assume dayOfWeek matches stopDay directly (JS standard)
           return stopDay === dayOfWeek;
         });
         
@@ -121,6 +221,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
               if (!isAlreadyMaterialized) {
                 theoreticalVisits.push({
                   id: `theoretical-${stop.id}-${task.industry_id}`,
+                  route_stop_id: stop.id, // For materialization
                   store_id: stop.store_id,
                   industry_id: task.industry_id,
                   status: 'planned',
@@ -131,7 +232,8 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
                   observation: stop.observation,
                   frequency: stop.frequency,
                   is_theoretical: true,
-                  route_id: route.id
+                  route_id: route.id,
+                  route_name: route.name
                 });
               }
             }
