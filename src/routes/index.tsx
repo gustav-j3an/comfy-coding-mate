@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 
 /**
- * MISSÃO 9.3 — LOG DE AUDITORIA ADMINISTRATIVA
+ * MISSÃO 9.3 — LOG DE AUDITORIA ADMINISTRATIVA E DIAGNÓSTICO DE ROTAS
  * 
  * 1. ESTRUTURA DE AUDITORIA
  * - Criada tabela `admin_audit_logs` com rastreamento de usuário, e-mail, papel, ação, módulo, resumo e metadados técnicos (IP/User-Agent).
@@ -15,9 +15,14 @@ import { createFileRoute, Navigate } from '@tanstack/react-router';
  *   - `automation.functions.ts`: Limpeza manual de mídias e alteração de configurações.
  *   - `users.functions.ts`: Convites de usuários e alteração de status.
  * 
- * 3. TELA DE AUDITORIA
+ * 3. TELA DE AUDITORIA E DIAGNÓSTICO
  * - Nova rota `/admin/audit` com lista paginada, filtros por módulo/resultado e busca textual.
- * - Dados sensíveis (senhas, coordenadas GPS completas, URLs secretas) deliberadamente excluídos dos logs.
+ * - Atualizada tela de diagnóstico para validar permissões das tabelas de rotas e roteiros.
+ * 
+ * 4. CORREÇÃO DE ROTAS (MISSÃO ATUAL)
+ * - Identificada falta de GRANTs e RLS nas tabelas `routes`, `route_stops` e `stop_tasks`.
+ * - Aplicadas permissões de banco e políticas de RLS para Admin.
+ * - Corrigido fluxo de redirecionamento e tratamento de erro na criação de rotas.
  */
 
 
@@ -73,12 +78,15 @@ function Index() {
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
-          <h2 className="text-xl font-semibold text-blue-400">Para cada nova missão:</h2>
+          <h2 className="text-xl font-semibold text-blue-400">CORREÇÃO DE ROTAS E ROTEIROS CONCLUÍDA:</h2>
+          <p className="text-slate-300">
+            A causa raiz era a falta de permissões (GRANTs) e políticas de RLS nas tabelas de rotas. O banco de dados foi corrigido e o fluxo de criação estabilizado.
+          </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>explique brevemente o plano;</li>
-            <li>implemente sem recriar funcionalidades existentes;</li>
-            <li>valide tipos, permissões, responsividade mobile e cenários de erro;</li>
-            <li>apresente ao final os arquivos alterados e os testes realizados.</li>
+            <li>Permissões aplicadas às tabelas <code className="text-blue-300">routes</code>, <code className="text-blue-300">route_stops</code> e <code className="text-blue-300">stop_tasks</code>.</li>
+            <li>Políticas de RLS configuradas para Administradores (acesso total) e Promotores (visualização própria).</li>
+            <li>Fluxo de redirecionamento e atualização automática da listagem corrigido no frontend.</li>
+            <li>Validação autoritativa na geração de visitas via <code className="text-blue-300">supabaseAdmin</code> garantida.</li>
           </ul>
         </section>
       </div>

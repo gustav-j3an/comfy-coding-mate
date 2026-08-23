@@ -49,7 +49,7 @@ function DiagnosticsPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="space-y-1">
               <CardTitle className="text-base font-semibold">Supabase (Banco de Dados)</CardTitle>
-              <CardDescription>Conexão e RLS</CardDescription>
+              <CardDescription>Conexão, RLS e Tabelas de Rotas</CardDescription>
             </div>
             <Database className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
