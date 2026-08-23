@@ -2,6 +2,8 @@ import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { useAuth } from '@/lib/auth/auth-context';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export const Route = createFileRoute('/_authenticated/admin')({
   component: AdminLayout,
