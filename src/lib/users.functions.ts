@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getPublicAppUrl } from "./app-config";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
