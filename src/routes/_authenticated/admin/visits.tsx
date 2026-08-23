@@ -226,15 +226,16 @@ function VisitsPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-bold text-slate-700">Data / Loja</TableHead>
-                <TableHead className="font-bold text-slate-700">Promotor / Indústria</TableHead>
-                <TableHead className="font-bold text-slate-700">Status</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Data / Loja</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Promotor / Indústria</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Status</TableHead>
+                  <TableHead className="w-[100px]"></TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -251,7 +252,7 @@ function VisitsPage() {
               ) : (
                 filteredVisits.map((visit) => (
                   <TableRow key={visit.id} className="hover:bg-slate-50 transition-colors group">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase">
                           <Calendar className="w-3 h-3" />
@@ -264,7 +265,7 @@ function VisitsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-sm font-semibold text-slate-700">
                           <User className="w-3 h-3 text-slate-400" />
@@ -277,7 +278,7 @@ function VisitsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {getStatusBadge(visit.status)}
                     </TableCell>
                     <TableCell>
@@ -294,7 +295,8 @@ function VisitsPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
 
