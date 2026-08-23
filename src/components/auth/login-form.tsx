@@ -60,7 +60,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-8">
+    <div className="w-full max-w-md mx-auto space-y-8 px-2 sm:px-0">
       <div className="text-center space-y-2">
         <div className="flex justify-center">
           <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200">
@@ -71,7 +71,7 @@ export function LoginForm() {
         <p className="text-slate-500 text-sm">Bem-vindo de volta! Entre com seus dados.</p>
       </div>
 
-      <Card className="border-none shadow-xl shadow-slate-200/60 bg-white/80 backdrop-blur-sm">
+      <Card className="border-none shadow-xl shadow-slate-200/60 bg-white/80 backdrop-blur-sm mx-auto">
         <form onSubmit={handleLogin}>
           <CardContent className="pt-8 space-y-6">
             <div className="space-y-2">

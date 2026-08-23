@@ -57,7 +57,7 @@ function IndustryPortal() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 overflow-x-hidden">
       <aside className="w-64 bg-slate-900 text-white hidden md:flex flex-col">
         <div className="p-6">
           <h1 className="text-xl font-bold text-blue-400">Portal Indústria</h1>
@@ -93,14 +93,14 @@ function IndustryPortal() {
       </aside>
 
       <main className="flex-1 overflow-auto">
-        <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-10">
+        <header className="bg-white border-b p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 z-10 gap-2">
           <h2 className="text-lg font-bold text-slate-800">Relatórios Publicados</h2>
           <Badge variant="outline" className="font-bold border-blue-200 text-blue-700 bg-blue-50">
             <Factory className="h-3 w-3 mr-1" /> {user?.email}
           </Badge>
         </header>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
