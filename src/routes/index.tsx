@@ -97,15 +97,15 @@ function Index() {
         </h1>
         
         <section className="space-y-4 pt-4 text-blue-300">
-          <h2 className="text-xl font-semibold text-blue-400">MISSÃO 13 — RESPONSIVIDADE TOTAL (100%)</h2>
+          <h2 className="text-xl font-semibold text-blue-400">REFORÇO DE SEGURANÇA — PRÉ-VISUALIZAÇÃO COMO PROMOTOR</h2>
           <p className="text-slate-300">
-            A aplicação foi submetida a uma revisão completa de layout para garantir compatibilidade em todos os dispositivos.
+            A autorização para o modo de visualização administrativa foi reforçada com validações autoritativas no servidor.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li><span className="font-bold text-white">Layout Fluído:</span> Removidos widths fixos e implementados grids/flexbox adaptáveis.</li>
-            <li><span className="font-bold text-white">Mobile-First:</span> Ajustes de padding, toque e visibilidade específicos para telas abaixo de 480px.</li>
-            <li><span className="font-bold text-white">Tabelas e Modais:</span> Implementado scroll horizontal em tabelas e modais full-screen em dispositivos pequenos.</li>
-            <li><span className="font-bold text-white">Navegação:</span> Sidebar e menus otimizados para tablets e desktops ultrawide.</li>
+            <li><span className="font-bold text-white">Validação Server-side:</span> Toda requisição de dados de terceiros agora exige confirmação do papel Admin no backend.</li>
+            <li><span className="font-bold text-white">Bloqueio de Escrita:</span> O modo preview é estritamente "Somente Leitura" no backend, impedindo forjas de requisição.</li>
+            <li><span className="font-bold text-white">Isolamento de Sessão:</span> O contexto de pré-visualização é zerado ao deslogar, impedindo persistência indevida.</li>
+            <li><span className="font-bold text-white">Integridade:</span> Validação da existência e status do promotor alvo antes da liberação dos dados.</li>
           </ul>
         </section>
 
