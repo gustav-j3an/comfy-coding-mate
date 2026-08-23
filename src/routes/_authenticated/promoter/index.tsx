@@ -32,6 +32,23 @@ function PromoterDashboard() {
   const { user, profile } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
+  const [online, setOnline] = useState(isOnline());
+  const [syncQueueSize, setSyncQueueSize] = useState(0);
+
+  useEffect(() => {
+    const handleStatus = () => setOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    
+    // Check sync queue
+    getSyncQueue().then(queue => setSyncQueueSize(queue.length));
+
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
   const { data: visits } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
@@ -39,25 +56,33 @@ function PromoterDashboard() {
       const currentPromoterId = profile?.promoter_id || null;
       if (!currentUserId) return [];
       
-      let query = supabase
-        .from('visits')
-        .select(`
-          *,
-          store:stores(name, address),
-          industry:industries(name)
-        `)
-        .eq('scheduled_date', today as any);
+      try {
+        let query = supabase
+          .from('visits')
+          .select(`
+            *,
+            store:stores(name, address),
+            industry:industries(name)
+          `)
+          .eq('scheduled_date', today as any);
 
-      if (currentPromoterId) {
-        query = query.eq('promoter_id', currentPromoterId);
-      } else {
-        query = query.eq('executor_id', currentUserId);
+        if (currentPromoterId) {
+          query = query.eq('promoter_id', currentPromoterId);
+        } else {
+          query = query.eq('executor_id', currentUserId);
+        }
+
+        const { data, error } = await query.order('visit_order', { ascending: true });
+
+        if (error) throw error;
+        
+        // Update cache for offline use
+        await cachePromoterVisits(data || []);
+        return data || [];
+      } catch (err) {
+        console.warn('Network error, loading from cache:', err);
+        return await getCachedVisits();
       }
-
-      const { data, error } = await query.order('visit_order', { ascending: true });
-
-      if (error) throw error;
-      return data;
     }
   });
 
