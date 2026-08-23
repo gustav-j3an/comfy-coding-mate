@@ -300,18 +300,34 @@ export const deleteRouteSafely = createServerFn({ method: "POST" })
       throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
     }
 
-    // 1. Check if route has executed visits
-    const { data: executedVisits, error: visitError } = await supabaseAdmin
-      .from('visits')
-      .select('id')
-      .eq('route_id' as any, routeId)
-      .neq('status', 'planned' as any)
-      .limit(1);
+    // 1. Check if route has executed visits (visits are linked by promoter + store)
+    const { data: routeRow, error: routeErr } = await supabaseAdmin
+      .from('routes')
+      .select('id, promoter_id, route_stops(store_id)')
+      .eq('id', routeId)
+      .maybeSingle();
 
-    if (visitError) throw visitError;
+    if (routeErr) throw routeErr;
+    if (!routeRow) throw new Error("Rota não encontrada.");
 
-    if (executedVisits && executedVisits.length > 0) {
-      throw new Error("Esta rota possui histórico de visitas executadas e não pode ser excluída. Tente arquivá-la.");
+    const storeIds = Array.from(
+      new Set((((routeRow as any).route_stops || []) as any[]).map((s) => s.store_id).filter(Boolean))
+    );
+
+    if ((routeRow as any).promoter_id && storeIds.length > 0) {
+      const { data: executedVisits, error: visitError } = await supabaseAdmin
+        .from('visits')
+        .select('id')
+        .eq('promoter_id', (routeRow as any).promoter_id)
+        .in('store_id', storeIds as string[])
+        .neq('status', 'planned' as any)
+        .limit(1);
+
+      if (visitError) throw visitError;
+
+      if (executedVisits && executedVisits.length > 0) {
+        throw new Error("Esta rota possui histórico de visitas executadas e não pode ser excluída. Tente arquivá-la.");
+      }
     }
 
     // 2. Delete route (cascading will handle stops and stop_tasks)
