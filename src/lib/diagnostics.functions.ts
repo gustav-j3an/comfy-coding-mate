@@ -29,13 +29,24 @@ export const getDiagnosticStatus = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
+    // Check Routes RLS & Permissions
+    const { error: routesError } = await supabaseAdmin
+      .from('routes')
+      .select('id')
+      .limit(1);
+
+    const { error: stopsError } = await supabaseAdmin
+      .from('route_stops')
+      .select('id')
+      .limit(1);
+
     // Environment variables status
     const n8nConfigured = !!process.env['N8N_WEBHOOK_URL'] && !!process.env['N8N_HMAC_SECRET'];
 
     return {
       supabase: {
-        status: !supabaseError ? 'ok' : 'error',
-        message: supabaseError?.message
+        status: !supabaseError && !routesError && !stopsError ? 'ok' : 'error',
+        message: supabaseError?.message || routesError?.message || stopsError?.message
       },
       automation: {
         status: n8nConfigured ? 'ok' : 'missing_env',
