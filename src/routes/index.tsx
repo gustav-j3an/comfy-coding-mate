@@ -38,61 +38,71 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        O bloqueio provavelmente não é mais do WhatsApp: o navegador bloqueia quando o sistema tenta abrir uma nova aba **depois** de esperar a geração do convite no servidor. Para o navegador, isso parece um pop-up automático.
+        A imagem confirma que o bloqueio agora vem do próprio WhatsApp/WebView do navegador (`ERR_BLOCKED_BY_RESPONSE`), não do botão do sistema. Não dá para “forçar” o WhatsApp Web a aceitar esse link; insistir no mesmo endereço continuará bloqueando.
 
-        A solução é não abrir o WhatsApp automaticamente após o carregamento. Primeiro o sistema gera o link; depois mostra um botão real para você clicar: **Abrir conversa no WhatsApp Web**.
+        A solução mais confiável sem API é usar o **WhatsApp Desktop** quando estiver instalado e, se ele não abrir, copiar a mensagem pronta para colar manualmente no WhatsApp Web.
 
         Cole este prompt no Lovable:
 
-        CORREÇÃO DEFINITIVA — NAVEGADOR BLOQUEIA A ABERTURA DO WHATSAPP WEB
+        CORREÇÃO FINAL — WHATSAPP WEB RETORNA `ERR_BLOCKED_BY_RESPONSE`
 
-        O convite por WhatsApp continua sendo bloqueado.
+        A abertura de:
 
-        Não use `window.open()` automaticamente após `await`, resposta de servidor, timeout ou qualquer operação assíncrona. O navegador trata isso como pop-up e pode bloquear.
+        `https://web.whatsapp.com/send?...`
 
-        IMPLEMENTE ESTE FLUXO:
+        também está sendo bloqueada com `ERR_BLOCKED_BY_RESPONSE`.
 
-        1. Admin clica em `Gerar convite por WhatsApp`.
-        2. O backend gera o link seguro.
-        3. A interface mostra um diálogo de confirmação com:
-           - nome do promotor;
-           - telefone parcialmente mascarado;
-           - mensagem pronta;
-           - botão real:
-             `Abrir conversa no WhatsApp Web`;
-           - botões:
-             `Copiar mensagem` e `Copiar link de acesso`.
-        4. O botão “Abrir conversa no WhatsApp Web” deve ser um link HTML real, não `window.open`:
-           - `href="https://web.whatsapp.com/send?phone=[NUMERO]&text=[MENSAGEM]"`
-           - `target="_blank"`
-           - `rel="noopener noreferrer"`
-5. O Admin clica diretamente nesse link para abrir a conversa.
-6. Em celular, apresente link real para:
-   - `https://wa.me/[NUMERO]?text=[MENSAGEM]`
+        Não tente contornar bloqueios do WhatsApp, navegador, WebView ou política de rede. Não use iframe, automação, API não oficial ou envio automático.
 
-REGRAS
+        SUBSTITUA O FLUXO ATUAL POR DUAS OPÇÕES EXPLÍCITAS
 
-- Remova qualquer referência a `api.whatsapp.com`.
-- Não abra WhatsApp automaticamente.
-- Não use iframe.
-- Não use popup automático.
-- Não use automação de navegador ou API.
-- Preserve a geração segura do link de acesso no backend.
-- O Admin continua sendo responsável pelo clique final de envio no WhatsApp.
+        Após gerar o convite seguro, mostrar um diálogo com:
 
-TESTE NO SITE PUBLICADO
+        1. Botão principal: `Abrir no WhatsApp Desktop`
+        - usar link de protocolo:
+          `whatsapp://send?phone=[NUMERO]&text=[MENSAGEM_CODIFICADA]`
+        - abrir por clique direto do Admin;
+        - funciona quando o aplicativo oficial WhatsApp Desktop estiver instalado e logado.
 
-1. Gere convite para promotor.
-2. Confirme que o diálogo aparece.
-3. Clique em “Abrir conversa no WhatsApp Web”.
-4. Confirme que abre nova aba em `web.whatsapp.com`, não `api.whatsapp.com`.
-5. Confirme que a conversa e a mensagem aparecem.
-6. Teste os botões de cópia.
-7. Confirme que o mesmo fluxo funciona sem pop-up bloqueado.
+        2. Botão secundário: `Copiar mensagem para WhatsApp Web`
+        - copiar para a área de transferência a mensagem completa, incluindo o link único de acesso;
+        - confirmar visualmente: `Mensagem copiada. Abra o WhatsApp Web, selecione o promotor e cole a mensagem.`
+        - incluir também botão separado `Copiar somente link de acesso`.
 
-Não declare concluído sem testar no domínio publicado e informar a URL aberta, sem incluir token.
+        3. Link auxiliar: `Abrir WhatsApp Web`
+        - abrir apenas:
+          `https://web.whatsapp.com/`
+        - sem telefone e sem texto na URL;
+        - o Admin encontra a conversa do promotor e cola a mensagem já copiada.
+
+        NÃO usar:
+
+        - `api.whatsapp.com`;
+        - `web.whatsapp.com/send`;
+        - iframe;
+        - popup automático;
+        - envio automático;
+        - URL de acesso em logs, telas permanentes ou auditoria.
+
+        TRATAMENTO DE BLOQUEIO
+
+        - Se o WhatsApp Desktop não estiver instalado ou não abrir, não mostrar erro técnico.
+        - Exibir:
+          `Não foi possível abrir o WhatsApp Desktop. Use “Copiar mensagem para WhatsApp Web”.`
+        - O diálogo deve sempre manter os botões de cópia disponíveis.
+
+        TESTES
+
+        1. Computador com WhatsApp Desktop instalado: abre conversa com mensagem pronta.
+        2. Computador sem WhatsApp Desktop: mostra fallback claro.
+        3. Copiar mensagem funciona.
+        4. Abrir WhatsApp Web abre somente a página normal.
+        5. Admin consegue colar a mensagem e enviar manualmente.
+        6. Nenhum envio é feito sem ação final do Admin.
+        7. Nenhum link usa `api.whatsapp.com` ou `web.whatsapp.com/send`.
+
+        Informe os arquivos alterados e o resultado dos sete testes.
       </div>
-
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto space-y-8">

@@ -319,7 +319,8 @@ function UserManagement() {
         if (isMobile) {
           waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
         } else {
-          waUrl = `https://web.whatsapp.com/send?phone=${res.phone}&text=${encodedMessage}`;
+          // Protocolo Desktop
+          waUrl = `whatsapp://send?phone=${res.phone}&text=${encodedMessage}`;
         }
         
         setWaInviteData({
@@ -328,6 +329,7 @@ function UserManagement() {
           link: res.actionLink
         });
       }
+
     } catch (error: any) {
       toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
       setWhatsAppTarget(null);
@@ -657,7 +659,7 @@ function UserManagement() {
 
               {!isMobile && (
                 <p className="text-[10px] text-slate-500 italic">
-                  * Abrirá diretamente o <strong>WhatsApp Web</strong> no computador.
+                  * Tenta abrir o <strong>WhatsApp Desktop</strong>. Se não abrir, use a cópia manual para o <strong>WhatsApp Web</strong>.
                 </p>
               )}
             </AlertDialogDescription>
@@ -675,7 +677,7 @@ function UserManagement() {
               >
                 <a href={waInviteData.url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {isMobile ? 'Abrir WhatsApp App' : 'Abrir WhatsApp Web'}
+                  {isMobile ? 'Abrir WhatsApp App' : 'Abrir WhatsApp Desktop'}
                 </a>
               </Button>
             ) : (
@@ -684,26 +686,38 @@ function UserManagement() {
               </Button>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <Button 
                 variant="outline" 
-                size="sm"
-                className="text-xs h-9"
+                className="w-full font-semibold text-blue-600 border-blue-200 bg-blue-50/50 hover:bg-blue-50"
                 disabled={!waInviteData}
-                onClick={() => waInviteData && copyToClipboard(waInviteData.message, 'Mensagem de convite')}
+                onClick={() => waInviteData && copyToClipboard(waInviteData.message, 'Mensagem para WhatsApp Web')}
               >
-                <CopyIcon className="w-3 h-3 mr-1" /> Copiar Mensagem
+                <CopyIcon className="w-4 h-4 mr-2" /> Copiar mensagem para WhatsApp Web
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="text-xs h-9"
-                disabled={!waInviteData}
-                onClick={() => waInviteData && copyToClipboard(waInviteData.link, 'Link de acesso')}
-              >
-                <LinkIcon className="w-3 h-3 mr-1" /> Copiar Link
-              </Button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-[10px] h-8 text-slate-500"
+                  disabled={!waInviteData}
+                  onClick={() => waInviteData && copyToClipboard(waInviteData.link, 'Somente link')}
+                >
+                  <LinkIcon className="w-3 h-3 mr-1" /> Copiar somente link
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  asChild
+                  size="sm"
+                  className="text-[10px] h-8 text-slate-500"
+                >
+                  <a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" /> Abrir WhatsApp Web
+                  </a>
+                </Button>
+              </div>
             </div>
           </div>
 
