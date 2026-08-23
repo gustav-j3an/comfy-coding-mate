@@ -86,7 +86,7 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 function UserManagement() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const searchParams = Route.useSearch() as any;
+  const searchParams: any = Route.useSearch();
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
