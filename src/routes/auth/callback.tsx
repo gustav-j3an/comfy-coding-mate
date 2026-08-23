@@ -4,20 +4,27 @@ import { supabase } from '@/integrations/supabase/client';
 export const Route = createFileRoute('/auth/callback')({
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      next: (search.next as string) || '/',
+      next: (search['next'] as string) || '/',
     };
   },
   loader: async ({ search }) => {
     const { next } = search;
+    
+    const { data: { session } } = await supabase.auth.getSession();
 
-    // Se não tiver sessão (token expirado ou inválido), vai para o login com erro
+    if (session) {
+      throw redirect({
+        to: next as any,
+      });
+    }
+
     return { error: 'Sessão expirada ou convite inválido.' };
   },
   component: AuthCallback,
 });
 
 function AuthCallback() {
-  const { error } = Route.useLoaderData();
+  const { error } = Route.useLoaderData() as { error?: string };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-6 font-sans">
