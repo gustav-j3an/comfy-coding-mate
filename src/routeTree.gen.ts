@@ -16,6 +16,7 @@ import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authentic
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin/audit'
 import { Route as AuthenticatedAdminAutomationRouteImport } from './routes/_authenticated/admin/automation'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin/billing'
 import { Route as AuthenticatedAdminContractsRouteImport } from './routes/_authenticated/admin/contracts'
@@ -70,6 +71,11 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
 const AuthenticatedAdminAutomationRoute =
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/contracts': typeof AuthenticatedAdminContractsRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/admin/contracts': typeof AuthenticatedAdminContractsRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/automation': typeof AuthenticatedAdminAutomationRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/admin/contracts': typeof AuthenticatedAdminContractsRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/audit'
     | '/admin/automation'
     | '/admin/billing'
     | '/admin/contracts'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/primeiro-acesso'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/admin/audit'
     | '/admin/automation'
     | '/admin/billing'
     | '/admin/contracts'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/_authenticated/admin/audit'
     | '/_authenticated/admin/automation'
     | '/_authenticated/admin/billing'
     | '/_authenticated/admin/contracts'
@@ -433,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/audit': {
+      id: '/_authenticated/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/automation': {
@@ -600,6 +619,7 @@ const AuthenticatedAdminRoutesRouteWithChildren =
   )
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminAutomationRoute: typeof AuthenticatedAdminAutomationRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAdminContractsRoute: typeof AuthenticatedAdminContractsRoute
@@ -618,6 +638,7 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
     AuthenticatedAdminAutomationRoute: AuthenticatedAdminAutomationRoute,
     AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
     AuthenticatedAdminContractsRoute: AuthenticatedAdminContractsRoute,
