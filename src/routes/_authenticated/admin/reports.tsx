@@ -143,21 +143,20 @@ function ReportsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Relatórios Mensais</h2>
           <p className="text-sm text-slate-500">BI e consolidado executivo por indústria</p>
         </div>
-        <div className="flex gap-2">
-          <Link to="/admin/exports">
-            <Button variant="outline" className="font-bold border-slate-200">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Link to="/admin/exports" className="w-full sm:w-auto">
+            <Button variant="outline" className="font-bold border-slate-200 w-full sm:w-auto">
               <Package className="mr-2 h-4 w-4" /> Exportações
             </Button>
           </Link>
-
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
+              <Button className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" /> Novo Relatório
               </Button>
             </DialogTrigger>
