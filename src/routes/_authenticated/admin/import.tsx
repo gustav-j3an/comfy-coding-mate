@@ -166,6 +166,9 @@ function ImportModule() {
       let totalStopsCount = 0;
 
       const seenStops = new Map();
+      const distinctPromotersInRoutes = new Set();
+      const distinctStoresInRoutes = new Set();
+      const distinctIndustriesInRoutes = new Set();
 
       rawData.routes.forEach((routeSheet: any) => {
         routeSheet.stops.forEach((stop: any, index: number) => {
@@ -175,8 +178,6 @@ function ImportModule() {
           distinctStoresInRoutes.add(stop.loja.toLowerCase());
           distinctIndustriesInRoutes.add(stop.industria.toLowerCase());
           
-          Object.values(stop.dias).forEach(val => { if (val) totalStopsCount++; });
-
           // Reference checks
           if (!normalizedPromoters.has(stop.promotor.toLowerCase())) {
             inconsistencies.push({ type: 'Promotor Não Encontrado', detail: `Promotor "${stop.promotor}" na linha ${line} de ${routeSheet.sheetName} não está na aba PROMOTORES.` });
@@ -188,29 +189,52 @@ function ImportModule() {
             inconsistencies.push({ type: 'Indústria Não Encontrada', detail: `Indústria "${stop.industria}" na linha ${line} de ${routeSheet.sheetName} não está na aba INDUSTRIA.` });
           }
 
-          // Duplicate detection
+          // Duplicate detection and merging
           const stopKey = `${stop.industria}|${stop.loja}|${stop.promotor}|${stop.frequencia}`.toLowerCase();
           if (seenStops.has(stopKey)) {
-            const original = seenStops.get(stopKey);
+            const existing = seenStops.get(stopKey);
+            // Merge days
+            Object.keys(stop.dias).forEach(day => {
+              if (stop.dias[day as keyof typeof stop.dias]) existing.dias[day] = true;
+            });
             inconsistencies.push({ 
               type: 'Duplicidade', 
-              detail: `Parada duplicada na linha ${line} de ${routeSheet.sheetName}. (Mesma combinação de Indústria, Loja, Promotor e Frequência já vista em ${original.sheetName} na linha ${original.line})` 
+              detail: `Linha ${line} de ${routeSheet.sheetName} mesclada com a anterior (Mesma Indústria, Loja, Promotor e Frequência). Dias combinados.` 
             });
           } else {
-            seenStops.set(stopKey, { sheetName: routeSheet.sheetName, line });
+            seenStops.set(stopKey, { ...stop, sheetName: routeSheet.sheetName, line, dias: { ...stop.dias } });
           }
         });
       });
 
+      let totalStopsCount = 0;
+      const mergedStops = Array.from(seenStops.values());
+      mergedStops.forEach((stop: any) => {
+        Object.values(stop.dias).forEach(val => { if (val) totalStopsCount++; });
+      });
+
+      // Re-group merged stops for the server function
+      const groupedRoutes: any[] = [];
+      const stopsBySheet = new Map();
+      mergedStops.forEach((stop: any) => {
+        if (!stopsBySheet.has(stop.sheetName)) stopsBySheet.set(stop.sheetName, []);
+        stopsBySheet.get(stop.sheetName).push(stop);
+      });
+      stopsBySheet.forEach((stops, sheetName) => {
+        groupedRoutes.push({ sheetName, stops });
+      });
+
       setPreviewData({ 
-        ...rawData, 
+        ...rawData,
+        routes: groupedRoutes,
         inconsistencies,
         metrics: {
           distinctPromoters: distinctPromotersInRoutes.size,
           distinctStores: distinctStoresInRoutes.size,
           distinctIndustries: distinctIndustriesInRoutes.size,
           totalStopMarkings: totalStopsCount,
-          validStopsCount: Array.from(seenStops.values()).length
+          validStopsCount: mergedStops.length,
+          originalLinesCount: rawData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)
         }
       });
       toast.success('Arquivo processado com sucesso!');
