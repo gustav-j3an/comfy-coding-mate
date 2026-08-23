@@ -89,6 +89,93 @@ export const inviteUser = createServerFn({ method: "POST" })
     return { success: true, userId, email: data.email };
   });
 
+export const resendInvite = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ userId: z.string(), email: z.string().email() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    
+    // Verify admin role
+    const { userId: adminId } = (context as any) || {};
+    if (!adminId) throw new Error("Não autorizado");
+
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+      _user_id: adminId,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) throw new Error("Apenas administradores podem reenviar convites");
+
+    // Get site URL
+    let siteUrl = process.env['SITE_URL'];
+    if (!siteUrl) {
+      const projectId = process.env['LOVABLE_PROJECT_ID'];
+      if (projectId) siteUrl = `https://project--${projectId}.lovable.app`;
+      else siteUrl = 'https://rota-do-promotor.lovable.app';
+    }
+
+    // Resend invite (this invalidates the previous one)
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      data.email,
+      {
+        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+      }
+    );
+
+    if (inviteError) throw inviteError;
+
+    // Record audit log
+    await recordAudit({
+      userId: adminId,
+      action: 'resend_invite',
+      module: 'users',
+      entityType: 'user',
+      entityId: data.userId,
+      summary: `Convite reenviado para: ${data.email}`,
+      details: data
+    });
+    
+    return { success: true };
+  });
+
+export const requestPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ email: z.string().email() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    
+    // Get site URL
+    let siteUrl = process.env['SITE_URL'];
+    if (!siteUrl) {
+      const projectId = process.env['LOVABLE_PROJECT_ID'];
+      if (projectId) siteUrl = `https://project--${projectId}.lovable.app`;
+      else siteUrl = 'https://rota-do-promotor.lovable.app';
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: data.email,
+      options: {
+        redirectTo: `${siteUrl}/auth/reset-password`,
+      }
+    });
+
+    if (error) throw error;
+
+    const { userId: adminId } = (context as any) || {};
+    
+    // Record audit log
+    await recordAudit({
+      userId: adminId || 'system',
+      action: 'request_password_reset',
+      module: 'users',
+      entityType: 'user',
+      entityId: data.email,
+      summary: `Redefinição de acesso solicitada para: ${data.email}`,
+      details: data
+    });
+    
+    return { success: true };
+  });
+
 export const updateUserStatus = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ userId: z.string(), status: z.enum(['active', 'blocked', 'pending']) }).parse(data))
   .handler(async ({ data, context }) => {

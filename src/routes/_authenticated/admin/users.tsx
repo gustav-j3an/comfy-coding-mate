@@ -57,7 +57,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { inviteUser, updateUserStatus, deleteUser } from '@/lib/users.functions';
+import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset } from '@/lib/users.functions';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -250,6 +250,25 @@ function UserManagement() {
       fetchData();
     } catch (error: any) {
       toast.error('Erro ao excluir: ' + error.message);
+    }
+  };
+
+  const handleResendInvite = async (userId: string, email: string) => {
+    try {
+      await resendInvite({ data: { userId, email } });
+      toast.success('Novo convite enviado com sucesso!');
+      fetchData();
+    } catch (error: any) {
+      toast.error('Erro ao reenviar convite: ' + error.message);
+    }
+  };
+
+  const handleResetAccess = async (email: string) => {
+    try {
+      await requestPasswordReset({ data: { email } });
+      toast.success('E-mail de redefinição de acesso enviado!');
+    } catch (error: any) {
+      toast.error('Erro ao solicitar redefinição: ' + error.message);
     }
   };
 
@@ -502,12 +521,15 @@ function UserManagement() {
                             <DropdownMenuItem className="cursor-pointer font-semibold text-green-600" onClick={() => copyWhatsAppInvite(user)}>
                               <MessageSquare className="w-4 h-4 mr-2" /> Convite para WhatsApp
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer">
-                              <Mail className="w-4 h-4 mr-2" /> Reenviar E-mail
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer">
-                              <RefreshCw className="w-4 h-4 mr-2" /> Redefinir Senha
-                            </DropdownMenuItem>
+                            {user.status === 'pending' ? (
+                              <DropdownMenuItem className="cursor-pointer text-blue-600 font-semibold" onClick={() => handleResendInvite(user.id, user.email)}>
+                                <RefreshCw className="w-4 h-4 mr-2" /> Reenviar Convite
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem className="cursor-pointer font-semibold text-amber-600" onClick={() => handleResetAccess(user.email)}>
+                                <RefreshCw className="w-4 h-4 mr-2" /> Redefinir Acesso
+                              </DropdownMenuItem>
+                            )}
                             {user.status === 'blocked' ? (
                               <DropdownMenuItem className="cursor-pointer text-green-600 focus:text-green-700" onClick={() => handleUpdateStatus(user.id, 'active')}>
                                 <UserCheck className="w-4 h-4 mr-2" /> Reativar Acesso
