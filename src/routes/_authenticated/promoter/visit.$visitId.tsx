@@ -75,6 +75,7 @@ function VisitExecution() {
   // Restore draft on load
   useEffect(() => {
     async function restoreDraft() {
+      if (!user?.id) return;
       const draft = await getVisitDraft(user.id, visitId);
       if (draft && !isRestored) {
         setObservation(draft.observation || '');

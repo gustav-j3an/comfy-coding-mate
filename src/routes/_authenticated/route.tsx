@@ -18,6 +18,7 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     const checkSync = async () => {
+      if (!user?.id) return;
       const queue = await getSyncQueue(user.id);
       setHasPendingSync(queue.length > 0);
     };
