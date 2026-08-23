@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, ChevronLeft, Loader2, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronLeft, Loader2, Save, Play, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useServerFn } from '@tanstack/react-start';
-import { executeImport } from '@/lib/import.functions';
+import { 
+  startImportBatch, 
+  processImportStep, 
+  finishImportBatch, 
+  failImportBatch, 
+  getImportBatchStatus 
+} from '@/lib/import.functions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
