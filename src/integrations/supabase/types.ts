@@ -758,6 +758,7 @@ export type Database = {
           id: string
           industry_id: string | null
           last_access: string | null
+          must_change_password: boolean | null
           promoter_id: string | null
           status: Database["public"]["Enums"]["user_status"] | null
         }
@@ -768,6 +769,7 @@ export type Database = {
           id: string
           industry_id?: string | null
           last_access?: string | null
+          must_change_password?: boolean | null
           promoter_id?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
         }
@@ -778,6 +780,7 @@ export type Database = {
           id?: string
           industry_id?: string | null
           last_access?: string | null
+          must_change_password?: boolean | null
           promoter_id?: string | null
           status?: Database["public"]["Enums"]["user_status"] | null
         }
