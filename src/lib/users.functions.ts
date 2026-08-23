@@ -312,11 +312,10 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     }
 
     // 4. Get site URL
-    let siteUrl = process.env['SITE_URL'];
+    // Get site URL
+    const siteUrl = process.env['PUBLIC_APP_URL'];
     if (!siteUrl) {
-      const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
-      else siteUrl = 'https://rota-do-promotor.lovable.app';
+      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
     }
 
     // 5. Generate Link
