@@ -103,7 +103,8 @@ function VisitExecution() {
         evidences,
         occurrences,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
+        status: missingEvidences.length > 0 ? 'awaiting_media' : 'offline_draft'
       });
       setLastSaved(draft.lastSaved);
     }, 2000);
@@ -135,7 +136,24 @@ function VisitExecution() {
     const uploadedTypes = evidences.map(e => e.evidenceType);
     const missing = required.filter(type => !uploadedTypes.includes(type));
     setMissingEvidences(missing);
-  }, [evidences]);
+
+    // Update draft status if offline
+    if (user?.id && isRestored) {
+      const updateStatus = async () => {
+        const draft = await getVisitDraft(user.id, visitId);
+        if (draft && (draft.status === 'awaiting_media' || draft.status === 'offline_draft' || draft.status === 'ready_to_send')) {
+          const newStatus = missing.length > 0 ? 'awaiting_media' : 'ready_to_send';
+          if (draft.status !== newStatus) {
+            await saveVisitDraft(user.id, {
+              ...draft,
+              status: newStatus
+            });
+          }
+        }
+      };
+      updateStatus();
+    }
+  }, [evidences, user?.id, visitId, isRestored]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -218,7 +236,8 @@ function VisitExecution() {
         evidences,
         occurrences,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
+        status: 'awaiting_connection'
       });
       await addToSyncQueue(user!.id, visitId);
       toast.warning("Visita salva offline. O envio ocorrerá automaticamente quando houver conexão.");
@@ -303,9 +322,18 @@ function VisitExecution() {
             </div>
           )}
           {!online && (
-            <div className="flex items-center text-[10px] text-orange-500 font-bold uppercase tracking-wider animate-pulse">
-              <RefreshCw className="h-3 w-3 mr-1" />
-              Aguardando Conexão
+            <div className="flex items-center text-[10px] font-bold uppercase tracking-wider animate-pulse">
+              {missingEvidences.length > 0 ? (
+                <span className="text-amber-500 flex items-center">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Aguardando Mídias
+                </span>
+              ) : (
+                <span className="text-orange-500 flex items-center">
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Aguardando Conexão
+                </span>
+              )}
             </div>
           )}
         </div>
