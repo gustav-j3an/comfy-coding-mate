@@ -88,11 +88,11 @@ function PromoterDashboard() {
 
   const stats = {
     total: visits.length,
-    completed: visits.filter(v => ['submitted', 'approved'].includes(v.status || '')).length,
-    pending: visits.filter(v => ['planned', 'pending'].includes(v.status || '')).length,
+    completed: (visits as any[]).filter(v => ['submitted', 'approved'].includes(v.status || '')).length,
+    pending: (visits as any[]).filter(v => ['planned', 'pending'].includes(v.status || '')).length,
   };
 
-  const nextStop = visits.find(v => v.status === 'planned');
+  const nextStop = (visits as any[]).find(v => v.status === 'planned');
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
