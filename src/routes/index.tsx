@@ -38,11 +38,11 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        Adicione esse código no final do código do index.css:
+        MISSÃO — ACESSO TEMPORÁRIO POR WHATSAPP, SEM LINK DE RECUPERAÇÃO
 
-        #lovable-badge {"{"}
-          display: none !important;
-        {"}"}
+        Substitua o fluxo atual de convite por link de recuperação para promotores por um fluxo de acesso temporário com troca obrigatória de senha.
+
+        O fluxo envolve a geração de uma senha aleatória forte pelo administrador, envio via wa.me, e troca obrigatória no primeiro acesso do promotor, com bloqueio total de outras funcionalidades até que a troca seja realizada.
       </div>
 
       {/* Hero Section */}
