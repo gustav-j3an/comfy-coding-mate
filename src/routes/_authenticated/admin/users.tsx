@@ -584,8 +584,9 @@ function UserManagement() {
                                   toast.error('Este usuário não está vinculado a um promotor.');
                                   return;
                                 }
-                                setWhatsAppTarget(user);
+                                handleGenerateWhatsAppInvite(user);
                               }}
+
                             >
                               <MessageSquare className="w-4 h-4 mr-2" /> Enviar convite por WhatsApp
                             </DropdownMenuItem>
