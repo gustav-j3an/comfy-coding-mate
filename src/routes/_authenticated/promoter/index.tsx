@@ -72,7 +72,7 @@ function PromoterDashboard() {
         if (currentPromoterId) {
           query = query.eq('promoter_id', currentPromoterId);
         } else {
-          query = query.eq('executor_id', currentUserId);
+          query = query.eq('executor_id', effectiveUserId);
         }
 
         const { data, error } = await query.order('visit_order', { ascending: true });
@@ -80,11 +80,11 @@ function PromoterDashboard() {
         if (error) throw error;
         
         // Update cache for offline use
-        await cachePromoterVisits(currentUserId, data || []);
+        await cachePromoterVisits(effectiveUserId, data || []);
         return data || [];
       } catch (err) {
         console.warn('Network error, loading from cache:', err);
-        return await getCachedVisits(currentUserId);
+        return await getCachedVisits(effectiveUserId);
       }
     }
   });
