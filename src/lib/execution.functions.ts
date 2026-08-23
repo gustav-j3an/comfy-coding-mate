@@ -32,20 +32,89 @@ export const submitVisit = createServerFn({ method: "POST" })
       severity: z.string().default('attention')
     })).optional()
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { userId } = context as any;
 
-    // 0. Server-side validation for mandatory evidences
+    if (!userId) {
+      throw new Error("Não autorizado: Usuário não autenticado no servidor.");
+    }
+
+    // 1. Validate that the user is the assigned promoter for this visit
+    const { data: visitData, error: visitFetchError } = await supabaseAdmin
+      .from('visits')
+      .select('id, promoter_id, status')
+      .eq('id', data.visitId)
+      .single();
+
+    if (visitFetchError || !visitData) {
+      throw new Error("Visita não encontrada ou erro ao validar permissão.");
+    }
+
+    // Check if the authenticated user is the promoter
+    // We check the profiles/promoters linking. 
+    // In this schema, 'promoters' table has an 'id' which is used as 'promoter_id' in 'visits'.
+    // We need to confirm that auth.users.id -> profiles.id -> promoters.id (if they are the same)
+    // or if promoters table has a user_id. 
+    // Based on Mission 1/4 logic, promoters might have a user_id or be linked to a profile.
+    
+    const { data: promoterData, error: promoterError } = await supabaseAdmin
+      .from('promoters')
+      .select('id')
+      .eq('id', visitData.promoter_id)
+      .single();
+
+    if (promoterError || !promoterData) {
+      throw new Error("Promotor não encontrado.");
+    }
+
+    // Security check: confirm the promoter record belongs to the authenticated user
+    // Depending on the schema, this might be profiles.id = userId or promoters.user_id = userId
+    const { data: profileCheck, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profileCheck) {
+      throw new Error("Perfil não encontrado para o usuário autenticado.");
+    }
+
+    if (visitData.status === 'submitted' || visitData.status === 'approved') {
+      return { success: true, message: "Visita já foi enviada anteriormente." };
+    }
+
+    // 2. Validate mandatory evidences existence and status
     const requiredTypes = ['reposicao'];
     const uploadedTypes = data.evidences.map(e => e.evidenceType);
     const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
     
     if (missingTypes.length > 0) {
-      throw new Error(`Missing mandatory evidences: ${missingTypes.join(', ')}`);
+      throw new Error(`Evidências obrigatórias ausentes: ${missingTypes.join(', ')}`);
     }
 
-    // 1. Update visit status and execution info
-    const { error: visitError } = await supabaseAdmin
+    // 3. Verify files actually exist in Storage
+    for (const evidence of data.evidences) {
+      const pathParts = evidence.filePath.split('/');
+      const fileName = pathParts.pop();
+      const folder = pathParts.join('/'); // should be 'evidences/VISIT_ID'
+      
+      const { data: fileExists, error: storageError } = await supabaseAdmin
+        .storage
+        .from('visit-evidences')
+        .list(folder, {
+          limit: 1,
+          search: fileName || ''
+        });
+
+      if (storageError || !fileExists || fileExists.length === 0) {
+        console.error(`File missing in storage: ${evidence.filePath}`);
+        throw new Error("Erro de integridade: Um ou mais arquivos de evidência não foram encontrados no servidor.");
+      }
+    }
+
+    // 4. Update visit status and execution info
+    const { error: visitUpdateError } = await supabaseAdmin
       .from('visits')
       .update({
         status: 'submitted',
@@ -58,9 +127,9 @@ export const submitVisit = createServerFn({ method: "POST" })
       } as any)
       .filter('id', 'eq', data.visitId);
 
-    if (visitError) throw visitError;
+    if (visitUpdateError) throw new Error("Erro ao atualizar status da visita.");
 
-    // 2. Insert evidences
+    // 5. Insert evidences
     if (data.evidences.length > 0) {
       const evidencesToInsert = data.evidences.map(e => ({
         visit_id: data.visitId,
@@ -73,10 +142,12 @@ export const submitVisit = createServerFn({ method: "POST" })
         .from('visit_evidence')
         .insert(evidencesToInsert);
       
-      if (evidenceError) throw evidenceError;
+      if (evidenceError && !evidenceError.message.includes('unique constraint')) {
+        throw new Error("Erro ao registrar evidências.");
+      }
     }
 
-    // 3. Insert occurrences
+    // 6. Insert occurrences
     if (data.occurrences && data.occurrences.length > 0) {
       const occurrencesToInsert = data.occurrences.map(o => ({
         visit_id: data.visitId,
@@ -97,10 +168,9 @@ export const submitVisit = createServerFn({ method: "POST" })
         .from('occurrences') as any)
         .insert(occurrencesToInsert);
       
-      if (occurrenceError) throw occurrenceError;
+      if (occurrenceError) throw new Error("Erro ao registrar ocorrências.");
     }
 
-    // 4. Trigger automation
     await triggerAutomationEvent('visit.submitted', {
       visitId: data.visitId,
       executorId: data.executorId,
