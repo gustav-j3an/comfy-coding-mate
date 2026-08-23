@@ -138,7 +138,7 @@ function PromoterDashboard() {
           `)
           .eq('promoter_id', currentPromoterId as any)
           .eq('active', true)
-          .eq('status', 'published' as any);
+          .in('status', ['published', 'archived'] as any);
 
         if (routesError) console.error("Error fetching active routes:", routesError);
 
@@ -176,9 +176,10 @@ function PromoterDashboard() {
                       visit_order: stop.visit_order,
                       store: stop.store,
                       industry: task.industry,
-                      observation: stop.observation,
-                      is_theoretical: true
-                    });
+                       observation: stop.observation,
+                       frequency: stop.frequency,
+                       is_theoretical: true
+                     });
                   }
                 });
               }
@@ -186,8 +187,29 @@ function PromoterDashboard() {
           });
         }
 
+        // Enrich materialized visits with route stop data (frequency, observation) if not present
+        const enrichedMaterialized = (materializedVisits || []).map(mv => {
+          // Find the corresponding stop in active routes
+          let stopInfo = null;
+          for (const route of activeRoutes || []) {
+            const stop = (route.route_stops || []).find((s: any) => 
+              s.store_id === mv.store_id && Number(s.day_of_week) === simulatedDay
+            );
+            if (stop) {
+              stopInfo = stop;
+              break;
+            }
+          }
+          
+          return {
+            ...mv,
+            frequency: (mv as any).frequency || stopInfo?.frequency,
+            observation: mv.observation || stopInfo?.observation
+          };
+        });
+
         // Merge and sort
-        const allVisits = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+        const allVisits = [...enrichedMaterialized, ...theoreticalVisits].sort((a, b) => 
           (a.visit_order || 0) - (b.visit_order || 0)
         );
 
@@ -232,7 +254,7 @@ function PromoterDashboard() {
 
   const getStatusBadge = (visit: any) => {
     if (visit.is_theoretical) {
-      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Visita Planejada</Badge>;
+      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Prévia do roteiro</Badge>;
     }
 
     const draft = offlineDrafts[visit.id];
@@ -413,8 +435,15 @@ function PromoterDashboard() {
                         <div className="flex-1 p-3 px-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
-                              <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
+                               <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
+                                {visit.frequency && (
+                                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 py-0 border-slate-200 text-slate-400 font-medium uppercase">
+                                    {visit.frequency === 'weekly' ? 'Semanal' : 'Quinzenal'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             {getStatusBadge(visit)}
                           </div>
