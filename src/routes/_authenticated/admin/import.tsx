@@ -51,7 +51,7 @@ function ImportModule() {
         const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: null }) || [];
         if (!jsonData || !jsonData.length) continue;
 
-        const headers: string[] = jsonData[0].map(h => String(h || '').trim().toUpperCase());
+        const headers: string[] = (jsonData[0] || []).map(h => String(h || '').trim().toUpperCase());
         const rows = jsonData.slice(1);
 
         if (sheetName === 'PROMOTORES') {
