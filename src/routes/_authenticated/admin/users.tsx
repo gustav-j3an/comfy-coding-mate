@@ -29,7 +29,10 @@ import {
   Copy,
   MessageSquare,
   AlertTriangle,
-  Loader2
+  Loader2,
+  CopyIcon,
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -55,6 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset, generateWhatsAppInvite } from '@/lib/users.functions';
@@ -75,6 +79,7 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 
 function UserManagement() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const searchParams = Route.useSearch() as any;
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
@@ -306,16 +311,40 @@ function UserManagement() {
         const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
         
         const encodedMessage = encodeURIComponent(message);
-        const waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
         
-        window.open(waUrl, '_blank');
-        toast.success('WhatsApp aberto com a mensagem pronta!');
+        let waUrl = "";
+        if (isMobile) {
+          waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
+        } else {
+          waUrl = `https://web.whatsapp.com/send?phone=${res.phone}&text=${encodedMessage}`;
+        }
+        
+        const win = window.open(waUrl, '_blank');
+        
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          toast.error("O bloqueio de pop-ups impediu a abertura do WhatsApp.", {
+            description: "Use as opções de cópia abaixo como alternativa.",
+            duration: 8000
+          });
+          // Note: we don't set whatsAppTarget to null here so the dialog stays open or the user sees the buttons if we added them to a dialog
+        } else {
+          toast.success('WhatsApp aberto com a mensagem pronta!');
+          setWhatsAppTarget(null);
+        }
       }
     } catch (error: any) {
       toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
     } finally {
       setGeneratingWA(false);
-      setWhatsAppTarget(null);
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copiado!`);
+    } catch (err) {
+      toast.error(`Erro ao copiar ${label}`);
     }
   };
 
@@ -596,28 +625,97 @@ function UserManagement() {
       </Card>
 
       <AlertDialog open={!!whatsAppTarget} onOpenChange={() => setWhatsAppTarget(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Convite via WhatsApp</AlertDialogTitle>
-            <AlertDialogDescription>
-              Isso gerará um link de acesso seguro e abrirá o WhatsApp para enviar a mensagem para <strong>{whatsAppTarget?.full_name}</strong>.
-              <br /><br />
-              Telefone: {whatsAppTarget && promoters.find(p => p.id === whatsAppTarget.promoter_id)?.phone?.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/, '+$1 ($2) $3-$4') || 'Não informado'}
+            <AlertDialogTitle>Convite via WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                Escolha como deseja enviar o convite para <strong>{whatsAppTarget?.full_name}</strong>.
+              </p>
+              
+              <div className="bg-blue-50 p-3 rounded-md text-xs text-blue-800 space-y-2">
+                <p className="font-bold flex items-center gap-1">
+                  <Info className="w-3 h-3" /> Orientações:
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>O WhatsApp abrirá em uma nova aba com a mensagem preenchida.</li>
+                  <li><strong>Você precisará clicar em "Enviar"</strong> dentro do WhatsApp.</li>
+                  <li>Se o bloqueio de pop-up impedir a abertura, use os botões de cópia abaixo.</li>
+                </ul>
+              </div>
+
+              {!isMobile && (
+                <p className="text-[10px] text-slate-500 italic">
+                  * No computador, tentaremos abrir diretamente o WhatsApp Web.
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e) => {
-                e.preventDefault();
-                handleWhatsAppInvite();
-              }} 
+          
+          <div className="grid gap-3 py-2">
+            <Button 
+              onClick={handleWhatsAppInvite} 
               disabled={generatingWA}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 w-full font-bold h-11"
             >
-              {generatingWA ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MessageSquare className="w-4 h-4 mr-2" />}
-              Gerar e Abrir WhatsApp
-            </AlertDialogAction>
+              {generatingWA ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
+              {isMobile ? 'Abrir WhatsApp App' : 'Abrir WhatsApp Web'}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-xs h-9"
+                onClick={async () => {
+                  try {
+                    const res: any = await generateWhatsAppInvite({ 
+                      data: { 
+                        userId: whatsAppTarget.id, 
+                        email: whatsAppTarget.email,
+                        promoterId: whatsAppTarget.promoter_id 
+                      } 
+                    });
+                    if (res.success && res.actionLink) {
+                      const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
+                      await copyToClipboard(message, 'Mensagem de convite');
+                    }
+                  } catch (e: any) {
+                    toast.error("Erro ao gerar convite: " + e.message);
+                  }
+                }}
+              >
+                <CopyIcon className="w-3 h-3 mr-1" /> Copiar Mensagem
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="text-xs h-9"
+                onClick={async () => {
+                  try {
+                    const res: any = await generateWhatsAppInvite({ 
+                      data: { 
+                        userId: whatsAppTarget.id, 
+                        email: whatsAppTarget.email,
+                        promoterId: whatsAppTarget.promoter_id 
+                      } 
+                    });
+                    if (res.success && res.actionLink) {
+                      await copyToClipboard(res.actionLink, 'Link de acesso');
+                    }
+                  } catch (e: any) {
+                    toast.error("Erro ao gerar link: " + e.message);
+                  }
+                }}
+              >
+                <LinkIcon className="w-3 h-3 mr-1" /> Copiar Link
+              </Button>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="w-full sm:w-auto">Fechar</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
