@@ -28,7 +28,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
       .eq('user_id', userId)
       .single();
 
-    let effectivePromoterId = data.promoterId;
+    let effectivePromoterId: string | undefined = data.promoterId;
     
     if (!effectivePromoterId || userRole?.role !== 'admin') {
       const { data: profile } = await supabaseAdmin
@@ -37,14 +37,14 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
         .eq('id', userId)
         .single();
       
-      effectivePromoterId = profile?.promoter_id || null;
+      effectivePromoterId = profile?.promoter_id || undefined;
     }
 
     const scheduledDateStr = data.date;
-    console.log(`[Agenda] User: ${maskedEmail}, PromoterID: ${effectivePromoterId || 'NONE'}, Date: ${scheduledDateStr}`);
 
     if (!effectivePromoterId) {
-      return []; // Not a promoter
+      console.log(`[Agenda] User: ${maskedEmail}, PromoterID: NONE, Date: ${scheduledDateStr}, Count: 0`);
+      return [];
     }
     const dateObj = new Date(scheduledDateStr + 'T12:00:00Z'); // Midday UTC
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday...
@@ -141,7 +141,10 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
     }
 
     // Merge and sort
-    return [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+    const merged = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
       (a.visit_order || 0) - (b.visit_order || 0)
     );
+
+    console.log(`[Agenda] User: ${maskedEmail}, PromoterID: ${effectivePromoterId}, Date: ${scheduledDateStr}, Count: ${merged.length}`);
+    return merged;
   });
