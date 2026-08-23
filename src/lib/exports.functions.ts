@@ -48,7 +48,7 @@ export const createExportTask = createServerFn({ method: "POST" })
 export const getExportTasks = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({
     industryId: z.string().optional()
-  }).parse(data))
+  }).optional().default({}).parse(data ?? {}))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
