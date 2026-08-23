@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Upload, FileText, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export const Route = createFileRoute('/_authenticated/admin/import')({
@@ -17,9 +17,8 @@ export const Route = createFileRoute('/_authenticated/admin/import')({
 function ImportModule() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const [file, setFile] = useState<File | null>(null);
-  const [previewData, setPreviewData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,7 +29,6 @@ function ImportModule() {
       return;
     }
 
-    setFile(file);
     setIsLoading(true);
 
     try {
@@ -49,96 +47,158 @@ function ImportModule() {
       for (const sheetName of sheets) {
         const worksheet = workbook.Sheets[sheetName];
         if (!worksheet) continue;
-        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        const headers: string[] = (jsonData[0] as string[]) || [];
+        
+        const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: null }) || [];
+        if (!jsonData || !jsonData.length) continue;
+
+        const headers: string[] = (jsonData[0] || []).map(h => String(h || '').trim().toUpperCase());
         const rows = jsonData.slice(1);
 
         if (sheetName === 'PROMOTORES') {
-          rawData.promoters = rows.map((row: any) => ({
-            matricula: row[headers.indexOf('MATRÍCULA')],
-            nome: row[headers.indexOf('NOME')],
-            uf: row[headers.indexOf('UF')],
-            cidade: row[headers.indexOf('CIDADE ATENDIMENTO')],
-            contato: row[headers.indexOf('CONTATO')],
-            observacao: row[headers.indexOf('OBSERVAÇÃO')]
-          }));
+          const nameIdx = headers.indexOf('NOME');
+          const matriculaIdx = headers.indexOf('MATRÍCULA');
+          const ufIdx = headers.indexOf('UF');
+          const cityIdx = headers.indexOf('CIDADE ATENDIMENTO');
+          const contactIdx = headers.indexOf('CONTATO');
+          const obsIdx = headers.indexOf('OBSERVAÇÃO');
+
+          rawData.promoters = rows
+            .filter(row => row[nameIdx] && String(row[nameIdx]).trim().length > 0)
+            .map(row => ({
+              matricula: row[matriculaIdx],
+              nome: String(row[nameIdx]).trim(),
+              uf: row[ufIdx],
+              cidade: row[cityIdx],
+              contato: row[contactIdx],
+              observacao: row[obsIdx]
+            }));
         } else if (sheetName === 'LOJAS') {
-          rawData.stores = rows.map((row: any) => ({
-            rede: row[headers.indexOf('REDE')],
-            loja: row[headers.indexOf('LOJA')],
-            uf: row[headers.indexOf('UF')]
-          }));
+          const storeIdx = headers.indexOf('LOJA');
+          const redeIdx = headers.indexOf('REDE');
+          const ufIdx = headers.indexOf('UF');
+
+          rawData.stores = rows
+            .filter(row => row[storeIdx] && String(row[storeIdx]).trim().length > 0)
+            .map(row => ({
+              rede: row[redeIdx],
+              loja: String(row[storeIdx]).trim(),
+              uf: row[ufIdx]
+            }));
         } else if (sheetName === 'INDUSTRIA') {
-          rawData.industries = rows.map((row: any) => ({
-            nome: row[headers.indexOf('INDUSTRIA')]
-          }));
+          const indIdx = headers.indexOf('INDUSTRIA');
+
+          rawData.industries = rows
+            .filter(row => row[indIdx] && String(row[indIdx]).trim().length > 0)
+            .map(row => ({
+              nome: String(row[indIdx]).trim()
+            }));
         } else if (sheetName.startsWith('ROTEIRO ')) {
-          rawData.routes.push({
-            sheetName,
-            stops: rows.map((row: any) => ({
-              industria: row[headers.indexOf('INDUSTRIA')],
-              loja: row[headers.indexOf('LOJA')],
-              uf: row[headers.indexOf('UF')],
-              promotor: row[headers.indexOf('PROMOTORES')],
-              frequencia: row[headers.indexOf('FREQ')],
-              dias: {
-                seg: row[headers.indexOf('SEG')] === '✓',
-                ter: row[headers.indexOf('TER')] === '✓',
-                qua: row[headers.indexOf('QUA')] === '✓',
-                qui: row[headers.indexOf('QUI')] === '✓',
-                sex: row[headers.indexOf('SEX')] === '✓',
-                sab: row[headers.indexOf('SAB')] === '✓',
-                dom: row[headers.indexOf('DOM')] === '✓',
-              }
-            }))
-          });
-        } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA'].includes(sheetName)) {
+          const indIdx = headers.indexOf('INDUSTRIA');
+          const storeIdx = headers.indexOf('LOJA');
+          const promIdx = headers.indexOf('PROMOTORES');
+          const freqIdx = headers.indexOf('FREQ');
+          
+          const segIdx = headers.indexOf('SEG');
+          const terIdx = headers.indexOf('TER');
+          const quaIdx = headers.indexOf('QUA');
+          const quiIdx = headers.indexOf('QUI');
+          const sexIdx = headers.indexOf('SEX');
+          const sabIdx = headers.indexOf('SAB');
+          const domIdx = headers.indexOf('DOM');
+
+          const validStops = rows.filter(row => {
+            const hasBasic = row[indIdx] && row[storeIdx] && row[promIdx] && row[freqIdx];
+            if (!hasBasic) return false;
+
+            const hasDay = [segIdx, terIdx, quaIdx, quiIdx, sexIdx, sabIdx, domIdx].some(idx => 
+              idx !== -1 && (row[idx] === '✓' || row[idx] === 'v' || row[idx] === 'V' || String(row[idx]).toLowerCase() === 'x')
+            );
+            return hasDay;
+          }).map(row => ({
+            industria: String(row[indIdx]).trim(),
+            loja: String(row[storeIdx]).trim(),
+            promotor: String(row[promIdx]).trim(),
+            frequencia: String(row[freqIdx]).trim(),
+            dias: {
+              seg: row[segIdx] === '✓',
+              ter: row[terIdx] === '✓',
+              qua: row[quaIdx] === '✓',
+              qui: row[quiIdx] === '✓',
+              sex: row[sexIdx] === '✓',
+              sab: row[sabIdx] === '✓',
+              dom: row[domIdx] === '✓',
+            }
+          }));
+
+          if (validStops.length > 0) {
+            rawData.routes.push({
+              sheetName,
+              stops: validStops
+            });
+          }
+        } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA', 'CONSULTA'].includes(sheetName)) {
           rawData.ignoredSheets.push(sheetName);
         }
       }
 
-      // Validation
+      // Validation & Metrics
       const inconsistencies: any[] = [];
-      const normalizedPromoters = rawData.promoters.map((p: any) => p.nome?.trim().toLowerCase()).filter(Boolean);
-      const normalizedStores = rawData.stores.map((s: any) => s.loja?.trim().toLowerCase()).filter(Boolean);
-      const normalizedIndustries = rawData.industries.map((i: any) => i.nome?.trim().toLowerCase()).filter(Boolean);
+      const normalizedPromoters = new Set(rawData.promoters.map((p: any) => p.nome.toLowerCase()));
+      const normalizedStores = new Set(rawData.stores.map((s: any) => s.loja.toLowerCase()));
+      const normalizedIndustries = new Set(rawData.industries.map((i: any) => i.nome.toLowerCase()));
+
+      const distinctPromotersInRoutes = new Set();
+      const distinctStoresInRoutes = new Set();
+      const distinctIndustriesInRoutes = new Set();
+      let totalStopsCount = 0;
+
+      const seenStops = new Map();
 
       rawData.routes.forEach((routeSheet: any) => {
-        const seenStops = new Set();
         routeSheet.stops.forEach((stop: any, index: number) => {
           const line = index + 2;
           
-          // Required fields
-          if (!stop.industria || !stop.loja || !stop.promotor) {
-            inconsistencies.push({ type: 'Campo Obrigatório', detail: `Linha ${line} em ${routeSheet.sheetName} possui campos vazios.` });
-          }
+          distinctPromotersInRoutes.add(stop.promotor.toLowerCase());
+          distinctStoresInRoutes.add(stop.loja.toLowerCase());
+          distinctIndustriesInRoutes.add(stop.industria.toLowerCase());
+          
+          Object.values(stop.dias).forEach(val => { if (val) totalStopsCount++; });
 
           // Reference checks
-          if (stop.promotor && !normalizedPromoters.includes(stop.promotor.trim().toLowerCase())) {
+          if (!normalizedPromoters.has(stop.promotor.toLowerCase())) {
             inconsistencies.push({ type: 'Promotor Não Encontrado', detail: `Promotor "${stop.promotor}" na linha ${line} de ${routeSheet.sheetName} não está na aba PROMOTORES.` });
           }
-          if (stop.loja && !normalizedStores.includes(stop.loja.trim().toLowerCase())) {
+          if (!normalizedStores.has(stop.loja.toLowerCase())) {
             inconsistencies.push({ type: 'Loja Não Encontrada', detail: `Loja "${stop.loja}" na linha ${line} de ${routeSheet.sheetName} não está na aba LOJAS.` });
           }
-          if (stop.industria && !normalizedIndustries.includes(stop.industria.trim().toLowerCase())) {
+          if (!normalizedIndustries.has(stop.industria.toLowerCase())) {
             inconsistencies.push({ type: 'Indústria Não Encontrada', detail: `Indústria "${stop.industria}" na linha ${line} de ${routeSheet.sheetName} não está na aba INDUSTRIA.` });
           }
 
           // Duplicate detection
-          const stopKey = `${stop.industria}-${stop.loja}-${stop.promotor}-${routeSheet.sheetName}`.toLowerCase();
+          const stopKey = `${stop.industria}|${stop.loja}|${stop.promotor}|${stop.frequencia}`.toLowerCase();
           if (seenStops.has(stopKey)) {
-            inconsistencies.push({ type: 'Duplicidade', detail: `Linha ${line} em ${routeSheet.sheetName} é uma duplicata de parada.` });
-          }
-          seenStops.add(stopKey);
-
-          // Frequency validation
-          if (stop.frequencia && !['SEMANAL', 'QUINZENAL'].includes(stop.frequencia.toUpperCase())) {
-            inconsistencies.push({ type: 'Frequência Inválida', detail: `Frequência "${stop.frequencia}" inválida na linha ${line} de ${routeSheet.sheetName}.` });
+            const original = seenStops.get(stopKey);
+            inconsistencies.push({ 
+              type: 'Duplicidade', 
+              detail: `Parada duplicada na linha ${line} de ${routeSheet.sheetName}. (Mesma combinação de Indústria, Loja, Promotor e Frequência já vista em ${original.sheetName} na linha ${original.line})` 
+            });
+          } else {
+            seenStops.set(stopKey, { sheetName: routeSheet.sheetName, line });
           }
         });
       });
 
-      setPreviewData({ ...rawData, inconsistencies });
+      setPreviewData({ 
+        ...rawData, 
+        inconsistencies,
+        metrics: {
+          distinctPromoters: distinctPromotersInRoutes.size,
+          distinctStores: distinctStoresInRoutes.size,
+          distinctIndustries: distinctIndustriesInRoutes.size,
+          totalStopMarkings: totalStopsCount
+        }
+      });
       toast.success('Arquivo processado com sucesso!');
     } catch (err) {
       toast.error('Erro ao processar arquivo.');
@@ -150,14 +210,21 @@ function ImportModule() {
 
   if (role !== 'admin') return null;
 
+  const requiresRevision = (previewData?.inconsistencies?.length || 0) > 0;
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 sm:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin' })}>
-            <ChevronLeft className="h-4 w-4 mr-2" /> Voltar
-          </Button>
-          <h1 className="text-2xl font-black text-slate-900">Importar Base Operacional</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin' })}>
+              <ChevronLeft className="h-4 w-4 mr-2" /> Voltar
+            </Button>
+            <h1 className="text-2xl font-black text-slate-900">Importar Base Operacional</h1>
+          </div>
+          {requiresRevision && (
+            <Badge variant="destructive" className="animate-pulse">REQUER REVISÃO</Badge>
+          )}
         </div>
 
         <Card className="border-none shadow-sm">
@@ -183,26 +250,45 @@ function ImportModule() {
             <TabsContent value="resumo">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Promotores</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Promotores</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.promoters.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Lojas</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Lojas</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.stores.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Indústrias</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Indústrias</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.industries.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Linhas de Roteiro</CardTitle></CardHeader>
-                  <CardContent><p className="text-2xl font-black">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Roteiros Válidos</CardTitle></CardHeader>
+                  <CardContent><p className="text-2xl font-black text-blue-600">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
+                </Card>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 opacity-80">
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Promotores em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctPromoters}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Lojas em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctStores}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Indústrias em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctIndustries}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Total de Paradas Semanais</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold text-green-600">{previewData.metrics.totalStopMarkings}</p></CardContent>
                 </Card>
               </div>
               
               <div className="mt-6 space-y-4">
                 <Card>
-                  <CardHeader><CardTitle className="text-sm">Abas Identificadas</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-sm">Abas Processadas</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-green-50 text-green-700">PROMOTORES</Badge>
                     <Badge variant="outline" className="bg-green-50 text-green-700">LOJAS</Badge>
