@@ -29,6 +29,7 @@ function ImportModule() {
   const [validFrom, setValidFrom] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [acceptedRevisionTerms, setAcceptedRevisionTerms] = useState(false);
 
   const importFn = useServerFn(executeImport);
 
@@ -208,7 +209,8 @@ function ImportModule() {
           distinctPromoters: distinctPromotersInRoutes.size,
           distinctStores: distinctStoresInRoutes.size,
           distinctIndustries: distinctIndustriesInRoutes.size,
-          totalStopMarkings: totalStopsCount
+          totalStopMarkings: totalStopsCount,
+          validStopsCount: Array.from(seenStops.values()).length
         }
       });
       toast.success('Arquivo processado com sucesso!');
@@ -250,6 +252,15 @@ function ImportModule() {
 
   if (role !== 'admin') return null;
 
+  const blockerInconsistencies = previewData?.inconsistencies?.filter((inc: any) => 
+    ['Promotor Não Encontrado', 'Loja Não Encontrada', 'Indústria Não Encontrada'].includes(inc.type)
+  ) || [];
+  
+  const revisablePending = previewData?.inconsistencies?.filter((inc: any) => 
+    ['Duplicidade'].includes(inc.type)
+  ) || [];
+
+  const isBlockerActive = blockerInconsistencies.length > 0;
   const requiresRevision = (previewData?.inconsistencies?.length || 0) > 0;
 
   return (
@@ -302,8 +313,12 @@ function ImportModule() {
                   <CardContent><p className="text-2xl font-black">{previewData.industries.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Roteiros Válidos</CardTitle></CardHeader>
-                  <CardContent><p className="text-2xl font-black text-blue-600">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Roteiros em Rascunho</CardTitle></CardHeader>
+                  <CardContent><p className="text-2xl font-black text-blue-600">{previewData.metrics.distinctPromoters}</p></CardContent>
+                </Card>
+                <Card>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Paradas Válidas</CardTitle></CardHeader>
+                  <CardContent><p className="text-2xl font-black text-green-600">{previewData.metrics.validStopsCount}</p></CardContent>
                 </Card>
               </div>
 
@@ -512,29 +527,48 @@ function ImportModule() {
                     <li>• Criar {previewData.promoters.length} registros de Promotores (se novos)</li>
                     <li>• Criar {previewData.stores.length} registros de Lojas (se novas)</li>
                     <li>• Criar {previewData.industries.length} registros de Indústrias (se novas)</li>
-                    <li>• Gerar {previewData.routes.length} Roteiros em <span className="font-bold text-amber-600">RASCUNHO</span></li>
+                    <li>• Criar/Vincular {previewData.metrics.distinctPromoters} Roteiros em <span className="font-bold text-amber-600">RASCUNHO</span></li>
+                    <li>• Processar {previewData.metrics.validStopsCount} paradas únicas</li>
                   </ul>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-                <Checkbox 
-                  id="terms" 
-                  checked={acceptedTerms} 
-                  onCheckedChange={(checked) => setAcceptedTerms(!!checked)}
-                  className="mt-1"
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="terms"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-amber-900"
-                  >
-                    Entendo que os roteiros serão importados como rascunho e não gerarão visitas automaticamente.
-                  </Label>
-                  <p className="text-xs text-amber-700">
-                    Nenhuma alteração será feita em usuários existentes ou roteiros publicados.
-                  </p>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms} 
+                    onCheckedChange={(checked) => setAcceptedTerms(!!checked)}
+                    className="mt-1"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none text-blue-900"
+                    >
+                      Entendo que os roteiros serão importados como rascunho e não gerarão visitas automaticamente.
+                    </Label>
+                  </div>
                 </div>
+
+                {requiresRevision && (
+                  <div className="flex items-start space-x-3 p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                    <Checkbox 
+                      id="revision-terms" 
+                      checked={acceptedRevisionTerms} 
+                      onCheckedChange={(checked) => setAcceptedRevisionTerms(!!checked)}
+                      className="mt-1"
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                      <Label
+                        htmlFor="revision-terms"
+                        className="text-sm font-medium leading-none text-amber-900"
+                      >
+                        Li e aceito importar os registros válidos; as pendências ficarão registradas para revisão posterior.
+                      </Label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-4">
@@ -547,7 +581,7 @@ function ImportModule() {
                 </Button>
                 <Button 
                   onClick={handleImport} 
-                  disabled={!acceptedTerms || !validFrom || isImporting || requiresRevision}
+                  disabled={!acceptedTerms || (requiresRevision && !acceptedRevisionTerms) || !validFrom || isImporting || isBlockerActive}
                   className="bg-blue-600 hover:bg-blue-700 font-bold min-w-[200px]"
                 >
                   {isImporting ? (
