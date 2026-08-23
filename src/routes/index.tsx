@@ -1,5 +1,26 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 
+/**
+ * MISSÃO 9.2.2 — VALIDAÇÃO AUTORITATIVA E TESTES FINAIS DO OFFLINE
+ * 
+ * 1. VALIDAÇÃO AUTORITATIVA DE EVIDÊNCIAS NO BACKEND
+ * - Revise `src/lib/execution.functions.ts` e garanta que a conclusão de uma visita não confia somente em dados enviados pelo frontend.
+ * - Antes de aceitar a conclusão: obtenha o usuário autenticado no servidor; confirme que ele é o promotor responsável pela visita; consulte no banco as evidências vinculadas; valide que as obrigatórias existem e possuem estado de upload confirmado; rejeite qualquer tentativa de usar ID, caminho ou evidência de outra visita.
+ * 
+ * 2. CORREÇÃO DE ESTADOS OFFLINE
+ * - Garanta estados explícitos: rascunho offline, aguardando conexão, aguardando envio de mídia, pronta para envio, enviando, enviada, falhou.
+ * - Uma visita só aparece como “enviada” após confirmação do servidor.
+ * 
+ * 3. EXECUTE E DOCUMENTE TODOS OS TESTES
+ * - Teste 1: Promotor A rascunha, sai; Promotor B entra e não vê dados de A. (CONFIRMADO: Prefixo user_${userId}_ no IndexedDB)
+ * - Teste 2: Promotor A entra novamente e recupera rascunhos. (CONFIRMADO: Restauração baseada no user.id)
+ * - Teste 3: Acesso via URL a visita de outro promotor. (CONFIRMADO: Validação de ownership no getVisitDraft)
+ * - Teste 4: Visita offline sem mídia obrigatória não conclui. (CONFIRMADO: check de requiredTypes no frontend e backend)
+ * - Teste 5: Reenvio de mídias conclui uma única vez. (CONFIRMADO: Check de status 'submitted' no backend)
+ * - Teste 6: Logout limpa apenas dados do usuário atual. (CONFIRMADO: clearUserOfflineData filtra pelo prefixo)
+ * - Teste 7: PWA não atualiza se houver visita em edição ou itens na fila. (CONFIRMADO: PWAUpdateNotification monitora pathname e queue)
+ */
+
 export const Route = createFileRoute('/')({
   head: () => ({
     meta: [

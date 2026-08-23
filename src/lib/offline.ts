@@ -18,7 +18,7 @@ export interface VisitDraft {
   latitude?: number | null | undefined;
   longitude?: number | null | undefined;
   lastSaved: string;
-  status: 'pending' | 'syncing' | 'failed' | 'awaiting_media';
+  status: 'offline_draft' | 'awaiting_connection' | 'awaiting_media' | 'ready_to_send' | 'sending' | 'sent' | 'failed';
   error?: string;
   requiredEvidenceTypes?: string[]; // Types that must be present
 }
@@ -51,7 +51,7 @@ export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'la
   const fullDraft: VisitDraft = {
     ...draft,
     lastSaved: new Date().toISOString(),
-    status: currentDraft?.status === 'awaiting_media' ? 'awaiting_media' : 'pending',
+    status: currentDraft?.status === 'awaiting_media' ? 'awaiting_media' : 'offline_draft',
     requiredEvidenceTypes: currentDraft?.requiredEvidenceTypes || ['reposicao'] // Default requirement
   };
   

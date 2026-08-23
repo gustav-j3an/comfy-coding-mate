@@ -210,8 +210,18 @@ function VisitExecution() {
     }
 
     if (!online) {
+      await saveVisitDraft(user!.id, {
+        visitId,
+        executorId: user!.id,
+        checkinAt: checkinTime,
+        observation,
+        evidences,
+        occurrences,
+        latitude: coords?.latitude,
+        longitude: coords?.longitude
+      });
       await addToSyncQueue(user!.id, visitId);
-      toast.warning("Visita salva offline. Mas ainda faltam evidências para concluir no servidor.");
+      toast.warning("Visita salva offline. O envio ocorrerá automaticamente quando houver conexão.");
       navigate({ to: '/promoter' });
       return;
     }
