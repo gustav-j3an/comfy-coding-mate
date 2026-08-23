@@ -13,85 +13,110 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO IMPORTAÇÃO 2 — CORRIGIR CONTAGEM E VALIDAÇÃO ANTES DE LIBERAR A GRAVAÇÃO
+MISSÃO IMPORTAÇÃO 3 — GRAVAÇÃO SEGURA DE PROMOTORES, LOJAS, INDÚSTRIAS E ROTEIROS
 
-Ainda não implemente a gravação no banco.
+Implemente a etapa de confirmação e gravação da importação no módulo:
 
-A tela de importação reconhece as abas, mas os totais estão errados. Para o arquivo de referência, a prévia está exibindo números como 994 promotores, 999 lojas e 992 indústrias, o que não corresponde aos dados reais.
+`/admin/import`
 
-A causa provável é que o leitor está contando linhas vazias, células apenas formatadas, fórmulas, cabeçalhos, intervalos reservados ou valores de fallback como registros.
+Objetivo: importar a base operacional do Excel sem gerar visitas automaticamente e sem apagar, duplicar ou substituir dados existentes de forma indevida.
 
-CORRIJA O LEITOR DO EXCEL
+ESTRATÉGIA DE IMPORTAÇÃO
 
-Considere registro válido somente quando os campos mínimos reais estiverem preenchidos:
+A importação deve criar ou atualizar com segurança:
 
-PROMOTORES:
-- contar apenas linhas com NOME preenchido;
-- ignorar cabeçalho, linha vazia e células com fórmulas sem dado real.
+1. Promotores
+- Importar a aba PROMOTORES.
+- Usar MATRÍCULA como chave principal de correspondência quando ela existir.
+- Se não houver matrícula, usar nome normalizado apenas para sugerir correspondência; não criar duplicidade automaticamente.
+- Importar nome, UF, cidade atendida, contato e observação.
+- Não alterar usuário, senha, papel ou acesso de login.
 
-LOJAS:
-- contar apenas linhas com LOJA preenchida;
-- ignorar cabeçalho e linhas vazias.
+2. Lojas
+- Importar a aba LOJAS.
+- Identificar duplicidade pela combinação normalizada: REDE + LOJA + UF.
+- Criar somente lojas inexistentes.
+- Não apagar ou sobrescrever endereço, GPS ou dados operacionais já preenchidos no sistema sem confirmação explícita.
 
-INDÚSTRIAS:
-- contar apenas linhas com INDUSTRIA preenchida;
-- ignorar cabeçalho e linhas vazias.
+3. Indústrias
+- Importar a aba INDUSTRIA.
+- Identificar pela denominação normalizada.
+- Criar somente indústrias inexistentes.
 
-ROTEIROS:
-- ler somente abas cujo nome começa com `ROTEIRO `;
-- contar somente linhas que possuam, no mínimo:
-  - INDUSTRIA;
-  - LOJA;
-  - PROMOTORES;
-  - FREQ;
-  - ao menos uma marcação de dia válida.
-- aceitar `✓` como marcação válida;
-- ignorar linhas vazias, totais, fórmulas, cabeçalhos e áreas formatadas além do fim dos dados.
+4. Roteiros
+- Importar somente as linhas válidas das abas que começam com `ROTEIRO `.
+- Criar um roteiro em RASCUNHO por promotor que possua linhas válidas.
+- Vincular as paradas ao roteiro correto, preservando:
+  - loja;
+  - indústria;
+  - frequência;
+  - dias da semana marcados;
+  - UF;
+  - ordem estável de importação.
+- Não publicar roteiros automaticamente.
+- Não criar visitas automaticamente.
+- Não alterar roteiros existentes durante esta primeira importação.
+- Use um nome claro, como: `Importação Excel — [Nome do Promotor]`.
 
-RESULTADO ESPERADO PARA O ARQUIVO DE REFERÊNCIA
+5. Linhas pendentes
+Não importe como parada automática as quatro linhas sem nenhum dia marcado. Registre-as no relatório final como “Pendente de definição de dia”:
 
-A prévia deve apresentar estes valores:
+- KING — ATACADÃO - COSTA E SILVA — ANA LETICIA ORTIZ AVALO;
+- ALLEZA — ASSAI GOIANIA T9 — FRANCISCO JOSE DOS SANTOS LOURENÇO;
+- KING — ASSAI ANAPOLIS — MARCELO AUGUSTO DE OLIVEIRA PEREIRA GOMES;
+- TERMOLAR — RIO VERMELHO MARACANA — MARCELO AUGUSTO DE OLIVEIRA PEREIRA GOMES.
 
-- Promotores: 42
-- Lojas: 419
-- Indústrias: 26
-- Linhas de roteiro válidas: 413
+INTERFACE DE CONFIRMAÇÃO
 
-Além disso, apresente:
+Antes de gravar, mostre uma tela final com:
 
-- 28 promotores distintos presentes nas linhas de roteiro;
-- 188 lojas distintas usadas nos roteiros;
-- 20 indústrias distintas usadas nos roteiros;
-- total de 522 marcações semanais de paradas.
+- data de vigência inicial obrigatória, escolhida pelo Admin;
+- resumo do que será criado, atualizado, ignorado e enviado para revisão;
+- lista de conflitos e duplicidades;
+- checkbox obrigatório:
+  “Entendo que os roteiros serão importados como rascunho e não gerarão visitas automaticamente.”
+- botão: `Confirmar Importação Segura`.
 
-DUPLICIDADE E INCONSISTÊNCIAS
+Durante a importação:
 
-- Detecte a duplicidade encontrada nas linhas de roteiro.
-- Mostre a linha/origem da duplicidade na aba Inconsistências.
-- Não bloqueie a prévia, mas marque a importação como “requer revisão” enquanto houver duplicidade ou vínculo ausente.
-- Corrija a interface para não usar contadores fictícios, valores fixos ou fallback.
+- mostre progresso;
+- bloqueie clique duplo;
+- se ocorrer falha, apresente relatório claro;
+- a operação deve ser atômica por categoria ou possuir rollback seguro, sem deixar roteiros pela metade;
+- registre um relatório de importação com data, Admin responsável, resumo, pendências e erros.
 
-TESTE NO PREVIEW
+SEGURANÇA
 
-1. Faça upload do arquivo de referência.
-2. Confirme que os quatro totais principais são exatamente 42, 419, 26 e 413.
-3. Confirme os quatro totais complementares: 28, 188, 20 e 522.
-4. Confirme que a duplicidade aparece em Inconsistências.
-5. Confirme que linhas vazias e fórmulas não entram na contagem.
-6. Confirme que nenhuma tabela operacional é alterada.
-7. Mantenha “Confirmar Importação” desabilitado nesta missão.
+- Somente Admin pode confirmar a importação.
+- A gravação deve ocorrer exclusivamente por função server-side.
+- Valide novamente no servidor todos os dados recebidos.
+- Não exponha chaves administrativas.
+- Não permita que upload ou campos manipulados pelo frontend alterem permissões, usuários ou dados financeiros.
+
+VALIDAÇÃO NO PREVIEW
+
+1. Importar a planilha de referência usando uma vigência escolhida pelo Admin.
+2. Confirmar que promotores aparecem no módulo Promotores.
+3. Confirmar que lojas aparecem no módulo Lojas.
+4. Confirmar que indústrias aparecem no módulo Indústrias.
+5. Confirmar criação de roteiros em rascunho para os promotores com roteiro.
+6. Confirmar que as paradas aparecem no editor de cada roteiro importado.
+7. Confirmar que nenhuma visita foi criada automaticamente.
+8. Confirmar que as quatro linhas sem dia ficaram no relatório de pendências.
+9. Repetir a mesma importação e confirmar que não duplica cadastros nem roteiros.
+10. Confirmar que usuário não-Admin é bloqueado.
 
 ENTREGA
 
 Informe:
 
-- causa raiz dos totais errados;
-- regra usada para reconhecer uma linha válida;
-- arquivos alterados;
-- resultado dos sete testes;
-- captura do Preview com os totais corretos.
+- quantidade criada, atualizada, ignorada e pendente em cada categoria;
+- IDs ou nomes dos roteiros em rascunho criados;
+- relatório das quatro pendências;
+- resultado individual dos dez testes;
+- confirmação explícita de que nenhuma visita foi gerada automaticamente.
 
-Não implemente gravação enquanto os totais não coincidirem com os valores esperados.
+Não publique roteiros nem gere visitas nesta missão.
         </div>
       </div>
     </div>
