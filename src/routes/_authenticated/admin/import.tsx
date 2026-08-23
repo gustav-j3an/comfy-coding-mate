@@ -218,6 +218,31 @@ function ImportModule() {
     } finally {
       setIsLoading(false);
     }
+  const handleImport = async () => {
+    if (!previewData || !validFrom || !acceptedTerms) return;
+    
+    setIsImporting(true);
+    try {
+      const res = await importFn({
+        validFrom,
+        promoters: previewData.promoters,
+        stores: previewData.stores,
+        industries: previewData.industries,
+        routes: previewData.routes
+      });
+
+      if (res.success) {
+        setImportResult(res.results);
+        toast.success('Importação realizada com sucesso!');
+      } else {
+        toast.error(`Erro na importação: ${res.error}`);
+      }
+    } catch (err: any) {
+      toast.error('Erro crítico na importação.');
+      console.error(err);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   if (role !== 'admin') return null;
