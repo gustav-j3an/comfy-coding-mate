@@ -29,7 +29,9 @@ import {
   Copy,
   MessageSquare,
   AlertTriangle,
-  Loader2
+  Loader2,
+  CopyIcon,
+  ExternalLink
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -55,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset, generateWhatsAppInvite } from '@/lib/users.functions';
@@ -75,6 +78,7 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 
 function UserManagement() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const searchParams = Route.useSearch() as any;
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
@@ -306,16 +310,40 @@ function UserManagement() {
         const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
         
         const encodedMessage = encodeURIComponent(message);
-        const waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
         
-        window.open(waUrl, '_blank');
-        toast.success('WhatsApp aberto com a mensagem pronta!');
+        let waUrl = "";
+        if (isMobile) {
+          waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
+        } else {
+          waUrl = `https://web.whatsapp.com/send?phone=${res.phone}&text=${encodedMessage}`;
+        }
+        
+        const win = window.open(waUrl, '_blank');
+        
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+          toast.error("O bloqueio de pop-ups impediu a abertura do WhatsApp.", {
+            description: "Use as opções de cópia abaixo como alternativa.",
+            duration: 8000
+          });
+          // Note: we don't set whatsAppTarget to null here so the dialog stays open or the user sees the buttons if we added them to a dialog
+        } else {
+          toast.success('WhatsApp aberto com a mensagem pronta!');
+          setWhatsAppTarget(null);
+        }
       }
     } catch (error: any) {
       toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
     } finally {
       setGeneratingWA(false);
-      setWhatsAppTarget(null);
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copiado!`);
+    } catch (err) {
+      toast.error(`Erro ao copiar ${label}`);
     }
   };
 
