@@ -133,7 +133,7 @@ function VisitExecution() {
 
   // Check for mandatory evidence requirements
   useEffect(() => {
-    const required = ['reposicao']; // Example: replenishment photo is always mandatory
+    const required = ['reposicao', 'relatorio']; // Mandatory for KING, DON LUIZ, FRUTA POLPA
     const uploadedTypes = evidences.map(e => e.evidenceType);
     const missing = required.filter(type => !uploadedTypes.includes(type));
     setMissingEvidences(missing);
@@ -326,7 +326,7 @@ function VisitExecution() {
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="font-bold text-amber-800">Evidências Obrigatórias Faltando</p>
-              <p className="text-amber-700">Para concluir esta visita, você precisa anexar: <span className="font-bold">{missingEvidences.map(t => t === 'reposicao' ? 'Foto da Reposição' : t).join(', ')}</span>.</p>
+              <p className="text-amber-700">Para concluir esta visita, você precisa anexar: <span className="font-bold">{missingEvidences.map(t => t === 'reposicao' ? 'Foto da Reposição' : (t === 'relatorio' ? 'Relatório da Indústria' : t)).join(', ')}</span>.</p>
             </div>
           </div>
         )}

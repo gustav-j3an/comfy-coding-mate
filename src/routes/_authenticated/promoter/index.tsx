@@ -26,6 +26,7 @@ import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitD
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
+import { getPromoterAgenda } from '@/lib/execution.functions';
 
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
@@ -89,154 +90,28 @@ function PromoterDashboard() {
     queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
       const currentUserId = user?.id;
-      const effectiveUserId = previewPromoter?.id || currentUserId;
-      const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
-      if (!effectiveUserId) return [];
+      const effectivePromoterId = previewPromoter?.id || profile?.promoter_id || null;
+      if (!currentUserId || !effectivePromoterId) return [];
 
-      const isRealToday = new Date().getDay() === simulatedDay && 
-                         new Date().toISOString().split('T')[0] === scheduledDateStr;
-      
       try {
-        // AUTH REINFORCEMENT: If accessing another promoter's data, verify admin role
-        if (previewPromoter?.id) {
-          const { data: hasRole } = await supabase.rpc('has_role', {
-            _user_id: currentUserId as any,
-            _role: 'admin'
-          });
-          
-          if (!hasRole) {
-            toast.error("Acesso negado: Apenas administradores podem visualizar dados de outros promotores.");
-            return [];
+        const allVisits = await getPromoterAgenda({
+          data: {
+            date: scheduledDateStr,
+            promoterId: previewPromoter?.id
           }
-        }
-
-        // 1. Get materialized visits for the date
-        let query = supabase
-          .from('visits')
-          .select(`
-            *,
-            store:stores(name, address),
-            industry:industries(name)
-          `)
-          .eq('scheduled_date', scheduledDateStr as any);
-
-        if (currentPromoterId) {
-          query = query.eq('promoter_id', currentPromoterId);
-        } else {
-          query = query.eq('executor_id', effectiveUserId);
-        }
-
-        const { data: materializedVisits, error: matError } = await query.order('visit_order', { ascending: true });
-        if (matError) throw matError;
-
-        // 2. Fetch theoretical stops from the active route to show what's planned.
-        // We ALWAYS check for theoretical visits if in preview mode OR if no materialized visits exist yet.
-        const { data: activeRoutes, error: routesError } = await supabase
-          .from('routes')
-          .select(`
-            id,
-            name,
-            valid_from,
-            route_stops (
-              id,
-              store_id,
-              day_of_week,
-              visit_order,
-              frequency,
-              biweekly_start_date,
-              observation,
-              store:stores(name, address),
-              stop_tasks (
-                industry_id,
-                industry:industries(name)
-              )
-            )
-          `)
-          .eq('promoter_id', currentPromoterId as any)
-          .eq('active', true)
-          .in('status', ['published'] as any);
-
-        if (routesError) console.error("Error fetching active routes:", routesError);
-
-        const theoreticalVisits: any[] = [];
-        if (activeRoutes && activeRoutes.length > 0) {
-          activeRoutes.forEach(route => {
-            // Filter stops by day of week
-            const stopsForDay = (route.route_stops || []).filter((s: any) => Number(s.day_of_week) === simulatedDay);
-            
-            stopsForDay.forEach((stop: any) => {
-              // Check frequency (biweekly logic)
-              let shouldShow = true;
-              if (stop.frequency === 'biweekly') {
-                const start = stop.biweekly_start_date ? new Date(stop.biweekly_start_date) : (route.valid_from ? new Date(route.valid_from) : new Date());
-                const diffTime = Math.abs(simulatedDate.getTime() - start.getTime());
-                const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
-                shouldShow = diffWeeks % 2 === 0;
-              }
-
-              if (shouldShow) {
-                // For each task, create a theoretical visit
-                (stop.stop_tasks || []).forEach((task: any) => {
-                  // Avoid duplicates if visit is already materialized (by store and industry)
-                  const isAlreadyMaterialized = (materializedVisits || []).some(mv => 
-                    mv.store_id === stop.store_id && mv.industry_id === task.industry_id
-                  );
-                  
-                  if (!isAlreadyMaterialized) {
-                    theoreticalVisits.push({
-                      id: `theoretical-${stop.id}-${task.industry_id}`,
-                      store_id: stop.store_id,
-                      industry_id: task.industry_id,
-                      status: 'planned',
-                      scheduled_date: scheduledDateStr,
-                      visit_order: stop.visit_order,
-                      store: stop.store,
-                      industry: task.industry,
-                       observation: stop.observation,
-                       frequency: stop.frequency,
-                       is_theoretical: true
-                     });
-                  }
-                });
-              }
-            });
-          });
-        }
-
-        // Enrich materialized visits with route stop data (frequency, observation) if not present
-        const enrichedMaterialized = (materializedVisits || []).map(mv => {
-          // Find the corresponding stop in active routes
-          let stopInfo = null;
-          for (const route of activeRoutes || []) {
-            const stop = (route.route_stops || []).find((s: any) => 
-              s.store_id === mv.store_id && Number(s.day_of_week) === simulatedDay
-            );
-            if (stop) {
-              stopInfo = stop;
-              break;
-            }
-          }
-          
-          return {
-            ...mv,
-            frequency: (mv as any).frequency || stopInfo?.frequency,
-            observation: mv.observation || stopInfo?.observation
-          };
         });
 
-        // Merge and sort
-        const allVisits = [...enrichedMaterialized, ...theoreticalVisits].sort((a, b) => 
-          (a.visit_order || 0) - (b.visit_order || 0)
-        );
+        const isRealToday = new Date().getDay() === simulatedDay && 
+                           new Date().toISOString().split('T')[0] === scheduledDateStr;
 
         if (isRealToday && !previewPromoter?.id) {
-          await cachePromoterVisits(effectiveUserId, allVisits);
+          await cachePromoterVisits(currentUserId, allVisits);
         }
         
         return allVisits;
       } catch (err) {
         console.warn('Network error or query error:', err);
-        return await getCachedVisits(effectiveUserId);
+        return await getCachedVisits(currentUserId || '');
       }
     }
   });

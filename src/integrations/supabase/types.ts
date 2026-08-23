@@ -1158,6 +1158,7 @@ export type Database = {
           file_path: string
           file_type: string
           id: string
+          industry_id: string | null
           visit_id: string
         }
         Insert: {
@@ -1166,6 +1167,7 @@ export type Database = {
           file_path: string
           file_type: string
           id?: string
+          industry_id?: string | null
           visit_id: string
         }
         Update: {
@@ -1174,9 +1176,17 @@ export type Database = {
           file_path?: string
           file_type?: string
           id?: string
+          industry_id?: string | null
           visit_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "visit_evidence_industry_id_fkey"
+            columns: ["industry_id"]
+            isOneToOne: false
+            referencedRelation: "industries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visit_evidence_visit_id_fkey"
             columns: ["visit_id"]
@@ -1202,6 +1212,7 @@ export type Database = {
           observation: string | null
           promoter_id: string
           rejection_reason: string | null
+          route_id: string | null
           scheduled_date: string
           status: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
@@ -1221,6 +1232,7 @@ export type Database = {
           observation?: string | null
           promoter_id: string
           rejection_reason?: string | null
+          route_id?: string | null
           scheduled_date: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
@@ -1240,6 +1252,7 @@ export type Database = {
           observation?: string | null
           promoter_id?: string
           rejection_reason?: string | null
+          route_id?: string | null
           scheduled_date?: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id?: string
@@ -1264,6 +1277,13 @@ export type Database = {
             columns: ["promoter_id"]
             isOneToOne: false
             referencedRelation: "promoters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
             referencedColumns: ["id"]
           },
           {
