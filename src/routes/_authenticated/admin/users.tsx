@@ -315,13 +315,8 @@ function UserManagement() {
         
         const encodedMessage = encodeURIComponent(message);
         
-        let waUrl = "";
-        if (isMobile) {
-          waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
-        } else {
-          // Protocolo Desktop
-          waUrl = `whatsapp://send?phone=${res.phone}&text=${encodedMessage}`;
-        }
+        // Regra: usar wa.me em computador e celular
+        const waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
         
         setWaInviteData({
           url: waUrl,

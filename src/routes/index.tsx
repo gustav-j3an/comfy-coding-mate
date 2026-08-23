@@ -38,70 +38,25 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        A imagem confirma que o bloqueio agora vem do próprio WhatsApp/WebView do navegador (`ERR_BLOCKED_BY_RESPONSE`), não do botão do sistema. Não dá para “forçar” o WhatsApp Web a aceitar esse link; insistir no mesmo endereço continuará bloqueando.
+        AJUSTE DO LINK DE CONVITE POR WHATSAPP
 
-        A solução mais confiável sem API é usar o **WhatsApp Desktop** quando estiver instalado e, se ele não abrir, copiar a mensagem pronta para colar manualmente no WhatsApp Web.
+        Substitua toda a lógica atual de abertura de WhatsApp por um único formato oficial de Click to Chat:
 
-        Cole este prompt no Lovable:
+        `https://wa.me/[NUMERO_NORMALIZADO]?text=[MENSAGEM_CODIFICADA]`
 
-        CORREÇÃO FINAL — WHATSAPP WEB RETORNA `ERR_BLOCKED_BY_RESPONSE`
+        Regras:
 
-        A abertura de:
+        - usar `wa.me` em computador e celular;
+        - remover completamente `api.whatsapp.com`;
+        - remover completamente `web.whatsapp.com/send`;
+        - manter somente dígitos no telefone, com `55 + DDD + número`;
+        - gerar a mensagem com `encodeURIComponent`;
+        - abrir o link por um elemento `<a>` real, com clique direto do Admin;
+        - manter fallback de copiar mensagem e copiar link de acesso;
+        - não usar popup automático, iframe, API ou automação;
+        - o Admin continua clicando manualmente em Enviar dentro do WhatsApp.
 
-        `https://web.whatsapp.com/send?...`
-
-        também está sendo bloqueada com `ERR_BLOCKED_BY_RESPONSE`.
-
-        Não tente contornar bloqueios do WhatsApp, navegador, WebView ou política de rede. Não use iframe, automação, API não oficial ou envio automático.
-
-        SUBSTITUA O FLUXO ATUAL POR DUAS OPÇÕES EXPLÍCITAS
-
-        Após gerar o convite seguro, mostrar um diálogo com:
-
-        1. Botão principal: `Abrir no WhatsApp Desktop`
-        - usar link de protocolo:
-          `whatsapp://send?phone=[NUMERO]&text=[MENSAGEM_CODIFICADA]`
-        - abrir por clique direto do Admin;
-        - funciona quando o aplicativo oficial WhatsApp Desktop estiver instalado e logado.
-
-        2. Botão secundário: `Copiar mensagem para WhatsApp Web`
-        - copiar para a área de transferência a mensagem completa, incluindo o link único de acesso;
-        - confirmar visualmente: `Mensagem copiada. Abra o WhatsApp Web, selecione o promotor e cole a mensagem.`
-        - incluir também botão separado `Copiar somente link de acesso`.
-
-        3. Link auxiliar: `Abrir WhatsApp Web`
-        - abrir apenas:
-          `https://web.whatsapp.com/`
-        - sem telefone e sem texto na URL;
-        - o Admin encontra a conversa do promotor e cola a mensagem já copiada.
-
-        NÃO usar:
-
-        - `api.whatsapp.com`;
-        - `web.whatsapp.com/send`;
-        - iframe;
-        - popup automático;
-        - envio automático;
-        - URL de acesso em logs, telas permanentes ou auditoria.
-
-        TRATAMENTO DE BLOQUEIO
-
-        - Se o WhatsApp Desktop não estiver instalado ou não abrir, não mostrar erro técnico.
-        - Exibir:
-          `Não foi possível abrir o WhatsApp Desktop. Use “Copiar mensagem para WhatsApp Web”.`
-        - O diálogo deve sempre manter os botões de cópia disponíveis.
-
-        TESTES
-
-        1. Computador com WhatsApp Desktop instalado: abre conversa com mensagem pronta.
-        2. Computador sem WhatsApp Desktop: mostra fallback claro.
-        3. Copiar mensagem funciona.
-        4. Abrir WhatsApp Web abre somente a página normal.
-        5. Admin consegue colar a mensagem e enviar manualmente.
-        6. Nenhum envio é feito sem ação final do Admin.
-        7. Nenhum link usa `api.whatsapp.com` ou `web.whatsapp.com/send`.
-
-        Informe os arquivos alterados e o resultado dos sete testes.
+        Teste no site publicado com um número válido e confirme que o link aberto começa com `https://wa.me/`.
       </div>
 
       {/* Hero Section */}
