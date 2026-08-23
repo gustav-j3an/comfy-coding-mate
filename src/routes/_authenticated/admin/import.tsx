@@ -225,9 +225,12 @@ function ImportModule() {
     if (!previewData || !validFrom || !acceptedTerms) return;
     
     setIsImporting(true);
+    const batchId = `BATCH-${Date.now()}`;
+    
     try {
       const res = await importFn({
         data: {
+          importBatchId: batchId,
           validFrom,
           promoters: previewData.promoters,
           stores: previewData.stores,
@@ -241,9 +244,11 @@ function ImportModule() {
         toast.success('Importação realizada com sucesso!');
       } else {
         toast.error(`Erro na importação: ${res.error}`);
+        // If we got partial results back, show them so the user knows what was saved
+        if (res.results) setImportResult(res.results);
       }
     } catch (err: any) {
-      toast.error('Erro crítico na importação.');
+      toast.error('Erro crítico na importação. Verifique o console.');
       console.error(err);
     } finally {
       setIsImporting(false);
