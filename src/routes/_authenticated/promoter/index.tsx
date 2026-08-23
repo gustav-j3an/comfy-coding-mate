@@ -203,7 +203,7 @@ function PromoterDashboard() {
           
           return {
             ...mv,
-            frequency: mv.frequency || stopInfo?.frequency,
+            frequency: (mv as any).frequency || stopInfo?.frequency,
             observation: mv.observation || stopInfo?.observation
           };
         });
