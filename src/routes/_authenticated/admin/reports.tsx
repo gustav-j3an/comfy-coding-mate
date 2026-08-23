@@ -330,7 +330,6 @@ function ReportsPage() {
             </Table>
           </div>
         </div>
-        </div>
       </div>
     </div>
   );
