@@ -2,65 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 /**
- * Server-side helper to record audit logs.
- * This file is BROWSERSAFE to import because it only exports createServerFn wrappers,
- * but the actual implementation will use supabaseAdmin.
+ * Audit Log retrieval for the UI.
+ * Writing logs is handled via recordAudit in audit.server.ts.
  */
-
-export const recordAuditLog = createServerFn({ method: "POST" })
-  .inputValidator((data: any) => z.object({
-    action: z.string(),
-    module: z.string(),
-    entityType: z.string().optional(),
-    entityId: z.string().optional(),
-    summary: z.string().optional(),
-    details: z.record(z.any()).optional(),
-    result: z.string().default('success'),
-  }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getRequest } = await import("@tanstack/react-start/server");
-    
-    const { userId } = context as any;
-    if (!userId) return { success: false, error: "Unauthorized" };
-
-    const request = getRequest();
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip');
-    const userAgent = request.headers.get('user-agent');
-
-    // Get user profile info for the log
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('email, user_roles(role)')
-      .eq('id', userId)
-      .single();
-
-    const role = (profile as any)?.user_roles?.[0]?.role || 'unknown';
-
-    const { error } = await supabaseAdmin
-      .from('admin_audit_logs' as any)
-      .insert({
-        user_id: userId,
-        user_email: profile?.email,
-        user_role: role,
-        action: data.action,
-        module: data.module,
-        entity_type: data.entityType,
-        entity_id: data.entityId,
-        summary: data.summary,
-        details: data.details,
-        result: data.result,
-        ip_address: ip,
-        user_agent: userAgent
-      } as any);
-
-    if (error) {
-      console.error("Failed to record audit log:", error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
-  });
 
 export const getAuditLogs = createServerFn({ method: "GET" })
   .inputValidator((data: any) => z.object({
