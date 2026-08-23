@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 });
 
 function PromoterDashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile, previewPromoter } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
   const [online, setOnline] = useState(isOnline());
