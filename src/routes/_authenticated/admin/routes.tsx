@@ -62,9 +62,12 @@ function RoutesPage() {
         .select('*, route_stops(id)')
         .order('created_at', { ascending: false });
 
-      if (routesError) throw routesError;
+      if (routesError) {
+        console.error('Error fetching routes:', routesError);
+        throw routesError;
+      }
 
-      const { data: promotersData } = await (supabase as any)
+      const { data: promotersData } = await supabase
         .from('promoters')
         .select('*');
 
@@ -80,6 +83,7 @@ function RoutesPage() {
 
       setRoutes(mappedRoutes);
     } catch (error: any) {
+      console.error('Fetch data error:', error);
       toast.error('Erro ao carregar roteiros: ' + error.message);
     } finally {
       setLoading(false);

@@ -203,12 +203,17 @@ function RouteEditorPage() {
       }
 
       if (publish) {
-        await publishRoute({ data: { routeId: route.id } });
-        toast.success('Roteiro publicado e visitas geradas!');
+        const result = await publishRoute({ data: { routeId: route.id } });
+        if (result && (result as any).success) {
+          toast.success('Roteiro publicado e visitas geradas!');
+        } else {
+          toast.error('Roteiro criado, mas houve um problema na geração automática de visitas.');
+        }
       } else {
         toast.success('Rascunho salvo com sucesso!');
       }
 
+      // Force refresh data in the list page by going back
       navigate({ to: '/admin/routes' });
     } catch (error: any) {
       toast.error('Erro ao salvar roteiro: ' + error.message);
