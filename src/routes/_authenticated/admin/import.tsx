@@ -35,6 +35,7 @@ function ImportModule() {
   const [validFrom, setValidFrom] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [acceptedRevisionTerms, setAcceptedRevisionTerms] = useState(false);
   const [activeBatch, setActiveBatch] = useState<any>(null);
   const startBatchFn = useServerFn(startImportBatch);
   const processStepFn = useServerFn(processImportStep);
