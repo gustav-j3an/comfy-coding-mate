@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
 import { recordAudit } from "./audit.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { format } from "date-fns";
 
 /**
  * Submits a visit for audit, uploading metadata and creating occurrences.
@@ -330,3 +332,5 @@ export const getSignedUrl = createServerFn({ method: "GET" })
     if (error) throw error;
     return signedUrl.signedUrl;
   });
+
+export { getPromoterAgenda } from "./execution.functions.server";
