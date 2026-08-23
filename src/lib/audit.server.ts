@@ -40,7 +40,7 @@ export async function recordAudit(params: {
       .single();
     
     if (profile) {
-      email = profile.email;
+      email = profile.email || undefined;
       role = (profile as any).user_roles?.[0]?.role || 'unknown';
     }
   }
