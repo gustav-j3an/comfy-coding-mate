@@ -5,8 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, Calendar, Clock, CheckCircle2, Archive, FileText } from 'lucide-react';
+import { 
+  Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, 
+  Calendar, Clock, CheckCircle2, Archive, FileText, 
+  ChevronRight, CalendarDays
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { useState, useMemo } from 'react';
+import { format, startOfWeek, differenceInCalendarWeeks, isBefore, parseISO, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
 import { getPromoterItineraryData } from '@/lib/routes.functions';
 import { useServerFn } from '@tanstack/react-start';
 
