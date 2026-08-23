@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { recordAuditLog } from "./audit.functions";
+import { recordAudit } from "./audit.server";
 
 export const getCleanupPreview = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -95,14 +95,12 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
     } as any);
 
     // Record audit log
-    await recordAuditLog({
-      data: {
-        action: 'manual_cleanup',
-        module: 'automation',
-        summary: `Limpeza manual executada. Arquivos deletados: ${deletedFiles}`,
-        details: preview
-      },
-      context
+    await recordAudit({
+      userId: userId || 'system',
+      action: 'manual_cleanup',
+      module: 'automation',
+      summary: `Limpeza manual executada. Arquivos deletados: ${deletedFiles}`,
+      details: preview
     });
 
     return { success: true, deleted_files: deletedFiles };
@@ -130,15 +128,13 @@ export const updateAutomationSettings = createServerFn({ method: "POST" })
     if (error) throw error;
 
     // Record audit log
-    await recordAuditLog({
-      data: {
-        action: 'update_automation_settings',
-        module: 'automation',
-        summary: 'Configurações de automação atualizadas',
-        details: data
-      },
-      context: { userId: (await import("@tanstack/react-start/server")).getRequest().headers.get('x-user-id') || 'system' } // Fallback since context might be missing in this simple chain
-    } as any);
+    await recordAudit({
+      userId: 'system',
+      action: 'update_automation_settings',
+      module: 'automation',
+      summary: 'Configurações de automação atualizadas',
+      details: data
+    });
 
     return settings;
   });
