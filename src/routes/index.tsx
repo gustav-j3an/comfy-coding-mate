@@ -13,125 +13,89 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-Entendi. São três problemas ligados:
+Entendi. O promotor já ficou vinculado/ativo, então o sistema provavelmente está bloqueando um novo convite como se a conta já estivesse pronta — mas o link anterior não concluiu o acesso.
 
-- o módulo de usuários quebra porque a consulta presume uma relação inexistente entre `profiles` e `user_roles`;
-- o convite está apontando para `localhost:8080`, por isso o promotor recebe uma página quebrada;
-- falta uma página simples de primeiro acesso com botão para instalar o PWA no celular.
-
-Importante: o link exibido na imagem contém um token de acesso. Não use esse convite; depois da correção, envie um convite novo.
+A solução é criar uma ação de **Reenviar convite** para conta pendente. Se a conta já tiver senha criada, a ação correta passa a ser **Redefinir acesso**, sem duplicar usuário nem vínculo com o promotor.
 
 Cole este prompt no Lovable:
 
-MISSÃO — CORRIGIR CONVITE DE PROMOTOR E PRIMEIRO ACESSO AO APLICATIVO
+CORREÇÃO — REENVIAR CONVITE PARA PROMOTOR JÁ VINCULADO
 
-Corrija o fluxo completo de convite de promotores, desde o painel Admin até o primeiro acesso e a instalação do PWA.
+Um promotor já aparece como ativo/vinculado no sistema, mas o convite anterior não funcionou e o link enviado não abre uma tela útil.
 
-Não altere roteiros, visitas, importação, faturamento ou políticas de retenção de mídias.
+O Admin precisa conseguir reenviar o acesso sem criar usuário duplicado, duplicar papel ou perder o vínculo com o promotor.
 
-PARTE 1 — CORRIGIR USUÁRIOS E VÍNCULO COM PROMOTOR
+NÃO apague o promotor, não crie novo promotor e não force novo cadastro para resolver isso.
 
-O painel mostra o erro:
+IMPLEMENTE ESTADOS CLAROS DE ACESSO
 
-`Could not find a relationship between 'profiles' and 'user_roles' in the schema cache`
+Para cada promotor vinculado a usuário, identificar no servidor:
 
-Não presuma uma relação inexistente no Supabase.
+1. Sem conta de acesso.
+2. Convite pendente / e-mail ainda não confirmado.
+3. Conta ativa / e-mail confirmado.
+4. Conta bloqueada ou inválida, se existir essa situação.
 
-Investigue a estrutura real de:
+Na lista Usuários e Acessos, exiba o estado correto e uma ação contextual:
 
-- `profiles`;
-- `user_roles`;
-- `promoters`;
-- colunas `id`, `user_id`, `profile_id`, `promoter_id` ou equivalentes;
-- foreign keys existentes.
+- Sem conta: `Convidar`
+- Convite pendente: `Reenviar convite`
+- Conta ativa: `Redefinir acesso`
+- Bloqueada: `Ver detalhes` ou ação adequada à regra existente.
 
-Corrija a listagem de Usuários e Acessos para buscar dados de forma compatível com o schema real. Se necessário, faça consultas separadas e una os resultados no backend, sem criar um relacionamento falso.
+REENVIO DE CONVITE
 
-No modal “Convidar Novo Usuário”:
+Para Promotor com convite pendente:
 
-- ao selecionar perfil Promotor, a lista “Vincular a Promotor Cadastrado” deve carregar promotores sem usuário vinculado;
-- mostrar nome, cidade/UF e matrícula, se disponível;
-- o valor enviado deve ser o `promoters.id` real;
-- tornar o vínculo obrigatório para perfil Promotor;
-- não exigir vínculo para Admin ou Indústria, salvo regra existente;
-- mostrar erro claro caso não existam promotores disponíveis.
+- adicionar botão `Reenviar convite`;
+- executar somente por função server-side;
+- validar que o usuário atual é Admin no banco;
+- manter o mesmo usuário, mesmo papel e mesmo `promoter_id`;
+- não criar novo `profiles`, `user_roles` ou vínculo duplicado;
+- invalidar/substituir de forma segura o link anterior, conforme o fluxo suportado pelo Supabase;
+- gerar novo convite com URL pública oficial, nunca localhost;
+- mostrar confirmação com data/hora do reenvio, sem exibir token ou link sensível;
+- respeitar limite contra envios repetidos, com mensagem clara.
 
-PARTE 2 — CORRIGIR ENVIO E REDIRECIONAMENTO DO CONVITE
+REDEFINIÇÃO DE ACESSO
 
-O convite atual redireciona para:
+Para conta já confirmada:
 
-`localhost:8080/auth/callback`
+- não enviar “convite” novamente;
+- usar fluxo seguro de recuperação/redefinição de senha;
+- enviar e-mail para página pública do aplicativo;
+- após nova senha, levar o promotor ao painel dele.
 
-Isso é inválido para o promotor e deve ser removido de todo fluxo de produção/Preview.
+TELA DE LINK INVÁLIDO OU EXPIRADO
 
-Implemente:
+No callback/primeiro acesso, quando o token estiver expirado, inválido ou já usado:
 
-- envio de convite somente por função server-side, validando Admin no banco;
-- uso de URL pública e autorizada do aplicativo para `redirectTo`;
-- nunca usar `localhost`, URL fixa de desenvolvimento ou origem fornecida livremente pelo frontend;
-- definir uma variável/configuração segura para a URL pública oficial do app;
-- configurar no Supabase Auth as URLs autorizadas necessárias para Preview e produção;
-- usar callback como `/auth/callback`, com retorno seguro para `/primeiro-acesso`;
-- validar o parâmetro de retorno contra uma lista interna, evitando open redirect;
-- tratar token inválido, expirado ou já utilizado com uma tela clara e botão para solicitar novo convite;
-- não mostrar token, erro técnico bruto ou URL sensível na tela.
-
-Após concluir o cadastro/senha, encaminhar o promotor para o painel dele.
-
-PARTE 3 — PÁGINA DE PRIMEIRO ACESSO E INSTALAÇÃO DO APLICATIVO
-
-Crie a página pública/autenticada de primeiro acesso:
-
-`/primeiro-acesso`
-
-Ela deve explicar, em linguagem simples:
-
-1. “Crie sua senha para acessar o Rota do Promotor.”
-2. “Depois, instale o aplicativo neste celular para acessar seu roteiro e enviar fotos.”
-3. Exibir botão `Instalar aplicativo`.
-
-Regras do botão:
-
-- se o navegador suportar a instalação do PWA, mostrar o botão e disparar o fluxo nativo de instalação;
-- no Android/Chrome, explicar: “Toque em Instalar”;
-- no iPhone/Safari, explicar: “Toque em Compartilhar e depois em Adicionar à Tela de Início”;
-- se o aplicativo já estiver instalado, informar isso e mostrar `Abrir aplicativo`;
-- nunca prometer download de APK: é um aplicativo web instalável (PWA);
-- o promotor deve poder continuar para `Meu roteiro` após concluir ou ignorar a instalação.
-
-PARTE 4 — SEGURANÇA
-
-- Somente Admin envia convite.
-- O vínculo de promotor deve ser validado no servidor.
-- Não permitir que o convite vincule um usuário a promotor já ocupado sem confirmação/regra explícita.
-- Não expor chave de serviço no frontend.
-- Não confiar somente na validação visual do formulário.
-- Não logar token de convite, senha ou URL completa com credenciais.
+- exibir mensagem clara:
+  `Este link de acesso expirou ou já foi utilizado. Peça ao administrador para reenviar o convite.`
+- não exibir tela vazia;
+- não mostrar token, URL sensível ou erro técnico;
+- incluir botão de voltar para o login.
 
 TESTES OBRIGATÓRIOS
 
-1. Painel Usuários e Acessos abre sem erro de relacionamento.
-2. Modal de convite carrega promotores disponíveis.
-3. Admin convida um promotor com e-mail válido e vínculo correto.
-4. O convite novo abre a URL pública do app, nunca localhost.
-5. Promotor cria senha e entra no próprio painel.
-6. A página Primeiro Acesso oferece instalação do PWA.
-7. Promotor não vê dados de outro promotor.
-8. Convite inválido/expirado mostra mensagem clara.
-9. Admin/Indústria não conseguem usar o convite para acessar painel de Promotor indevidamente.
+1. Promotor pendente recebe novo convite sem criar registros duplicados.
+2. O novo e-mail abre a URL pública correta, nunca localhost.
+3. O promotor cria a senha e entra no próprio painel.
+4. Link antigo mostra mensagem de expirado/inválido.
+5. Conta ativa recebe fluxo de redefinição de acesso, não convite duplicado.
+6. Admin não consegue reenviar convite para e-mail diferente sem editar conscientemente o cadastro.
+7. Promotor e Indústria não conseguem usar essa ação.
+8. O vínculo do promotor permanece o mesmo após reenvio.
 
 ENTREGA
 
 Informe:
 
-- causa raiz da relação quebrada;
-- esquema real usado para vincular usuário e promotor;
-- URLs configuradas para Auth;
-- arquivos e configurações alterados;
-- resultado individual dos nove testes;
-- confirme que um novo convite foi testado sem redirecionar para localhost.
-
-Não use nem reutilize o convite antigo; gere um novo somente após a correção.
+- estado atual encontrado para o promotor de teste;
+- ação disponibilizada e por quê;
+- arquivos alterados;
+- resultado individual dos oito testes;
+- confirmação de que o novo convite foi testado com URL pública e acesso ao painel do promotor.
         </div>
       </div>
     </div>
