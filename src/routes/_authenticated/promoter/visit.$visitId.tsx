@@ -428,7 +428,7 @@ function VisitExecution() {
           {isSubmitting ? (
             <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Enviando...</>
           ) : (
-            <>Enviar para Conferência <CheckCircle2 className="ml-2 h-5 w-5" /></>
+            <>{online ? 'Enviar para Conferência' : 'Salvar Offline'} <CheckCircle2 className="ml-2 h-5 w-5" /></>
           )}
         </Button>
       </div>
