@@ -218,6 +218,7 @@ function ImportModule() {
     } finally {
       setIsLoading(false);
     }
+  }
   const handleImport = async () => {
     if (!previewData || !validFrom || !acceptedTerms) return;
     
