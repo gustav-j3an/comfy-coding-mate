@@ -690,6 +690,76 @@ function UserManagement() {
       </Card>
 
       <AlertDialog 
+        open={!!tempAccessTarget} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setTempAccessTarget(null);
+            setTempAccessData(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Acesso Temporário Gerado</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-amber-50 p-3 rounded-md text-xs text-amber-800 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <p><strong>Atenção:</strong> Mostre esta senha apenas uma vez ao promotor. Ela não será salva em texto puro.</p>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Promotor</span>
+                  <span className="text-sm font-bold text-slate-900">{tempAccessTarget?.full_name}</span>
+                </div>
+                <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">E-mail</span>
+                  <span className="text-sm text-slate-900">{tempAccessData?.email}</span>
+                </div>
+                <div className="flex justify-between items-center bg-white p-2 rounded border border-slate-100">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Senha Temporária</span>
+                  <code className="text-lg font-black text-blue-700 tracking-wider">
+                    {generatingTempAccess ? <Loader2 className="w-4 h-4 animate-spin" /> : tempAccessData?.tempPassword}
+                  </code>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="grid gap-3 py-2">
+            {generatingTempAccess ? (
+              <Button disabled className="w-full h-11 bg-slate-100 text-slate-400 border-none">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Gerando acesso...
+              </Button>
+            ) : tempAccessData ? (
+              <>
+                <Button 
+                  asChild
+                  className="bg-green-600 hover:bg-green-700 w-full font-bold h-11 shadow-lg shadow-green-100"
+                >
+                  <a href={tempAccessData.waUrl} target="_blank" rel="noopener noreferrer">
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Enviar via WhatsApp
+                  </a>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full font-semibold text-blue-600 border-blue-200 bg-blue-50/50 hover:bg-blue-50"
+                  onClick={() => tempAccessData && copyToClipboard(tempAccessData.message, 'Mensagem')}
+                >
+                  <Copy className="w-4 h-4 mr-2" /> Copiar Mensagem Completa
+                </Button>
+              </>
+            ) : null}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="w-full sm:w-auto">Fechar</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog 
         open={!!whatsAppTarget} 
         onOpenChange={(open) => {
           if (!open) {
