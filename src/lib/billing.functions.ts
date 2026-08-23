@@ -208,7 +208,7 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
     cancellation_reason: z.string().optional(),
     payment_link: z.string().optional(),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const updates: any = {

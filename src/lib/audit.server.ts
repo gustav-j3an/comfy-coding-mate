@@ -49,8 +49,8 @@ export async function recordAudit(params: {
     .from('admin_audit_logs' as any)
     .insert({
       user_id: params.userId,
-      user_email: email,
-      user_role: role,
+      user_email: email || undefined,
+      user_role: role || undefined,
       action: params.action,
       module: params.module,
       entity_type: params.entityType,

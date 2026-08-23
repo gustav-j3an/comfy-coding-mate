@@ -191,7 +191,7 @@ export const auditVisit = createServerFn({ method: "POST" })
     decision: z.enum(['approved', 'rejected']),
     reason: z.string().optional()
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Update visit status
