@@ -13,7 +13,7 @@ const inviteUserSchema = z.object({
 
 export const inviteUser = createServerFn({ method: "POST" })
   .inputValidator((data) => inviteUserSchema.parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     // Verify admin role
