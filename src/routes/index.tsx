@@ -13,27 +13,28 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO V1.1 — RECRIAR DO ZERO O VISUALIZADOR DE ROTEIRO DO PROMOTOR
+MISSÃO V1.2 — LEITURA REAL DE ROTEIROS E PARADAS NO NOVO VISUALIZADOR
 
-O visualizador antigo “Visualizar como Promotor” foi removido. A impersonação na tela real do promotor e o banner de simulação foram desativados para preservar a integridade da ferramenta de campo.
+O novo visualizador administrativo agora carrega dados reais diretamente da estrutura de roteiros do banco de dados, garantindo total isolamento da tela real do promotor e da tabela de visitas.
 
-NOVA BASE ISOLADA CRIADA:
-Uma nova página administrativa independente foi implementada em:
+PÁGINA ALVO:
 `/admin/visualizar-promotor`
 
-FLUXO ATUAL:
-1. Admin acessa a tela de Rotas e Roteiros.
-2. Seleciona um promotor no filtro superior.
-3. Clica no novo botão "Visualizar roteiro do promotor".
-4. O sistema valida as permissões e redireciona para a nova página isolada.
+FUNCIONALIDADES IMPLEMENTADAS:
+1. Leitura Server-Side: Criada server function `getPromoterItineraryData` que valida permissão de Admin e busca roteiros vinculados ao promotor.
+2. Relacionamentos Reais: A consulta atravessa {"routes -> route_stops -> stores"} e {"stop_tasks -> industries"} para montar a visão completa.
+3. Interface Detalhada:
+   - Exibição clara do Status (Publicado, Rascunho, Arquivado, Pausado).
+   - Listagem técnica de cada parada: Dia da Semana, Loja, Endereço, Indústria e Frequência.
+   - Tratamento de estados vazios para promotores sem roteiro.
+4. Segurança: Validação obrigatória de Admin no servidor e filtro estrito por `promoterId`.
 
-SEGURANÇA E VALIDAÇÃO:
-- A nova página valida no servidor (via Supabase RPC) se o usuário é Admin.
-- O promoterId é validado para garantir que o promotor existe e está ativo.
-- A sessão do Admin não é alterada e a tela real do promotor permanece limpa.
+STATUS DO ROTEIRO "LUCAS":
+Confirmado como "Publicado", exibindo corretamente a parada "Segunda-feira — SUPER ADEGA QNL — INDÚSTRIA KING — Semanal".
 
 PRÓXIMA ETAPA:
-Adicionar a agenda semanal simulada na nova página isolada.
+Montagem da Agenda Semanal Visual baseada nestes dados.
+
         </div>
       </div>
     </div>

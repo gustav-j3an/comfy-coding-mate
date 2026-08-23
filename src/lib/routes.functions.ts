@@ -430,3 +430,42 @@ export const duplicateRoute = createServerFn({ method: "POST" })
     return { success: true, newRouteId: newRoute.id };
   });
 
+
+/**
+ * Fetches real route and stop data for a promoter.
+ */
+export const getPromoterItineraryData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    promoterId: z.string()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { promoterId } = data;
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Check admin role
+    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
+    if (!hasRole) throw new Error("Não autorizado");
+
+    const { data: routes, error } = await supabaseAdmin
+      .from('routes')
+      .select(`
+        *,
+        route_stops (
+          *,
+          stores (name, address),
+          stop_tasks (
+            industries (name)
+          )
+        )
+      `)
+      .eq('promoter_id', promoterId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return routes;
+  });
