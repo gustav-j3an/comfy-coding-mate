@@ -103,7 +103,8 @@ function VisitExecution() {
         evidences,
         occurrences,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
+        status: missingEvidences.length > 0 ? 'awaiting_media' : 'offline_draft'
       });
       setLastSaved(draft.lastSaved);
     }, 2000);
@@ -145,7 +146,7 @@ function VisitExecution() {
           if (draft.status !== newStatus) {
             await saveVisitDraft(user.id, {
               ...draft,
-              status: newStatus as any
+              status: newStatus
             });
           }
         }
@@ -235,7 +236,8 @@ function VisitExecution() {
         evidences,
         occurrences,
         latitude: coords?.latitude,
-        longitude: coords?.longitude
+        longitude: coords?.longitude,
+        status: 'awaiting_connection'
       });
       await addToSyncQueue(user!.id, visitId);
       toast.warning("Visita salva offline. O envio ocorrerá automaticamente quando houver conexão.");
