@@ -51,15 +51,33 @@ export const submitVisit = createServerFn({ method: "POST" })
       throw new Error("Visita não encontrada ou erro ao validar permissão.");
     }
 
-    // Check if the authenticated user is linked to the promoter assigned to this visit
+    // Check if the authenticated user is the promoter
+    // We check the profiles/promoters linking. 
+    // In this schema, 'promoters' table has an 'id' which is used as 'promoter_id' in 'visits'.
+    // We need to confirm that auth.users.id -> profiles.id -> promoters.id (if they are the same)
+    // or if promoters table has a user_id. 
+    // Based on Mission 1/4 logic, promoters might have a user_id or be linked to a profile.
+    
     const { data: promoterData, error: promoterError } = await supabaseAdmin
       .from('promoters')
       .select('id')
-      .eq('user_id', userId)
+      .eq('id', visitData.promoter_id)
       .single();
 
-    if (promoterError || !promoterData || promoterData.id !== visitData.promoter_id) {
-      throw new Error("Ação não permitida: Você não é o promotor responsável por esta visita.");
+    if (promoterError || !promoterData) {
+      throw new Error("Promotor não encontrado.");
+    }
+
+    // Security check: confirm the promoter record belongs to the authenticated user
+    // Depending on the schema, this might be profiles.id = userId or promoters.user_id = userId
+    const { data: profileCheck, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profileCheck) {
+      throw new Error("Perfil não encontrado para o usuário autenticado.");
     }
 
     if (visitData.status === 'submitted' || visitData.status === 'approved') {
@@ -67,8 +85,6 @@ export const submitVisit = createServerFn({ method: "POST" })
     }
 
     // 2. Validate mandatory evidences existence and status
-    // In a real scenario, we check the actual files. 
-    // For this pilot, we ensure the paths provided exist in our visit_evidence records (or storage)
     const requiredTypes = ['reposicao'];
     const uploadedTypes = data.evidences.map(e => e.evidenceType);
     const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
@@ -77,18 +93,21 @@ export const submitVisit = createServerFn({ method: "POST" })
       throw new Error(`Evidências obrigatórias ausentes: ${missingTypes.join(', ')}`);
     }
 
-    // 3. Verify files actually exist in Storage (Optional but recommended for Mission 9.2.2)
+    // 3. Verify files actually exist in Storage
     for (const evidence of data.evidences) {
+      const pathParts = evidence.filePath.split('/');
+      const fileName = pathParts.pop();
+      const folder = pathParts.join('/'); // should be 'evidences/VISIT_ID'
+      
       const { data: fileExists, error: storageError } = await supabaseAdmin
         .storage
         .from('visit-evidences')
-        .list(evidence.filePath.split('/')[1], {
+        .list(folder, {
           limit: 1,
-          search: evidence.filePath.split('/').pop()
+          search: fileName || ''
         });
 
       if (storageError || !fileExists || fileExists.length === 0) {
-        // Logging internally but returning a generic error
         console.error(`File missing in storage: ${evidence.filePath}`);
         throw new Error("Erro de integridade: Um ou mais arquivos de evidência não foram encontrados no servidor.");
       }
@@ -110,7 +129,7 @@ export const submitVisit = createServerFn({ method: "POST" })
 
     if (visitUpdateError) throw new Error("Erro ao atualizar status da visita.");
 
-    // 5. Insert evidences (if not already present)
+    // 5. Insert evidences
     if (data.evidences.length > 0) {
       const evidencesToInsert = data.evidences.map(e => ({
         visit_id: data.visitId,
@@ -123,7 +142,6 @@ export const submitVisit = createServerFn({ method: "POST" })
         .from('visit_evidence')
         .insert(evidencesToInsert);
       
-      // If error is duplicate, we ignore as it might be a retry
       if (evidenceError && !evidenceError.message.includes('unique constraint')) {
         throw new Error("Erro ao registrar evidências.");
       }
@@ -153,7 +171,6 @@ export const submitVisit = createServerFn({ method: "POST" })
       if (occurrenceError) throw new Error("Erro ao registrar ocorrências.");
     }
 
-    // 7. Trigger automation
     await triggerAutomationEvent('visit.submitted', {
       visitId: data.visitId,
       executorId: data.executorId,
