@@ -45,7 +45,7 @@ export async function getCachedVisits(userId: string) {
 /**
  * Saves a visit draft locally.
  */
-export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'lastSaved' | 'status'>) {
+export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'lastSaved' | 'status'> & { status?: VisitDraft['status'] }) {
   const currentDraft = await getVisitDraft(userId, draft.visitId);
   
   const fullDraft: VisitDraft = {

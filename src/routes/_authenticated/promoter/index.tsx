@@ -21,7 +21,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
-import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline } from '@/lib/offline';
+import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/promoter/')({

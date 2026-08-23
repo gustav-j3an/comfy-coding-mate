@@ -1,11 +1,12 @@
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { get, keys } from 'idb-keyval';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
 import { PWAUpdateNotification } from '@/components/common/pwa-updater';
-import { getSyncQueue } from '@/lib/offline';
+import { getSyncQueue, getVisitDraft } from '@/lib/offline';
 
 export const Route = createFileRoute('/_authenticated')({
   component: AuthenticatedLayout,
@@ -15,19 +16,37 @@ function AuthenticatedLayout() {
   const { user, loading, role } = useAuth();
   const navigate = useNavigate();
   const [hasPendingSync, setHasPendingSync] = useState(false);
+  const [hasAwaitingMedia, setHasAwaitingMedia] = useState(false);
 
   useEffect(() => {
-    const checkSync = async () => {
+    const checkSyncStatus = async () => {
       if (!user?.id) return;
+      
+      // Check sync queue
       const queue = await getSyncQueue(user.id);
       setHasPendingSync(queue.length > 0);
+
+      // Check for awaiting_media drafts
+      const allKeys = await keys();
+      const userPrefix = `user_${user.id}_visit_draft_`;
+      let awaitingMedia = false;
+      for (const key of allKeys) {
+        if (typeof key === 'string' && key.startsWith(userPrefix)) {
+          const draft = await getVisitDraft(user.id, key.replace(userPrefix, ''));
+          if (draft?.status === 'awaiting_media') {
+            awaitingMedia = true;
+            break;
+          }
+        }
+      }
+      setHasAwaitingMedia(awaitingMedia);
     };
-    checkSync();
+    checkSyncStatus();
     
-    // Polling sync queue status every 10 seconds while on promoter route
-    const interval = setInterval(checkSync, 10000);
+    // Polling sync queue status every 10 seconds
+    const interval = setInterval(checkSyncStatus, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -60,7 +79,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
-      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync} />
+      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       <Outlet />
     </>
   );
