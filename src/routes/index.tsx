@@ -13,110 +13,106 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO IMPORTAÇÃO 3 — GRAVAÇÃO SEGURA DE PROMOTORES, LOJAS, INDÚSTRIAS E ROTEIROS
+O botão está desabilitado porque a tela está em **“Requer revisão”**. Mas há um problema mais importante: o resumo informa que vai gerar apenas **2 roteiros em rascunho**. Isso está errado.
 
-Implemente a etapa de confirmação e gravação da importação no módulo:
+Os dois são apenas as abas do Excel (`ROTEIRO LUCAS` e `ROTEIRO ALEXANDRE`). O sistema precisa criar roteiros por **promotor**: são 28 promotores com paradas válidas, portanto devem ser **28 roteiros em rascunho**, com as 409 paradas distribuídas entre eles.
 
-`/admin/import`
+Não confirme ainda. Cole este prompt no Lovable:
 
-Objetivo: importar a base operacional do Excel sem gerar visitas automaticamente e sem apagar, duplicar ou substituir dados existentes de forma indevida.
+CORREÇÃO BLOQUEADORA DA IMPORTAÇÃO — BOTÃO DESABILITADO E QUANTIDADE DE ROTEIROS INCORRETA
 
-ESTRATÉGIA DE IMPORTAÇÃO
+A tela de importação está em “Requer revisão” e o botão “Confirmar Importação Segura” permanece desabilitado mesmo com:
 
-A importação deve criar ou atualizar com segurança:
+- data de vigência preenchida;
+- checkbox de ciência marcado.
 
-1. Promotores
-- Importar a aba PROMOTORES.
-- Usar MATRÍCULA como chave principal de correspondência quando ela existir.
-- Se não houver matrícula, usar nome normalizado apenas para sugerir correspondência; não criar duplicidade automaticamente.
-- Importar nome, UF, cidade atendida, contato e observação.
-- Não alterar usuário, senha, papel ou acesso de login.
+Além disso, o resumo informa:
 
-2. Lojas
-- Importar a aba LOJAS.
-- Identificar duplicidade pela combinação normalizada: REDE + LOJA + UF.
-- Criar somente lojas inexistentes.
-- Não apagar ou sobrescrever endereço, GPS ou dados operacionais já preenchidos no sistema sem confirmação explícita.
+`Gerar 2 Roteiros em RASCUNHO`
 
-3. Indústrias
-- Importar a aba INDUSTRIA.
-- Identificar pela denominação normalizada.
-- Criar somente indústrias inexistentes.
+Isso está incorreto. As duas abas de roteiro do Excel não representam dois roteiros. Elas contêm linhas de 28 promotores diferentes.
 
-4. Roteiros
-- Importar somente as linhas válidas das abas que começam com `ROTEIRO `.
-- Criar um roteiro em RASCUNHO por promotor que possua linhas válidas.
-- Vincular as paradas ao roteiro correto, preservando:
-  - loja;
-  - indústria;
-  - frequência;
-  - dias da semana marcados;
-  - UF;
-  - ordem estável de importação.
-- Não publicar roteiros automaticamente.
-- Não criar visitas automaticamente.
-- Não alterar roteiros existentes durante esta primeira importação.
-- Use um nome claro, como: `Importação Excel — [Nome do Promotor]`.
+Não permita importação até corrigir esse mapeamento.
 
-5. Linhas pendentes
-Não importe como parada automática as quatro linhas sem nenhum dia marcado. Registre-as no relatório final como “Pendente de definição de dia”:
+CORREÇÃO DO MODELO DE ROTEIROS
 
-- KING — ATACADÃO - COSTA E SILVA — ANA LETICIA ORTIZ AVALO;
-- ALLEZA — ASSAI GOIANIA T9 — FRANCISCO JOSE DOS SANTOS LOURENÇO;
-- KING — ASSAI ANAPOLIS — MARCELO AUGUSTO DE OLIVEIRA PEREIRA GOMES;
-- TERMOLAR — RIO VERMELHO MARACANA — MARCELO AUGUSTO DE OLIVEIRA PEREIRA GOMES.
+Para a planilha atual:
 
-INTERFACE DE CONFIRMAÇÃO
+- criar 1 roteiro em rascunho por promotor com paradas válidas;
+- expectativa: 28 roteiros em rascunho;
+- distribuir as 409 linhas válidas como paradas desses 28 roteiros;
+- manter loja, indústria, frequência e dias marcados;
+- não criar visitas;
+- não publicar roteiros automaticamente;
+- o nome do roteiro deve identificar o promotor, por exemplo:
+  `Importação Excel — [Nome do Promotor]`.
 
-Antes de gravar, mostre uma tela final com:
+Nunca crie roteiro por nome de aba.
 
-- data de vigência inicial obrigatória, escolhida pelo Admin;
-- resumo do que será criado, atualizado, ignorado e enviado para revisão;
-- lista de conflitos e duplicidades;
-- checkbox obrigatório:
-  “Entendo que os roteiros serão importados como rascunho e não gerarão visitas automaticamente.”
-- botão: `Confirmar Importação Segura`.
+CORREÇÃO DO BLOQUEIO “REQUER REVISÃO”
 
-Durante a importação:
+Separe inconsistências bloqueadoras de pendências revisáveis.
 
-- mostre progresso;
-- bloqueie clique duplo;
-- se ocorrer falha, apresente relatório claro;
-- a operação deve ser atômica por categoria ou possuir rollback seguro, sem deixar roteiros pela metade;
-- registre um relatório de importação com data, Admin responsável, resumo, pendências e erros.
+Pendências revisáveis:
 
-SEGURANÇA
+- linhas sem nenhum dia da semana marcado;
+- duplicidade idêntica de parada;
+- campos opcionais ausentes.
 
-- Somente Admin pode confirmar a importação.
-- A gravação deve ocorrer exclusivamente por função server-side.
-- Valide novamente no servidor todos os dados recebidos.
-- Não exponha chaves administrativas.
-- Não permita que upload ou campos manipulados pelo frontend alterem permissões, usuários ou dados financeiros.
+Para essas pendências:
 
-VALIDAÇÃO NO PREVIEW
+- mostre a lista clara em “Inconsistências”;
+- não importe as linhas sem dia;
+- ignore duplicidades idênticas, registrando-as no relatório;
+- permita que o Admin confirme a importação dos registros válidos após marcar um novo checkbox:
 
-1. Importar a planilha de referência usando uma vigência escolhida pelo Admin.
-2. Confirmar que promotores aparecem no módulo Promotores.
-3. Confirmar que lojas aparecem no módulo Lojas.
-4. Confirmar que indústrias aparecem no módulo Indústrias.
-5. Confirmar criação de roteiros em rascunho para os promotores com roteiro.
-6. Confirmar que as paradas aparecem no editor de cada roteiro importado.
-7. Confirmar que nenhuma visita foi criada automaticamente.
-8. Confirmar que as quatro linhas sem dia ficaram no relatório de pendências.
-9. Repetir a mesma importação e confirmar que não duplica cadastros nem roteiros.
-10. Confirmar que usuário não-Admin é bloqueado.
+`Li e aceito importar os registros válidos; as pendências ficarão registradas para revisão posterior.`
+
+Inconsistências bloqueadoras:
+
+- arquivo inválido;
+- ausência de aba obrigatória;
+- promotor, loja ou indústria obrigatórios ausentes em uma linha que seria importada;
+- falha de vínculo que impeça criar uma parada válida.
+
+Somente inconsistências bloqueadoras devem manter o botão desabilitado.
+
+INTERFACE
+
+Após o arquivo válido, a tela deve mostrar:
+
+- `28 roteiros em rascunho`;
+- `409 paradas válidas`;
+- quantidade de promotores, lojas e indústrias a criar/atualizar/ignorar;
+- quantidade de pendências excluídas da importação;
+- motivo claro caso o botão esteja bloqueado;
+- botão habilitado quando:
+  - data válida;
+  - primeiro checkbox marcado;
+  - checkbox de aceite das pendências marcado;
+  - não existir inconsistência bloqueadora.
+
+TESTES OBRIGATÓRIOS
+
+1. Carregar a planilha de referência.
+2. Confirmar que o resumo mostra 28 roteiros em rascunho, não 2.
+3. Confirmar 409 paradas válidas.
+4. Confirmar que as linhas sem dia aparecem como pendência revisável.
+5. Confirmar que duplicidade idêntica aparece como pendência revisável.
+6. Marcar os dois checkboxes e confirmar que o botão é habilitado.
+7. Remover um checkbox e confirmar que o botão volta a ficar desabilitado.
+8. Simular uma inconsistência bloqueadora e confirmar que o botão permanece bloqueado com motivo claro.
+9. Confirmar que nenhuma importação é realizada nesta missão; apenas corrija a prévia e a habilitação.
 
 ENTREGA
 
 Informe:
 
-- quantidade criada, atualizada, ignorada e pendente em cada categoria;
-- IDs ou nomes dos roteiros em rascunho criados;
-- relatório das quatro pendências;
-- resultado individual dos dez testes;
-- confirmação explícita de que nenhuma visita foi gerada automaticamente.
-
-Não publique roteiros nem gere visitas nesta missão.
+- causa raiz de mostrar 2 roteiros;
+- regra de agrupamento por promotor;
+- quais pendências são bloqueadoras ou revisáveis;
+- resultado individual dos nove testes;
+- captura com “28 roteiros em rascunho” e botão habilitado após os dois checkboxes.
         </div>
       </div>
     </div>
