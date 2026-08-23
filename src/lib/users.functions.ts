@@ -307,11 +307,7 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     }
 
     // 4. Get site URL
-    // Get site URL
-    const siteUrl = process.env['PUBLIC_APP_URL'];
-    if (!siteUrl) {
-      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
-    }
+    const siteUrl = getPublicAppUrl();
 
     // 5. Generate Link
     // We'll use 'recovery' as it's the safest way to get a single-use link that forces password creation
