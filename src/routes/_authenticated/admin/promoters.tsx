@@ -288,17 +288,18 @@ function PromotersPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-bold text-slate-700">Promotor</TableHead>
-                <TableHead className="font-bold text-slate-700">Contato / Região</TableHead>
-                <TableHead className="font-bold text-slate-700">Visitas/Semana</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Login</TableHead>
-                <TableHead className="font-bold text-slate-700">Status</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Promotor</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Contato / Região</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Visitas/Semana</TableHead>
+                  <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Login</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Status</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -318,15 +319,15 @@ function PromotersPage() {
               ) : (
                 filteredPromoters.map((promoter) => (
                   <TableRow key={promoter.id} className="hover:bg-slate-50 transition-colors">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center text-blue-700 font-bold border border-blue-200">
                           {promoter.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="font-bold text-slate-900">{promoter.name}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="flex items-center gap-3">
                           {promoter.phone && (
@@ -350,13 +351,13 @@ function PromotersPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-slate-400" />
                         <span className="font-medium text-slate-700">{promoter.visits_this_week}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       {promoter.profiles && promoter.profiles.length > 0 ? (
                         <div className="flex flex-col items-center gap-1">
                           <Badge className="bg-green-50 text-green-700 border-green-100 font-bold hover:bg-green-50">
@@ -372,7 +373,7 @@ function PromotersPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge variant={promoter.active ? 'default' : 'secondary'} className="font-bold">
                         {promoter.active ? 'Ativo' : 'Inativo'}
                       </Badge>
@@ -425,7 +426,8 @@ function PromotersPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
 

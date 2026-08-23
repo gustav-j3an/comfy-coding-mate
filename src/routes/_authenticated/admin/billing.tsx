@@ -283,14 +283,14 @@ function BillingPage() {
               </Link>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
             <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="font-bold text-slate-700 text-left">Indústria / Ref</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Vencimento</TableHead>
-                <TableHead className="font-bold text-slate-700 text-right">Valor Total</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Status</TableHead>
+                <TableHead className="font-bold text-slate-700 text-left whitespace-nowrap">Indústria / Ref</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Vencimento</TableHead>
+                <TableHead className="font-bold text-slate-700 text-right whitespace-nowrap">Valor Total</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Status</TableHead>
                 <TableHead className="w-[80px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -311,9 +311,9 @@ function BillingPage() {
               ) : (
                 filteredBillings.map((bill) => (
                   <TableRow key={bill.id} className="hover:bg-slate-50 transition-colors">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
+                        <div className="w-8 h-8 rounded bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-500 border border-slate-200">
                           <Factory className="h-4 w-4" />
                         </div>
                         <div className="text-left">
@@ -325,17 +325,17 @@ function BillingPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-600">
                         {format(new Date(bill.due_date), 'dd/MM/yyyy')}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       <span className="font-black text-slate-900 tabular-nums">
                         R$ {Number(bill.total_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       {getStatusBadge(bill.status)}
                     </TableCell>
                     <TableCell>

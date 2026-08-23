@@ -82,7 +82,7 @@ function AuthenticatedLayout() {
       <ConnectionStatus />
       <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       
-      <div className="pt-0">
+      <div className="pt-0 min-h-screen flex flex-col">
         <Outlet />
       </div>
     </>

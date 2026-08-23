@@ -258,15 +258,16 @@ function IndustriesPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-bold">Indústria</TableHead>
-                <TableHead className="font-bold">Contato</TableHead>
-                <TableHead className="font-bold">Status</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Indústria</TableHead>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Contato</TableHead>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Status</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -284,9 +285,9 @@ function IndustriesPage() {
               ) : (
                 filteredIndustries.map((industry) => (
                   <TableRow key={industry.id} className="hover:bg-slate-50 transition-colors">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-100 flex-shrink-0 flex items-center justify-center text-indigo-700 font-bold">
                           <Building2 className="h-5 w-5" />
                         </div>
                         <div>
@@ -295,14 +296,14 @@ function IndustriesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="text-sm font-medium text-slate-700">{industry.contact_name}</div>
                       <div className="flex gap-2 text-[10px] text-slate-400">
                         {industry.email && <span className="flex items-center gap-0.5"><Mail className="h-2.5 w-2.5" />{industry.email}</span>}
                         {industry.phone && <span className="flex items-center gap-0.5"><Phone className="h-2.5 w-2.5" />{industry.phone}</span>}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge variant={industry.active ? 'default' : 'secondary'} className="font-bold">
                         {industry.active ? 'Ativo' : 'Inativo'}
                       </Badge>
@@ -338,7 +339,8 @@ function IndustriesPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
 

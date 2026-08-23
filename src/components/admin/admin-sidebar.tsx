@@ -211,7 +211,7 @@ export function AdminSidebar({ className }: { className?: string }) {
               <Menu className="h-5 w-5 text-slate-600" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 border-none">
+          <SheetContent side="left" className="p-0 w-[85vw] max-w-72 border-none">
             <SidebarContent isMobile />
           </SheetContent>
         </Sheet>

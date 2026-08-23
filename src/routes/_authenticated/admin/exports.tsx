@@ -193,14 +193,14 @@ function ExportsPage() {
               Atualizar
             </Button>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="font-bold text-slate-700">Arquivo</TableHead>
-                  <TableHead className="font-bold text-slate-700">Solicitado em</TableHead>
-                  <TableHead className="font-bold text-slate-700 text-center">Status</TableHead>
-                  <TableHead className="font-bold text-slate-700 text-center">Downloads</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Arquivo</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Solicitado em</TableHead>
+                  <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Status</TableHead>
+                  <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Downloads</TableHead>
                   <TableHead className="w-[150px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -220,9 +220,9 @@ function ExportsPage() {
                 ) : (
                   tasks.map((task) => (
                     <TableRow key={task.id} className="hover:bg-slate-50 group transition-colors">
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${
+                          <div className={`w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center border ${
                             task.format === 'xlsx' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-purple-50 text-purple-600 border-purple-100'
                           }`}>
                             {task.format === 'xlsx' ? <FileSpreadsheet className="h-5 w-5" /> : <FileArchive className="h-5 w-5" />}
@@ -237,13 +237,13 @@ function ExportsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-600 font-medium text-sm">
+                      <TableCell className="text-slate-600 font-medium text-sm whitespace-nowrap">
                         {format(new Date(task.created_at), "dd 'de' MMMM, HH:mm", { locale: ptBR })}
                       </TableCell>
-                      <TableCell className="text-center">
+                      <TableCell className="text-center whitespace-nowrap">
                         {getStatusBadge(task.status)}
                       </TableCell>
-                      <TableCell className="text-center font-bold text-slate-700 text-sm">
+                      <TableCell className="text-center font-bold text-slate-700 text-sm whitespace-nowrap">
                         {task.download_count || 0}
                       </TableCell>
                       <TableCell>
