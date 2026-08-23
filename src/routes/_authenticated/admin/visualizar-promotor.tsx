@@ -5,8 +5,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, Calendar, Clock, CheckCircle2, Archive, FileText } from 'lucide-react';
+import { 
+  Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, 
+  Calendar, Clock, CheckCircle2, Archive, FileText, 
+  ChevronRight, CalendarDays
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { useState, useMemo } from 'react';
+import { format, startOfWeek, differenceInCalendarWeeks, isBefore, parseISO, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
 import { getPromoterItineraryData } from '@/lib/routes.functions';
 import { useServerFn } from '@tanstack/react-start';
 
@@ -24,6 +33,7 @@ function VisualizarPromotorPage() {
   const { promoterId } = Route.useSearch() as { promoterId: string };
   const { role } = useAuth();
   const navigate = useNavigate();
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
 
   const fetchItineraryData = useServerFn(getPromoterItineraryData);
 
@@ -53,6 +63,63 @@ function VisualizarPromotorPage() {
 
   const isLoading = promoterLoading || routesLoading;
   const error = promoterError || routesError;
+
+  const agendaStops = useMemo(() => {
+    if (!routes) return [];
+
+    const today = startOfDay(new Date());
+    
+    // 1. Filtrar roteiros válidos (publicados, ativos e dentro da vigência)
+    const activeRoutes = routes.filter((r: any) => {
+      const isPublished = r.status === 'published';
+      const isActive = r.active !== false;
+      const isValidFrom = r.valid_from ? !isBefore(today, startOfDay(parseISO(r.valid_from))) : true;
+      return isPublished && isActive && isValidFrom;
+    });
+
+    const stops: any[] = [];
+
+    activeRoutes.forEach((route: any) => {
+      const routeStops = route.route_stops || [];
+      
+      routeStops.forEach((stop: any) => {
+        // Filtrar pelo dia da semana
+        if (stop.day_of_week !== selectedDay) return;
+
+        // Lógica de frequência
+        let shouldShow = true;
+        if (stop.frequency === 'biweekly') {
+          const refDate = stop.biweekly_start_date 
+            ? parseISO(stop.biweekly_start_date) 
+            : (route.valid_from ? parseISO(route.valid_from) : today);
+          
+          const weeksDiff = Math.abs(differenceInCalendarWeeks(today, startOfWeek(refDate)));
+          shouldShow = weeksDiff % 2 === 0;
+        }
+
+        if (shouldShow) {
+          stops.push({
+            ...stop,
+            routeName: route.name
+          });
+        }
+      });
+    });
+
+    // Ordenar por visit_order
+    return stops.sort((a, b) => (a.visit_order || 0) - (b.visit_order || 0));
+  }, [routes, selectedDay]);
+
+  const daysConfig = [
+    { label: 'DOM', value: 0 },
+    { label: 'SEG', value: 1 },
+    { label: 'TER', value: 2 },
+    { label: 'QUA', value: 3 },
+    { label: 'QUI', value: 4 },
+    { label: 'SEX', value: 5 },
+    { label: 'SÁB', value: 6 },
+  ];
+
 
 
   if (role !== 'admin') {
@@ -120,6 +187,105 @@ function VisualizarPromotorPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0 bg-white rounded-b-xl overflow-hidden">
+            {/* Agenda Semanal */}
+            <div className="p-6 sm:p-8 bg-white border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                    <CalendarDays className="h-6 w-6 text-blue-600" />
+                    Agenda semanal de {promoter?.name}
+                  </h3>
+                  <p className="text-sm text-slate-500 font-medium mt-1">
+                    Visualize a programação teórica baseada nos roteiros ativos.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                  {daysConfig.map((day) => (
+                    <Button
+                      key={day.value}
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-9 px-3 text-[10px] font-black rounded-lg transition-all",
+                        selectedDay === day.value 
+                          ? "bg-white text-blue-600 shadow-sm" 
+                          : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                      )}
+                      onClick={() => setSelectedDay(day.value)}
+                    >
+                      {day.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {agendaStops.length > 0 ? (
+                  agendaStops.map((stop, index) => {
+                    const industries = stop.stop_tasks?.map((t: any) => t.industries?.name).filter(Boolean).join(', ') || 'Nenhuma';
+                    return (
+                      <div key={stop.id} className="relative pl-4 border-l-4 border-blue-500 bg-slate-50/50 rounded-r-xl p-4 transition-all hover:bg-slate-50">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                          <div className="flex items-start gap-3">
+                            <div className="bg-blue-600 text-white h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm shadow-blue-200">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-base font-black text-slate-900">{stop.stores?.name}</h4>
+                                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-none text-[9px] font-black uppercase tracking-wider px-2">
+                                  Prévia do roteiro
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-slate-500 font-bold mt-0.5 flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {stop.stores?.address || 'Sem endereço disponível'}
+                              </p>
+                              
+                              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Indústria</span>
+                                  <span className="text-xs font-bold text-slate-700">{industries}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Frequência</span>
+                                  <span className="text-xs font-bold text-slate-700 capitalize">
+                                    {stop.frequency === 'biweekly' ? 'Quinzenal' : 'Semanal'}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Origem</span>
+                                  <span className="text-xs font-bold text-blue-600 underline decoration-blue-200 underline-offset-2 italic">
+                                    Roteiro: {stop.routeName}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {stop.observation && (
+                                <div className="mt-3 p-2 bg-amber-50 rounded-lg border border-amber-100 text-[10px] text-amber-700 font-medium flex items-start gap-2">
+                                  <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                  <span><strong className="font-black uppercase tracking-tighter">OBS:</strong> {stop.observation}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-10 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                    <Calendar className="h-10 w-10 text-slate-200 mx-auto mb-2" />
+                    <p className="text-slate-400 font-medium italic">
+                      Nenhuma parada programada para {daysConfig.find(d => d.value === selectedDay)?.label.toLowerCase()}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Listagem Técnica (Roteiros Encontrados) */}
+
             <div className="p-6 sm:p-8 bg-slate-50/50 border-b border-slate-100">
               <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600" />
