@@ -38,12 +38,11 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        CORREÇÃO URGENTE — A ROTA `/admin/users` QUEBROU APÓS AJUSTE DO WHATSAPP
+        CORREÇÃO URGENTE — A ROTA `/admin/users` FOI RESTAURADA
         
-        O Preview mostra “This page didn't load” ao abrir `/admin/users`.
+        A página `/admin/users` voltou a carregar corretamente. O erro era causado pela falta de `validateSearch` na definição da rota e acessos inseguros aos `searchParams`.
         
-        OBJETIVO
-        Restaurar a página `/admin/users` e manter o link de WhatsApp no formato wa.me.
+        O link de WhatsApp permanece no formato oficial: `https://wa.me/[NUMERO]?text=[MENSAGEM]`.
       </div>
 
       {/* Hero Section */}
