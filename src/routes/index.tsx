@@ -13,33 +13,33 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO V1.4.1 — AUTORIZAÇÃO SERVER-SIDE DO VISUALIZADOR
+MISSÃO IMPORTAÇÃO 1 — BASE SEGURA DE IMPORTAÇÃO OPERACIONAL
 
-O visualizador administrativo agora possui proteção autoritativa no servidor.
+O novo módulo de importação foi criado em `/admin/import`.
 
 OBJETIVO
-Corrigir a falha de segurança onde o bloqueio era feito apenas no frontend.
+Criar a estrutura de upload, leitura, prévia e validação de planilhas Excel sem gravar dados no banco.
 
-CORREÇÕES IMPLEMENTADAS
-1. Validação Server-Side: A função `getPromoterItineraryData` agora valida o papel real do usuário no banco de dados (`has_role`) antes de qualquer processamento.
-2. Checagem de Existência: O servidor valida se o `promoterId` existe antes de carregar roteiros.
-3. Respostas HTTP Seguras: Retorno de 401 (Não autenticado), 403 (Não autorizado) ou 404 (Não encontrado) direto do handler do servidor.
-4. Isolamento de Dados: Nenhuma informação do promotor ou roteiros é enviada ao cliente se a validação de papel falhar no servidor.
-5. Melhoria Visual Mantida: A checagem de frontend (`role !== 'admin'`) permanece apenas para UX imediata, mas a segurança real é garantida pelo servidor.
+FUNCIONALIDADES IMPLEMENTADAS
+1. Mapeamento Excel: Leitura das abas PROMOTORES, LOJAS, INDUSTRIA e ROTEIROS.
+2. Filtro de Abas: Abas CONSULTA e FREQUÊNCIA INDÚSTRIA são ignoradas automaticamente.
+3. Normalização: Dados de roteiro (indústria, loja, promotor, frequência e dias da semana) normalizados para prévia.
+4. Validação de Referência: Detecção de promotores, lojas ou indústrias citadas em roteiros que não existem em seus respectivos cadastros.
+5. Detecção de Inconsistências:
+   - Campos obrigatórios vazios.
+   - Duplicidade de paradas/roteiros.
+   - Frequências ou marcações de dias inválidas.
+6. Interface Administrativa:
+   - Resumo com contagens totais.
+   - Aba de Inconsistências com alertas detalhados.
+   - Aba de Prévia com as primeiras 20 linhas de dados normalizados.
+7. Segurança: Acesso restrito a administradores e gravação desabilitada nesta fase.
 
-RESULTADO DOS TESTES
-1. Admin abre Lucas: OK (Acesso normal).
-2. Promotor acessa URL: OK (Bloqueado pelo servidor com 403).
-3. Indústria acessa URL: OK (Bloqueado pelo servidor com 403).
-4. Não autenticado: OK (Redirecionado ou 401).
-5. ID inexistente: OK (Erro 404 "Promotor não encontrado" sem vazar dados).
-6. Integridade: OK (Nenhuma visita ou roteiro real foi alterado).
+ESTRATÉGIA DE LEITURA
+Utilização da biblioteca `xlsx` no frontend para processamento seguro e rápido, permitindo validações imediatas antes de qualquer interação com o servidor.
 
-ENTREGA
-Arquivos alterados:
-- `src/lib/routes.functions.ts`: Adicionada lógica de autorização server-side e validação de existência.
-- `src/routes/_authenticated/admin/visualizar-promotor.tsx`: Tratamento de erros de Response do servidor.
-- `src/routes/index.tsx`: Atualizado com o status da Missão V1.4.1.
+PRÓXIMA ETAPA
+Implementação da gravação definitiva e sincronização com as tabelas operacionais.
         </div>
       </div>
     </div>
