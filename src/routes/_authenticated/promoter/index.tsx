@@ -34,7 +34,7 @@ function PromoterDashboard() {
   const { user, profile, previewPromoter } = useAuth();
   
   // Simulation states
-  const [simulatedDay, setSimulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
+  const [simulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
   
   // Calculate simulated date based on today and simulatedDay
   const getSimulatedDate = () => {
