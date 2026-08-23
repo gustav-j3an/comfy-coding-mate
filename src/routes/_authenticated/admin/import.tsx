@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Upload, FileText, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export const Route = createFileRoute('/_authenticated/admin/import')({
@@ -17,9 +17,8 @@ export const Route = createFileRoute('/_authenticated/admin/import')({
 function ImportModule() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const [file, setFile] = useState<File | null>(null);
-  const [previewData, setPreviewData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,7 +29,6 @@ function ImportModule() {
       return;
     }
 
-    setFile(file);
     setIsLoading(true);
 
     try {
@@ -50,9 +48,8 @@ function ImportModule() {
         const worksheet = workbook.Sheets[sheetName];
         if (!worksheet) continue;
         
-        // Use sheet_to_json with header: 1 to get raw grid
         const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: null });
-        if (!jsonData.length) continue;
+        if (!jsonData || !jsonData.length) continue;
 
         const headers: string[] = jsonData[0].map(h => String(h || '').trim().toUpperCase());
         const rows = jsonData.slice(1);
@@ -213,14 +210,21 @@ function ImportModule() {
 
   if (role !== 'admin') return null;
 
+  const requiresRevision = (previewData?.inconsistencies?.length || 0) > 0;
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 sm:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin' })}>
-            <ChevronLeft className="h-4 w-4 mr-2" /> Voltar
-          </Button>
-          <h1 className="text-2xl font-black text-slate-900">Importar Base Operacional</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin' })}>
+              <ChevronLeft className="h-4 w-4 mr-2" /> Voltar
+            </Button>
+            <h1 className="text-2xl font-black text-slate-900">Importar Base Operacional</h1>
+          </div>
+          {requiresRevision && (
+            <Badge variant="destructive" className="animate-pulse">REQUER REVISÃO</Badge>
+          )}
         </div>
 
         <Card className="border-none shadow-sm">
@@ -246,26 +250,45 @@ function ImportModule() {
             <TabsContent value="resumo">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Promotores</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Promotores</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.promoters.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Lojas</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Lojas</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.stores.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Indústrias</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Indústrias</CardTitle></CardHeader>
                   <CardContent><p className="text-2xl font-black">{previewData.industries.length}</p></CardContent>
                 </Card>
                 <Card>
-                  <CardHeader><CardTitle className="text-sm text-slate-500">Linhas de Roteiro</CardTitle></CardHeader>
-                  <CardContent><p className="text-2xl font-black">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
+                  <CardHeader><CardTitle className="text-xs text-slate-500 uppercase tracking-widest">Roteiros Válidos</CardTitle></CardHeader>
+                  <CardContent><p className="text-2xl font-black text-blue-600">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
+                </Card>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 opacity-80">
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Promotores em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctPromoters}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Lojas em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctStores}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Indústrias em Roteiro</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold">{previewData.metrics.distinctIndustries}</p></CardContent>
+                </Card>
+                <Card className="bg-slate-50/50">
+                  <CardHeader className="py-2"><CardTitle className="text-[10px] text-slate-400 uppercase tracking-widest">Total de Paradas Semanais</CardTitle></CardHeader>
+                  <CardContent className="py-2"><p className="text-lg font-bold text-green-600">{previewData.metrics.totalStopMarkings}</p></CardContent>
                 </Card>
               </div>
               
               <div className="mt-6 space-y-4">
                 <Card>
-                  <CardHeader><CardTitle className="text-sm">Abas Identificadas</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-sm">Abas Processadas</CardTitle></CardHeader>
                   <CardContent className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-green-50 text-green-700">PROMOTORES</Badge>
                     <Badge variant="outline" className="bg-green-50 text-green-700">LOJAS</Badge>
