@@ -710,7 +710,7 @@ function ImportModule() {
                   {isImporting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gravando...
+                      {importStatus ? `Gravando ${importStatus.step}: ${importStatus.processed}/${importStatus.total}...` : 'Gravando...'}
                     </>
                   ) : (
                     <>
