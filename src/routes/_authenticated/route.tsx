@@ -84,10 +84,17 @@ function AuthenticatedLayout() {
       
       {previewPromoter && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-600 text-white px-4 py-2 flex justify-between items-center shadow-lg">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <Eye className="h-4 w-4 animate-pulse" />
-            <span>VOCÊ ESTÁ VISUALIZANDO COMO: <span className="underline">{previewPromoter.name.toUpperCase()}</span></span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2 font-bold text-[10px] sm:text-xs">
+            <div className="flex items-center gap-2">
+              <Eye className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse" />
+              <span>VISUALIZANDO COMO: <span className="underline">{previewPromoter.name.toUpperCase()}</span></span>
+            </div>
+            <div className="hidden sm:block opacity-50">|</div>
+            <div className="text-[9px] sm:text-[10px] text-amber-100 uppercase tracking-tighter">
+              MODO SIMULAÇÃO ATIVO
+            </div>
           </div>
+
           <Button 
             variant="outline" 
             size="sm" 
