@@ -82,11 +82,10 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        CORREÇÃO URGENTE — /admin/users RETORNA INTERNAL SERVER ERROR
-        Após implementar Acesso Temporário, a rota /admin/users passou a mostrar apenas Internal Server Error.
-        A causa exata foi a importação estática do módulo crypto que quebrava o runtime do servidor. 
-        A correção envolveu mover para importação dinâmica e adicionar resiliência no carregamento da UI.
-        Testes confirmados: Rota abre, lista usuários, gera acesso e bloqueia não-admins.
+        MISSÃO PRIORITÁRIA — ROTEIRO REAL DO PROMOTOR + INSTALAÇÃO DO PWA APÓS LOGIN
+        Causa Raiz Identificada: A exibição do dashboard dependia de visitas já materializadas, ignorando roteiros publicados para o dia selecionado.
+        Solução: Refatoração da query 'promoter-visits' para mesclar visitas reais com previsões de roteiro, adição de seletor de dias da semana e banner de instalação PWA.
+        Resultados: Gustavo agora visualiza sua agenda completa de segunda a domingo, com paradas programadas claramente identificadas.
       </div>
     </div>
   );
