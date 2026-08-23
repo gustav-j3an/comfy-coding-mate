@@ -219,7 +219,7 @@ export const auditVisit = createServerFn({ method: "POST" })
 
     // Record audit log
     await recordAudit({
-      userId,
+      userId: (context as any).userId || 'system',
       action: data.decision === 'approved' ? 'approve_visit' : 'reject_visit',
       module: 'visits',
       entityType: 'visit',

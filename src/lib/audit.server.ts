@@ -58,8 +58,8 @@ export async function recordAudit(params: {
       summary: params.summary,
       details: params.details,
       result: params.result || 'success',
-      ip_address: ip || undefined,
-      user_agent: userAgent || undefined
+      ip_address: ip ?? undefined,
+      user_agent: userAgent ?? undefined
     } as any);
 
   if (error) {

@@ -68,7 +68,7 @@ export const inviteUser = createServerFn({ method: "POST" })
 
 export const updateUserStatus = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ userId: z.string(), status: z.enum(['active', 'blocked', 'pending']) }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     const { error } = await supabaseAdmin
@@ -78,7 +78,7 @@ export const updateUserStatus = createServerFn({ method: "POST" })
 
     if (error) throw error;
 
-    const { userId: currentAdminId } = context as any;
+    const { userId: currentAdminId } = (context as any) || {};
 
     // Record audit log
     await recordAudit({

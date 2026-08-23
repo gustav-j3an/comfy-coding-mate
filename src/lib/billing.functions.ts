@@ -238,10 +238,8 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
       cancellationReason: data.cancellation_reason
     });
 
-    // Record audit log
-    const { userId } = context as any;
     await recordAudit({
-      userId: userId || 'system',
+      userId: (context as any).userId || 'system',
       action: 'update_billing_status',
       module: 'billing',
       entityType: 'billing',
