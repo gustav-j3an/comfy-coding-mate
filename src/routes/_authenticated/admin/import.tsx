@@ -160,11 +160,6 @@ function ImportModule() {
       const normalizedStores = new Set(rawData.stores.map((s: any) => s.loja.toLowerCase()));
       const normalizedIndustries = new Set(rawData.industries.map((i: any) => i.nome.toLowerCase()));
 
-      const distinctPromotersInRoutes = new Set();
-      const distinctStoresInRoutes = new Set();
-      const distinctIndustriesInRoutes = new Set();
-      let totalStopsCount = 0;
-
       const seenStops = new Map();
       const distinctPromotersInRoutes = new Set();
       const distinctStoresInRoutes = new Set();
