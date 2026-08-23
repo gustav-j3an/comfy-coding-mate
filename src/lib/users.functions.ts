@@ -294,12 +294,15 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     // 3. Normalize phone (digits only, Brazil 55 prefix)
     const digitsOnly = promoter.phone.replace(/\D/g, '');
     let normalizedPhone = digitsOnly;
+    
+    // Regra: manter somente dígitos no telefone, com 55 + DDD + número
     if (digitsOnly.length === 10 || digitsOnly.length === 11) {
       normalizedPhone = '55' + digitsOnly;
-    } else if (digitsOnly.length > 11 && !digitsOnly.startsWith('55')) {
-       // Potentially already has international prefix but not 55? 
-       // Requirement says 55 + DDD + number.
-       // If it starts with 55 and has 12-13 digits, it's probably already correct.
+    } else if (digitsOnly.length > 11 && digitsOnly.startsWith('55')) {
+      normalizedPhone = digitsOnly;
+    } else {
+      // Fallback: se tiver DDD mas não tiver 55 no início, adiciona 55
+      normalizedPhone = '55' + digitsOnly.slice(-11);
     }
 
     if (normalizedPhone.length < 12) {
