@@ -32,6 +32,7 @@ function ImportModule() {
   const [acceptedRevisionTerms, setAcceptedRevisionTerms] = useState(false);
 
   const importFn = useServerFn(executeImport);
+  const [importStatus, setImportStatus] = useState<{ step: string; processed: number; total: number } | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -367,6 +368,15 @@ function ImportModule() {
                 </Card>
               </div>
               
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                <p className="text-sm font-bold text-blue-900 mb-2">Integridade das Paradas:</p>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Linhas válidas no Excel: <span className="font-bold">{previewData.metrics.originalLinesCount}</span></li>
+                  <li>• Paradas únicas processadas: <span className="font-bold">{previewData.metrics.validStopsCount}</span></li>
+                  <li>• Redução por mesclagem: <span className="font-bold">{previewData.metrics.originalLinesCount - previewData.metrics.validStopsCount}</span> paradas duplicadas (mesmo Promotor, Loja, Indústria e Frequência) tiveram seus dias combinados para evitar duplicidade de visitas no mesmo dia.</li>
+                </ul>
+              </div>
+
               <div className="mt-6 space-y-4">
                 <Card>
                   <CardHeader><CardTitle className="text-sm">Abas Processadas</CardTitle></CardHeader>
