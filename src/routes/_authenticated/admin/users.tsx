@@ -62,7 +62,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset, generateWhatsAppInvite } from '@/lib/users.functions';
+import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset, generateWhatsAppInvite, generateTemporaryAccess } from '@/lib/users.functions';
 import { 
   AlertDialog,
   AlertDialogAction,
