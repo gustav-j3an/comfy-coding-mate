@@ -24,7 +24,13 @@ function ImportModule() {
   const navigate = useNavigate();
   const { role } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
+  const [validFrom, setValidFrom] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+
+  const importFn = useServerFn(executeImport);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
