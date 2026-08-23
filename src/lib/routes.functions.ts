@@ -98,11 +98,17 @@ export const publishRoute = createServerFn({ method: "POST" })
     }
 
     if (visitsToInsert.length > 0) {
+      console.log('[DEBUG] Inserting visits:', visitsToInsert.length, 'rows');
+      console.log('[DEBUG] Sample visit:', JSON.stringify(visitsToInsert[0]));
+      
       const { error: insertError } = await supabaseAdmin
         .from('visits')
         .insert(visitsToInsert as any);
       
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[DEBUG] Visit insertion error:', insertError);
+        throw insertError;
+      }
     }
 
     return { success: true, visitsGenerated: visitsToInsert.length };

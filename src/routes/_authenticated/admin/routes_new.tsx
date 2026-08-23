@@ -159,6 +159,9 @@ function RouteEditorPage() {
     try {
       const user = (await supabase.auth.getUser()).data.user;
       
+      console.log('[DEBUG] Inserting route for promoter:', selectedPromoterId);
+      console.log('[DEBUG] Current User ID (created_by):', user?.id);
+
       const { data: route, error: routeError } = await supabase
         .from('routes')
         .insert({
