@@ -283,11 +283,10 @@ function UserManagement() {
     }
   };
 
-  const copyInviteLink = (email: string) => {
-    // In a real app, this would be a unique link with a token
-    const link = `${window.location.origin}/auth/reset-password?email=${encodeURIComponent(email)}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Link de convite copiado!');
+  const copyInviteLink = async (email: string) => {
+    // We cannot construct the link on frontend anymore as it must use PUBLIC_APP_URL from backend
+    // For now, we inform the admin to use the WhatsApp or Email buttons which are already protected
+    toast.error("URL pública deve ser gerada via servidor. Use o botão WhatsApp ou E-mail.");
   };
 
   const handleWhatsAppInvite = async () => {

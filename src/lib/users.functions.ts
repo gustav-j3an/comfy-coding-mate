@@ -29,18 +29,10 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     if (!isAdmin) throw new Error("Apenas administradores podem convidar usuários");
 
-    // Get site URL from env or fallback to a reliable default
-    let siteUrl = process.env['SITE_URL'];
+    // Use PUBLIC_APP_URL as the source of truth for the site URL
+    const siteUrl = process.env['PUBLIC_APP_URL'];
     if (!siteUrl) {
-      // In Lovable environments, we can construct the preview URL if we have the project ID
-      const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) {
-        // Use the standard Lovable preview URL format
-        siteUrl = `https://id-preview--${projectId}.lovable.app`;
-      } else {
-        // Final fallback - should be updated by user in Supabase dashboard
-        siteUrl = 'https://rota-do-promotor.lovable.app';
-      }
+      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
     }
 
     // 1. Invite user to Supabase Auth
@@ -111,11 +103,9 @@ export const resendInvite = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Apenas administradores podem reenviar convites");
 
     // Get site URL
-    let siteUrl = process.env['SITE_URL'];
+    const siteUrl = process.env['PUBLIC_APP_URL'];
     if (!siteUrl) {
-      const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
-      else siteUrl = 'https://rota-do-promotor.lovable.app';
+      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
     }
 
     // Try to resend the invite (this invalidates the previous one)
@@ -202,11 +192,9 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     // Get site URL
-    let siteUrl = process.env['SITE_URL'];
+    const siteUrl = process.env['PUBLIC_APP_URL'];
     if (!siteUrl) {
-      const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
-      else siteUrl = 'https://rota-do-promotor.lovable.app';
+      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
     }
 
     const { error } = await supabaseAdmin.auth.admin.generateLink({
@@ -324,11 +312,10 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     }
 
     // 4. Get site URL
-    let siteUrl = process.env['SITE_URL'];
+    // Get site URL
+    const siteUrl = process.env['PUBLIC_APP_URL'];
     if (!siteUrl) {
-      const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
-      else siteUrl = 'https://rota-do-promotor.lovable.app';
+      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
     }
 
     // 5. Generate Link
