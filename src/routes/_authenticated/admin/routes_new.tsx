@@ -22,7 +22,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { publishRoute } from '@/lib/routes.functions';
 
-export const Route = createFileRoute('/_authenticated/admin/routes/new')({
+export const Route = createFileRoute('/_authenticated/admin/routes_new')({
   component: RouteEditorPage,
 });
 
