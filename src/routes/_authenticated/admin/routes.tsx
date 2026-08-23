@@ -95,7 +95,7 @@ function RoutesPage() {
       toast.error('Selecione um promotor primeiro');
       return;
     }
-    navigate({ to: `/admin/routes/new`, search: { promoterId: selectedPromoterId } as any });
+    navigate({ to: `/admin/routes_new`, search: { promoterId: selectedPromoterId } as any });
   };
 
   return (

@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminOccurrencesRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
 import { Route as AuthenticatedAdminRoutesRouteImport } from './routes/_authenticated/admin/routes'
+import { Route as AuthenticatedAdminRoutes_newRouteImport } from './routes/_authenticated/admin/routes_new'
 import { Route as AuthenticatedAdminStoresRouteImport } from './routes/_authenticated/admin/stores'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
@@ -36,7 +37,6 @@ import { Route as AuthenticatedIndustryExportsRouteImport } from './routes/_auth
 import { Route as AuthenticatedPromoterIndexRouteImport } from './routes/_authenticated/promoter/index'
 import { Route as ApiPublicWebhookRouteImport } from './routes/api/public/webhook'
 import { Route as ApiReportsPdfRouteImport } from './routes/api/reports.pdf'
-import { Route as AuthenticatedAdminRoutesNewRouteImport } from './routes/_authenticated/admin/routes.new'
 import { Route as AuthenticatedPromoterVisitVisitIdRouteImport } from './routes/_authenticated/promoter/visit.$visitId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -138,6 +138,12 @@ const AuthenticatedAdminRoutesRoute =
     path: '/routes',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRoutes_newRoute =
+  AuthenticatedAdminRoutes_newRouteImport.update({
+    id: '/routes_new',
+    path: '/routes_new',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminStoresRoute =
   AuthenticatedAdminStoresRouteImport.update({
     id: '/stores',
@@ -189,12 +195,6 @@ const ApiReportsPdfRoute = ApiReportsPdfRouteImport.update({
   path: '/api/reports/pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAdminRoutesNewRoute =
-  AuthenticatedAdminRoutesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedAdminRoutesRoute,
-  } as any)
 const AuthenticatedPromoterVisitVisitIdRoute =
   AuthenticatedPromoterVisitVisitIdRouteImport.update({
     id: '/promoter/visit/$visitId',
@@ -218,7 +218,8 @@ export interface FileRoutesByFullPath {
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
+  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/routes_new': typeof AuthenticatedAdminRoutes_newRoute
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
@@ -229,7 +230,6 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/industry/': typeof AuthenticatedIndustryIndexRoute
   '/promoter/': typeof AuthenticatedPromoterIndexRoute
-  '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRoutesByTo {
@@ -247,7 +247,8 @@ export interface FileRoutesByTo {
   '/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
+  '/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/admin/routes_new': typeof AuthenticatedAdminRoutes_newRoute
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
@@ -258,7 +259,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/industry': typeof AuthenticatedIndustryIndexRoute
   '/promoter': typeof AuthenticatedPromoterIndexRoute
-  '/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRoutesById {
@@ -279,7 +279,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/occurrences': typeof AuthenticatedAdminOccurrencesRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
-  '/_authenticated/admin/routes': typeof AuthenticatedAdminRoutesRouteWithChildren
+  '/_authenticated/admin/routes': typeof AuthenticatedAdminRoutesRoute
+  '/_authenticated/admin/routes_new': typeof AuthenticatedAdminRoutes_newRoute
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
@@ -290,7 +291,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/industry/': typeof AuthenticatedIndustryIndexRoute
   '/_authenticated/promoter/': typeof AuthenticatedPromoterIndexRoute
-  '/_authenticated/admin/routes/new': typeof AuthenticatedAdminRoutesNewRoute
   '/_authenticated/promoter/visit/$visitId': typeof AuthenticatedPromoterVisitVisitIdRoute
 }
 export interface FileRouteTypes {
@@ -312,6 +312,7 @@ export interface FileRouteTypes {
     | '/admin/promoters'
     | '/admin/reports'
     | '/admin/routes'
+    | '/admin/routes_new'
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
@@ -322,7 +323,6 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/industry/'
     | '/promoter/'
-    | '/admin/routes/new'
     | '/promoter/visit/$visitId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -341,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/promoters'
     | '/admin/reports'
     | '/admin/routes'
+    | '/admin/routes_new'
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
@@ -351,7 +352,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/industry'
     | '/promoter'
-    | '/admin/routes/new'
     | '/promoter/visit/$visitId'
   id:
     | '__root__'
@@ -372,6 +372,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/promoters'
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/routes'
+    | '/_authenticated/admin/routes_new'
     | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
@@ -382,7 +383,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/industry/'
     | '/_authenticated/promoter/'
-    | '/_authenticated/admin/routes/new'
     | '/_authenticated/promoter/visit/$visitId'
   fileRoutesById: FileRoutesById
 }
@@ -524,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRoutesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/routes_new': {
+      id: '/_authenticated/admin/routes_new'
+      path: '/routes_new'
+      fullPath: '/admin/routes_new'
+      preLoaderRoute: typeof AuthenticatedAdminRoutes_newRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/stores': {
       id: '/_authenticated/admin/stores'
       path: '/stores'
@@ -587,13 +594,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiReportsPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin/routes/new': {
-      id: '/_authenticated/admin/routes/new'
-      path: '/new'
-      fullPath: '/admin/routes/new'
-      preLoaderRoute: typeof AuthenticatedAdminRoutesNewRouteImport
-      parentRoute: typeof AuthenticatedAdminRoutesRoute
-    }
     '/_authenticated/promoter/visit/$visitId': {
       id: '/_authenticated/promoter/visit/$visitId'
       path: '/promoter/visit/$visitId'
@@ -603,20 +603,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedAdminRoutesRouteChildren {
-  AuthenticatedAdminRoutesNewRoute: typeof AuthenticatedAdminRoutesNewRoute
-}
-
-const AuthenticatedAdminRoutesRouteChildren: AuthenticatedAdminRoutesRouteChildren =
-  {
-    AuthenticatedAdminRoutesNewRoute: AuthenticatedAdminRoutesNewRoute,
-  }
-
-const AuthenticatedAdminRoutesRouteWithChildren =
-  AuthenticatedAdminRoutesRoute._addFileChildren(
-    AuthenticatedAdminRoutesRouteChildren,
-  )
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
@@ -629,7 +615,8 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminOccurrencesRoute: typeof AuthenticatedAdminOccurrencesRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
-  AuthenticatedAdminRoutesRoute: typeof AuthenticatedAdminRoutesRouteWithChildren
+  AuthenticatedAdminRoutesRoute: typeof AuthenticatedAdminRoutesRoute
+  AuthenticatedAdminRoutes_newRoute: typeof AuthenticatedAdminRoutes_newRoute
   AuthenticatedAdminStoresRoute: typeof AuthenticatedAdminStoresRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVisitsRoute: typeof AuthenticatedAdminVisitsRoute
@@ -648,7 +635,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminOccurrencesRoute: AuthenticatedAdminOccurrencesRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
-    AuthenticatedAdminRoutesRoute: AuthenticatedAdminRoutesRouteWithChildren,
+    AuthenticatedAdminRoutesRoute: AuthenticatedAdminRoutesRoute,
+    AuthenticatedAdminRoutes_newRoute: AuthenticatedAdminRoutes_newRoute,
     AuthenticatedAdminStoresRoute: AuthenticatedAdminStoresRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
     AuthenticatedAdminVisitsRoute: AuthenticatedAdminVisitsRoute,
