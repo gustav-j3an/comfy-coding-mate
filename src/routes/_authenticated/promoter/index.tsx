@@ -23,6 +23,8 @@ import { ptBR } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
   component: PromoterDashboard,
@@ -30,7 +32,22 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 
 function PromoterDashboard() {
   const { user, profile, previewPromoter } = useAuth();
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Simulation states
+  const [simulatedDay, setSimulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
+  
+  // Calculate simulated date based on today and simulatedDay
+  const getSimulatedDate = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const diff = simulatedDay - currentDay;
+    const target = new Date(today);
+    target.setDate(today.getDate() + diff);
+    return target;
+  };
+
+  const simulatedDate = getSimulatedDate();
+  const scheduledDateStr = simulatedDate.toISOString().split('T')[0];
 
   const [online, setOnline] = useState(isOnline());
   const [syncQueueSize, setSyncQueueSize] = useState(0);
@@ -49,11 +66,13 @@ function PromoterDashboard() {
       window.removeEventListener('online', handleStatus);
       window.removeEventListener('offline', handleStatus);
     };
-  }, []);
+  }, [user?.id]);
+
 
   const { data: visits } = useSuspenseQuery({
-    queryKey: ['promoter-visits', user?.id, today, previewPromoter?.id],
+    queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id],
     queryFn: async () => {
+
       const currentUserId = user?.id;
       const effectiveUserId = previewPromoter?.id || currentUserId;
       const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
@@ -93,7 +112,7 @@ function PromoterDashboard() {
             store:stores(name, address),
             industry:industries(name)
           `)
-          .eq('scheduled_date', today as any);
+          .eq('scheduled_date', scheduledDateStr as any);
 
         if (currentPromoterId) {
           query = query.eq('promoter_id', currentPromoterId);
@@ -183,7 +202,7 @@ function PromoterDashboard() {
         <div className="flex justify-between items-start mb-6 pt-2">
           <div>
             <h1 className="text-2xl font-bold">Olá, {profile?.full_name?.split(' ')[0]}</h1>
-            <p className="text-blue-100 opacity-90">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
+            <p className="text-blue-100 opacity-90">{format(simulatedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
           </div>
         </div>
 
@@ -204,7 +223,45 @@ function PromoterDashboard() {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Weekly Simulation for Admin */}
+        {previewPromoter && (
+          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-amber-100">
+            <h3 className="text-sm font-black text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Calendar className="h-4 w-4" /> Roteiro da Semana (Simulação)
+            </h3>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
+                const dayName = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][day];
+                const isSelected = simulatedDay === day;
+                const isRealToday = new Date().getDay() === day;
+                
+                return (
+                  <button
+                    key={day}
+                    onClick={() => setSimulatedDay(day)}
+                    className={cn(
+                      "flex-shrink-0 w-14 h-16 rounded-xl flex flex-col items-center justify-center transition-all border-2",
+                      isSelected 
+                        ? "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-100" 
+                        : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
+                    )}
+                  >
+                    <span className="text-[10px] font-bold uppercase">{dayName}</span>
+                    <span className="text-lg font-black">{isRealToday ? "HOJE" : ""}</span>
+                    {isRealToday && !isSelected && <div className="w-1 h-1 bg-amber-500 rounded-full mt-1" />}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-amber-600 mt-2 font-bold leading-tight">
+              Selecione um dia para simular a agenda do promotor.
+              <br />Ações de escrita continuam bloqueadas.
+            </p>
+          </div>
+        )}
+
         {/* Next Stop highlight */}
+
         {nextStop && (
           <div className="mt-[-20px]">
             <Card className="border-none shadow-md bg-white overflow-hidden">
@@ -237,8 +294,9 @@ function PromoterDashboard() {
         <div>
           <h2 className="text-lg font-bold text-slate-800 mb-4 px-1 flex items-center">
             <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-            Roteiro do Dia
+            {simulatedDay === new Date().getDay() ? "Roteiro do Dia" : `Agenda de ${["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][simulatedDay]}`}
           </h2>
+
           
           <div className="space-y-3">
             {visits.length === 0 ? (

@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ChevronLeft, Plus, Trash2, GripVertical, 
-  Save, Calendar, Info, Building2, Clock, MapPin
+  Save, Calendar, Info, Building2, Clock, MapPin,
+  Loader2
 } from 'lucide-react';
 import {
   Select,
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { publishRoute } from '@/lib/routes.functions';
+
 
 export const Route = createFileRoute('/_authenticated/admin/routes_new')({
   component: RouteEditorPage,
@@ -65,13 +67,11 @@ function RouteEditorPage() {
   const [saving, setSaving] = useState(false);
 
   const searchParams = Route.useSearch() as any;
+  const routeId = searchParams.routeId;
 
   useEffect(() => {
-    if (searchParams.promoterId) {
-      setSelectedPromoterId(searchParams.promoterId);
-    }
     fetchInitialData();
-  }, [searchParams.promoterId]);
+  }, [searchParams.promoterId, routeId]);
 
   const fetchInitialData = async () => {
     try {
@@ -85,11 +85,70 @@ function RouteEditorPage() {
       setPromoters(promData.data || []);
       setStores(storeData.data || []);
       setIndustries(indData.data || []);
+
+      if (routeId) {
+        await loadExistingRoute(routeId);
+      } else if (searchParams.promoterId) {
+        setSelectedPromoterId(searchParams.promoterId);
+      }
     } catch (error: any) {
       toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadExistingRoute = async (id: string) => {
+    const { data: route, error: routeError } = await supabase
+      .from('routes')
+      .select(`
+        *,
+        route_stops (
+          *,
+          stop_tasks (*)
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (routeError) {
+      toast.error("Erro ao carregar roteiro existente");
+      return;
+    }
+
+    setRouteName(route.name);
+    setSelectedPromoterId(route.promoter_id);
+    setValidFrom(route.valid_from || format(new Date(), 'yyyy-MM-dd'));
+
+    const stops: Record<number, Stop[]> = {
+      1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 0: []
+    };
+
+    (route.route_stops || []).forEach((s: any) => {
+      const day = Number(s.day_of_week);
+      if (!stops[day]) stops[day] = [];
+      
+      stops[day].push({
+        id: s.id,
+        store_id: s.store_id,
+        visit_order: s.visit_order,
+        frequency: s.frequency,
+        biweekly_start_date: s.biweekly_start_date || format(new Date(), 'yyyy-MM-dd'),
+        observation: s.observation || '',
+        industry_ids: s.stop_tasks?.map((t: any) => t.industry_id) || []
+      });
+    });
+
+    // Sort by visit_order
+    Object.keys(stops).forEach(dayKey => {
+      const day = Number(dayKey);
+      if (stops[day]) {
+        stops[day].sort((a, b) => a.visit_order - b.visit_order);
+      }
+    });
+
+
+    setStopsByDay(stops);
   };
 
   const addStop = () => {
@@ -149,6 +208,7 @@ function RouteEditorPage() {
     }));
   };
 
+
   const handleSave = async (publish = false) => {
     if (!routeName || !selectedPromoterId) {
       toast.error('Preencha o nome da rota e selecione um promotor');
@@ -157,23 +217,53 @@ function RouteEditorPage() {
 
     setSaving(true);
     try {
-      const user = (await supabase.auth.getUser()).data.user;
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
       
-      const { data: route, error: routeError } = await supabase
-        .from('routes')
-        .insert({
+      let route;
+      if (routeId) {
+        const updateData: any = {
           name: routeName,
           promoter_id: selectedPromoterId,
           valid_from: validFrom,
-          active: publish,
-          status: (publish ? 'published' : 'draft') as any,
-          version: 1,
-          created_by: user?.id || null
-        })
-        .select()
-        .single();
+          updated_at: new Date().toISOString()
+        };
+        
+        if (publish) {
+          updateData.active = true;
+          updateData.status = 'published';
+        }
 
-      if (routeError) throw routeError;
+        const { data, error } = await supabase
+          .from('routes')
+          .update(updateData)
+          .eq('id', routeId)
+          .select()
+          .single();
+        if (error) throw error;
+        route = data;
+      } else {
+        const { data, error } = await supabase
+          .from('routes')
+          .insert({
+            name: routeName,
+            promoter_id: selectedPromoterId,
+            valid_from: validFrom,
+            active: publish,
+            status: (publish ? 'published' : 'draft') as any,
+            version: 1,
+            created_by: user?.id || null
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        route = data;
+      }
+
+      // Handle stops
+      if (routeId) {
+        await supabase.from('route_stops').delete().eq('route_id', routeId);
+      }
 
       for (const day of Object.keys(stopsByDay)) {
         const dayNum = Number(day);
@@ -210,13 +300,12 @@ function RouteEditorPage() {
         if (result && (result as any).success) {
           toast.success('Roteiro publicado e visitas geradas!');
         } else {
-          toast.error('Roteiro criado, mas houve um problema na geração automática de visitas.');
+          toast.error('Roteiro salvo, mas houve um problema na geração automática de visitas.');
         }
       } else {
-        toast.success('Rascunho salvo com sucesso!');
+        toast.success(routeId ? 'Alterações salvas!' : 'Rascunho salvo!');
       }
 
-      // Force refresh data in the list page by going back
       navigate({ to: '/admin/routes' });
     } catch (error: any) {
       toast.error('Erro ao salvar roteiro: ' + error.message);
@@ -225,9 +314,17 @@ function RouteEditorPage() {
     }
   };
 
+
+
   if (loading) {
-    return <div className="p-8 text-center text-slate-500 font-sans">Carregando editor...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 font-sans gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <p className="text-slate-500 font-bold">Carregando editor...</p>
+      </div>
+    );
   }
+
 
   const currentDay = DAYS_OF_WEEK.find(d => d.id === selectedDay);
   const currentDayName = currentDay ? currentDay.name : '';
@@ -241,17 +338,20 @@ function RouteEditorPage() {
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Novo Roteiro</h2>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {routeId ? 'Editar Roteiro' : 'Novo Roteiro'}
+            </h2>
             <p className="text-sm text-slate-500 font-medium">Planejamento semanal fixo</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="font-bold text-slate-600" onClick={() => handleSave(false)} disabled={saving}>
-            Salvar Rascunho
+            {routeId ? 'Salvar Alterações' : 'Salvar Rascunho'}
           </Button>
           <Button className="bg-blue-600 hover:bg-blue-700 font-bold shadow-lg shadow-blue-100" onClick={() => handleSave(true)} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" /> Publicar Roteiro
+            <Save className="mr-2 h-4 w-4" /> {routeId ? 'Salvar e Publicar' : 'Publicar Roteiro'}
           </Button>
+
         </div>
       </header>
 

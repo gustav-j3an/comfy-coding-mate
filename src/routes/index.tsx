@@ -1,4 +1,6 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
+import { Calendar, CheckCircle2 } from 'lucide-react';
+
 
 /**
  * CORREÇÃO DE UX — “VISUALIZAR COMO PROMOTOR” E MENU LATERAL RECOLHÍVEL
@@ -97,17 +99,20 @@ function Index() {
         </h1>
         
         <section className="space-y-4 pt-4 text-blue-300">
-          <h2 className="text-xl font-semibold text-blue-400">REFORÇO DE SEGURANÇA — PRÉ-VISUALIZAÇÃO COMO PROMOTOR</h2>
+          <h2 className="text-xl font-semibold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+            <Calendar className="h-5 w-5" /> Editor de Roteiro e Simulação Semanal
+          </h2>
           <p className="text-slate-300">
-            A autorização para o modo de visualização administrativa foi reforçada com validações autoritativas no servidor.
+            Implementação concluída do editor unificado e simulador de agenda para administradores.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li><span className="font-bold text-white">Validação Server-side:</span> Toda requisição de dados de terceiros agora exige confirmação do papel Admin no backend.</li>
-            <li><span className="font-bold text-white">Bloqueio de Escrita:</span> O modo preview é estritamente "Somente Leitura" no backend, impedindo forjas de requisição.</li>
-            <li><span className="font-bold text-white">Isolamento de Sessão:</span> O contexto de pré-visualização é zerado ao deslogar, impedindo persistência indevida.</li>
-            <li><span className="font-bold text-white">Integridade:</span> Validação da existência e status do promotor alvo antes da liberação dos dados.</li>
+            <li><span className="font-bold text-white">Editor Unificado:</span> Edição completa de nomes, datas, lojas e tarefas em rotas existentes.</li>
+            <li><span className="font-bold text-white">Gestão de Roteiro:</span> Menu de ações rápidas (Duplicar, Pausar, Arquivar, Excluir com segurança).</li>
+            <li><span className="font-bold text-white">Simulação Semanal:</span> Seletor de dias na visão do promotor para conferência de roteiros futuros.</li>
+            <li><span className="font-bold text-white">Integridade:</span> Proteção contra exclusão de rotas com visitas já executadas.</li>
           </ul>
         </section>
+
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
           <h2 className="text-xl font-semibold text-green-400">FUNCIONALIDADES CONCLUÍDAS</h2>
