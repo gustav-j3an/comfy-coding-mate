@@ -414,8 +414,15 @@ function PromoterDashboard() {
                         <div className="flex-1 p-3 px-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
-                              <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
+                               <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
+                                {visit.frequency && (
+                                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 py-0 border-slate-200 text-slate-400 font-medium uppercase">
+                                    {visit.frequency === 'weekly' ? 'Semanal' : 'Quinzenal'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                             {getStatusBadge(visit)}
                           </div>
