@@ -77,8 +77,8 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
   component: UserManagement,
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      invite: (search?.['invite'] as string) || undefined,
-      id: (search?.['id'] as string) || undefined,
+      invite: search?.invite || search?.['invite'],
+      id: search?.id || search?.['id'],
     };
   },
 });
@@ -86,7 +86,7 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
 function UserManagement() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const searchParams = Route.useSearch();
+  const searchParams = Route.useSearch() as any;
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
