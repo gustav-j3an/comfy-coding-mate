@@ -1,10 +1,11 @@
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
 import { PWAUpdateNotification } from '@/components/common/pwa-updater';
+import { getSyncQueue } from '@/lib/offline';
 
 export const Route = createFileRoute('/_authenticated')({
   component: AuthenticatedLayout,
@@ -13,6 +14,19 @@ export const Route = createFileRoute('/_authenticated')({
 function AuthenticatedLayout() {
   const { user, loading, role } = useAuth();
   const navigate = useNavigate();
+  const [hasPendingSync, setHasPendingSync] = useState(false);
+
+  useEffect(() => {
+    const checkSync = async () => {
+      const queue = await getSyncQueue();
+      setHasPendingSync(queue.length > 0);
+    };
+    checkSync();
+    
+    // Polling sync queue status every 10 seconds while on promoter route
+    const interval = setInterval(checkSync, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -45,7 +59,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
-      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/')} />
+      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync} />
       <Outlet />
     </>
   );

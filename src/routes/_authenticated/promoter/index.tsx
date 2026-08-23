@@ -13,10 +13,16 @@ import {
   MapPin, 
   Calendar,
   LayoutDashboard,
-  CheckCircle
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline } from '@/lib/offline';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
   component: PromoterDashboard,
@@ -26,6 +32,23 @@ function PromoterDashboard() {
   const { user, profile } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
+  const [online, setOnline] = useState(isOnline());
+  const [syncQueueSize, setSyncQueueSize] = useState(0);
+
+  useEffect(() => {
+    const handleStatus = () => setOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    
+    // Check sync queue
+    getSyncQueue().then(queue => setSyncQueueSize(queue.length));
+
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
   const { data: visits } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, today],
     queryFn: async () => {
@@ -33,35 +56,43 @@ function PromoterDashboard() {
       const currentPromoterId = profile?.promoter_id || null;
       if (!currentUserId) return [];
       
-      let query = supabase
-        .from('visits')
-        .select(`
-          *,
-          store:stores(name, address),
-          industry:industries(name)
-        `)
-        .eq('scheduled_date', today as any);
+      try {
+        let query = supabase
+          .from('visits')
+          .select(`
+            *,
+            store:stores(name, address),
+            industry:industries(name)
+          `)
+          .eq('scheduled_date', today as any);
 
-      if (currentPromoterId) {
-        query = query.eq('promoter_id', currentPromoterId);
-      } else {
-        query = query.eq('executor_id', currentUserId);
+        if (currentPromoterId) {
+          query = query.eq('promoter_id', currentPromoterId);
+        } else {
+          query = query.eq('executor_id', currentUserId);
+        }
+
+        const { data, error } = await query.order('visit_order', { ascending: true });
+
+        if (error) throw error;
+        
+        // Update cache for offline use
+        await cachePromoterVisits(data || []);
+        return data || [];
+      } catch (err) {
+        console.warn('Network error, loading from cache:', err);
+        return await getCachedVisits();
       }
-
-      const { data, error } = await query.order('visit_order', { ascending: true });
-
-      if (error) throw error;
-      return data;
     }
   });
 
   const stats = {
     total: visits.length,
-    completed: visits.filter(v => ['submitted', 'approved'].includes(v.status || '')).length,
-    pending: visits.filter(v => ['planned', 'pending'].includes(v.status || '')).length,
+    completed: (visits as any[]).filter(v => ['submitted', 'approved'].includes(v.status || '')).length,
+    pending: (visits as any[]).filter(v => ['planned', 'pending'].includes(v.status || '')).length,
   };
 
-  const nextStop = visits.find(v => v.status === 'planned');
+  const nextStop = (visits as any[]).find(v => v.status === 'planned');
 
   const getStatusBadge = (status: string | null) => {
     switch (status) {
@@ -77,14 +108,29 @@ function PromoterDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 safe-area-inset-bottom">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg">
-        <div className="flex justify-between items-start mb-6">
+      <div className="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg relative overflow-hidden">
+        {/* Connection Indicator */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          {syncQueueSize > 0 && (
+            <Badge className="bg-orange-500 text-white border-none animate-pulse">
+              <RefreshCw className="h-3 w-3 mr-1" /> {syncQueueSize} pendentes
+            </Badge>
+          )}
+          {online ? (
+            <Badge className="bg-green-500/20 text-green-100 border-none backdrop-blur-sm">
+              <Wifi className="h-3 w-3 mr-1" /> Online
+            </Badge>
+          ) : (
+            <Badge className="bg-red-500 text-white border-none shadow-lg">
+              <WifiOff className="h-3 w-3 mr-1" /> Offline
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex justify-between items-start mb-6 pt-2">
           <div>
             <h1 className="text-2xl font-bold">Olá, {profile?.full_name?.split(' ')[0]}</h1>
             <p className="text-blue-100 opacity-90">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-          </div>
-          <div className="bg-white/20 p-2 rounded-full">
-            <LayoutDashboard className="h-6 w-6" />
           </div>
         </div>
 
@@ -149,7 +195,7 @@ function PromoterDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              visits.map((visit, index) => (
+              (visits as any[]).map((visit, index) => (
                 <Link 
                   key={visit.id} 
                   to={"/promoter/visit/$visitId" as any}

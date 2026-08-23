@@ -15,12 +15,27 @@ import {
   ChevronLeft,
   Loader2,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Wifi,
+  WifiOff,
+  Save,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { submitVisit } from '@/lib/execution.functions';
 import { toast } from 'sonner';
+import { 
+  saveVisitDraft, 
+  getVisitDraft, 
+  deleteVisitDraft, 
+  addToSyncQueue, 
+  removeFromSyncQueue, 
+  isOnline 
+} from '@/lib/offline';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')({
   component: VisitExecution,
@@ -38,9 +53,61 @@ function VisitExecution() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [checkinTime] = useState(new Date().toISOString());
+  
+  const [online, setOnline] = useState(isOnline());
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [isRestored, setIsRestored] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleStatus = () => setOnline(navigator.onLine);
+    window.addEventListener('online', handleStatus);
+    window.addEventListener('offline', handleStatus);
+    return () => {
+      window.removeEventListener('online', handleStatus);
+      window.removeEventListener('offline', handleStatus);
+    };
+  }, []);
+
+  // Restore draft on load
+  useEffect(() => {
+    async function restoreDraft() {
+      const draft = await getVisitDraft(visitId);
+      if (draft && !isRestored) {
+        setObservation(draft.observation || '');
+        setEvidences(draft.evidences || []);
+        setOccurrences(draft.occurrences || []);
+        setLastSaved(draft.lastSaved);
+        setIsRestored(true);
+        toast.info("Rascunho restaurado automaticamente.");
+      }
+    }
+    restoreDraft();
+  }, [visitId, isRestored]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!visitId || !user?.id) return;
+    
+    const saveTimer = setTimeout(async () => {
+      const draft = await saveVisitDraft({
+        visitId,
+        executorId: user.id,
+        checkinAt: checkinTime,
+        observation,
+        evidences,
+        occurrences,
+        latitude: coords?.latitude,
+        longitude: coords?.longitude
+      });
+      setLastSaved(draft.lastSaved);
+    }, 2000);
+
+    return () => clearTimeout(saveTimer);
+  }, [observation, evidences, occurrences, coords, visitId, user?.id, checkinTime]);
 
   const { data: visit } = useSuspenseQuery({
     queryKey: ['visit-details', visitId],
@@ -132,6 +199,13 @@ function VisitExecution() {
       return;
     }
 
+    if (!online) {
+      await addToSyncQueue(visitId);
+      toast.warning("Sem conexão. Visita salva na fila para sincronização automática.");
+      navigate({ to: '/promoter' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await submitVisit({
@@ -148,10 +222,15 @@ function VisitExecution() {
         }
       });
 
+      await deleteVisitDraft(visitId);
+      await removeFromSyncQueue(visitId);
+      
       toast.success("Visita enviada para conferência administrativa.");
       navigate({ to: '/promoter' });
     } catch (error: any) {
-      toast.error("Erro ao enviar: " + error.message);
+      console.error("Submit error:", error);
+      await addToSyncQueue(visitId);
+      toast.error("Erro ao enviar. O rascunho foi mantido na fila de sincronização.");
     } finally {
       setIsSubmitting(false);
     }
@@ -160,17 +239,45 @@ function VisitExecution() {
   return (
     <div className="min-h-screen bg-slate-50 pb-10">
       {/* Header */}
-      <div className="bg-white border-b p-4 sticky top-0 z-10 flex items-center justify-between">
-        <Button variant="ghost" size="icon" asChild>
-          <button onClick={() => navigate({ to: '/promoter' })}>
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-        </Button>
-        <h1 className="font-bold text-lg">Executar Visita</h1>
-        <div className="w-10" />
+      <div className="bg-white border-b p-4 sticky top-0 z-20 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild>
+            <button onClick={() => navigate({ to: '/promoter' })}>
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          </Button>
+          <h1 className="font-bold text-lg">Executar Visita</h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {online ? (
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none">
+              <Wifi className="h-3 w-3 mr-1" /> Online
+            </Badge>
+          ) : (
+            <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none">
+              <WifiOff className="h-3 w-3 mr-1" /> Offline
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Status indicator */}
+        <div className="flex justify-between items-center px-1">
+          {lastSaved && (
+            <div className="flex items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <Save className="h-3 w-3 mr-1" />
+              Rascunho salvo: {format(new Date(lastSaved), "HH:mm:ss", { locale: ptBR })}
+            </div>
+          )}
+          {!online && (
+            <div className="flex items-center text-[10px] text-orange-500 font-bold uppercase tracking-wider animate-pulse">
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Pendente de Sincronização
+            </div>
+          )}
+        </div>
         {/* Info Card */}
         <Card className="border-none shadow-sm">
           <CardContent className="p-4">
@@ -243,7 +350,7 @@ function VisitExecution() {
           <div className="space-y-2">
             <h3 className="text-sm font-bold text-slate-700">Evidências Anexadas ({evidences.length})</h3>
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {evidences.map((ev, i) => (
+              {(evidences as any[]).map((ev, i) => (
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                   {ev.fileType.startsWith('image/') ? (
                     <img 
@@ -283,7 +390,7 @@ function VisitExecution() {
           
           {occurrences.length > 0 && (
             <div className="space-y-2 mt-2">
-              {occurrences.map((oc, i) => (
+              {(occurrences as any[]).map((oc, i) => (
                 <div key={i} className="flex justify-between items-center bg-white p-3 rounded-lg border text-sm">
                   <span className="capitalize font-medium">{oc.type}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOccurrences(occurrences.filter((_, idx) => idx !== i))}>
@@ -321,7 +428,7 @@ function VisitExecution() {
           {isSubmitting ? (
             <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Enviando...</>
           ) : (
-            <>Enviar para Conferência <CheckCircle2 className="ml-2 h-5 w-5" /></>
+            <>{online ? 'Enviar para Conferência' : 'Salvar Offline'} <CheckCircle2 className="ml-2 h-5 w-5" /></>
           )}
         </Button>
       </div>
