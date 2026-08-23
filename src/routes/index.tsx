@@ -1,40 +1,86 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useAuth } from '@/lib/auth/auth-context';
+import { Button } from '@/components/ui/button';
+import { MapPin, LogIn, Download, Info } from 'lucide-react';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
   component: Index,
 });
 
 function Index() {
+  const { user, role, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (role === 'admin') {
+        navigate({ to: '/admin' });
+      } else if (role === 'promoter') {
+        navigate({ to: '/promoter/dashboard' });
+      } else if (role === 'industry') {
+        navigate({ to: '/industry/dashboard' });
+      }
+    }
+  }, [user, role, loading, navigate]);
+
+  const handleLoginClick = () => {
+    navigate({ to: '/login' });
+  };
+
   return (
-    <div className="min-h-screen bg-[#0F172A] text-white p-4 sm:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold border-b border-slate-700 pb-4 text-center">
-          ROTA DO PROMOTOR
-        </h1>
-        
-        <div className="p-8 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl text-center space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto space-y-8">
+        <div className="space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
-              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="bg-blue-600 p-4 rounded-3xl shadow-xl shadow-blue-200">
+              <MapPin className="h-10 w-10 text-white" />
             </div>
           </div>
-          
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-slate-100">Sistema Operacional</h2>
-            <p className="text-slate-400 max-w-md mx-auto">
-              Segurança auditada e corrigida. RLS ativado em todas as tabelas e funções sensíveis protegidas.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-slate-800">
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-medium">
-              Ambiente de produção seguro
-            </p>
-          </div>
+          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            Rota do Promotor
+          </h1>
+          <p className="text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
+            Sistema inteligente para gestão, roteirização e execução de operações de trade marketing.
+          </p>
         </div>
-      </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+          <Button 
+            onClick={handleLoginClick}
+            className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <LogIn className="h-5 w-5" />
+            Entrar no sistema
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="h-14 border-slate-200 bg-white text-slate-700 font-bold text-lg rounded-2xl shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Download className="h-5 w-5" />
+            Instalar aplicativo
+          </Button>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl max-w-md w-full space-y-3">
+          <div className="flex items-center gap-2 text-blue-700 font-bold justify-center">
+            <Info className="h-5 w-5" />
+            <span>Recebeu um convite?</span>
+          </div>
+          <p className="text-blue-600 text-sm leading-relaxed">
+            Acesse o link enviado pelo administrador via WhatsApp ou E-mail para criar sua senha e ativar sua conta.
+          </p>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="p-6 text-center border-t border-slate-100">
+        <p className="text-slate-400 text-xs font-medium uppercase tracking-widest">
+          © {new Date().getFullYear()} Rota do Promotor • Todos os direitos reservados
+        </p>
+      </footer>
     </div>
   );
 }
