@@ -346,6 +346,50 @@ function UserManagement() {
     }
   };
 
+  const handleGenerateTempAccess = async (user: any) => {
+    setTempAccessTarget(user);
+    setTempAccessData(null);
+    setGeneratingTempAccess(true);
+    
+    try {
+      const res: any = await generateTemporaryAccess({ 
+        data: { 
+          userId: user.id, 
+          email: user.email,
+          promoterId: user.promoter_id 
+        } 
+      });
+
+      if (res.success && res.tempPassword) {
+        const message = `Olá, ${res.promoterName}! 👋\n\nSeu acesso ao Rota do Promotor está pronto.\n\nAcesse:\nhttps://comfy-coding-mate.lovable.app/login\n\nE-mail: ${res.email}\nSenha temporária: ${res.tempPassword}\n\nNo primeiro acesso, você deverá criar sua própria senha.`;
+        
+        const encodedMessage = encodeURIComponent(message);
+        
+        // Normalize phone for wa.me link
+        const digitsOnly = (res.phone || '').replace(/\D/g, '');
+        let normalizedPhone = digitsOnly;
+        if (digitsOnly.length === 10 || digitsOnly.length === 11) {
+          normalizedPhone = '55' + digitsOnly;
+        }
+        
+        const waUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
+        
+        setTempAccessData({
+          tempPassword: res.tempPassword,
+          email: res.email,
+          waUrl,
+          message: message
+        });
+      }
+
+    } catch (error: any) {
+      toast.error('Erro ao gerar acesso temporário: ' + error.message);
+      setTempAccessTarget(null);
+    } finally {
+      setGeneratingTempAccess(false);
+    }
+  };
+
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
