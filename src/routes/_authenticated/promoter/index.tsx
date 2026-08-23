@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 });
 
 function PromoterDashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile, previewPromoter } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
   const [online, setOnline] = useState(isOnline());
@@ -52,11 +52,12 @@ function PromoterDashboard() {
   }, []);
 
   const { data: visits } = useSuspenseQuery({
-    queryKey: ['promoter-visits', user?.id, today],
+    queryKey: ['promoter-visits', user?.id, today, previewPromoter?.id],
     queryFn: async () => {
       const currentUserId = user?.id;
-      const currentPromoterId = profile?.promoter_id || null;
-      if (!currentUserId) return [];
+      const effectiveUserId = previewPromoter?.id || currentUserId;
+      const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
+      if (!effectiveUserId) return [];
       
       try {
         let query = supabase
@@ -71,7 +72,7 @@ function PromoterDashboard() {
         if (currentPromoterId) {
           query = query.eq('promoter_id', currentPromoterId);
         } else {
-          query = query.eq('executor_id', currentUserId);
+          query = query.eq('executor_id', effectiveUserId);
         }
 
         const { data, error } = await query.order('visit_order', { ascending: true });
@@ -79,11 +80,11 @@ function PromoterDashboard() {
         if (error) throw error;
         
         // Update cache for offline use
-        await cachePromoterVisits(currentUserId, data || []);
+        await cachePromoterVisits(effectiveUserId, data || []);
         return data || [];
       } catch (err) {
         console.warn('Network error, loading from cache:', err);
-        return await getCachedVisits(currentUserId);
+        return await getCachedVisits(effectiveUserId);
       }
     }
   });

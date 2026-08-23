@@ -12,6 +12,8 @@ interface AuthContextType {
   profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  previewPromoter: { id: string; name: string } | null;
+  setPreviewPromoter: (promoter: { id: string; name: string } | null) => void;
 }
 
 // A safe default keeps consumers rendering (in a loading state) even if they
@@ -24,6 +26,8 @@ const defaultAuthContext: AuthContextType = {
   profile: null,
   loading: true,
   signOut: async () => {},
+  previewPromoter: null,
+  setPreviewPromoter: () => {},
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -34,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewPromoter, setPreviewPromoter] = useState<{ id: string; name: string } | null>(null);
 
   async function fetchRole(userId: string) {
     try {
@@ -132,7 +137,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      role, 
+      profile, 
+      loading, 
+      signOut, 
+      previewPromoter, 
+      setPreviewPromoter 
+    }}>
       {children}
     </AuthContext.Provider>
   );

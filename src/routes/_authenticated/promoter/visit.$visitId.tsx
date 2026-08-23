@@ -43,7 +43,7 @@ export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')(
 
 function VisitExecution() {
   const { visitId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, previewPromoter } = useAuth();
   const navigate = useNavigate();
   const { coords, loading: loadingGeo } = useGeolocation();
   
@@ -156,6 +156,10 @@ function VisitExecution() {
   }, [evidences, user?.id, visitId, isRestored]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (previewPromoter) {
+      toast.warning("Modo Visualização: O upload de mídias está bloqueado.");
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file || !activeEvidenceType) return;
 
@@ -222,6 +226,11 @@ function VisitExecution() {
   };
 
   const handleSubmit = async () => {
+    if (previewPromoter) {
+      toast.warning("Modo Visualização: O envio de visitas está bloqueado.");
+      return;
+    }
+
     if (missingEvidences.length > 0) {
       toast.error(`Evidências obrigatórias pendentes: ${missingEvidences.join(', ')}`);
       return;

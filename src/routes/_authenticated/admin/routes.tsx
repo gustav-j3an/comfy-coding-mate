@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,9 @@ function RoutesPage() {
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [selectedPromoterId, setSelectedPromoterId] = useState<string>('');
+  const [selectedPromoterName, setSelectedPromoterName] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { role, setPreviewPromoter, previewPromoter } = useAuth();
 
   useEffect(() => {
     fetchData();
@@ -106,7 +109,14 @@ function RoutesPage() {
           <p className="text-sm text-slate-500">Planejamento logístico e paradas</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedPromoterId} onValueChange={setSelectedPromoterId}>
+          <Select 
+            value={selectedPromoterId} 
+            onValueChange={(value) => {
+              setSelectedPromoterId(value);
+              const p = promoters.find(promoter => promoter.id === value);
+              if (p) setSelectedPromoterName(p.name);
+            }}
+          >
             <SelectTrigger className="w-56 bg-slate-50">
               <SelectValue placeholder="Selecione um promotor" />
             </SelectTrigger>
@@ -141,7 +151,20 @@ function RoutesPage() {
              <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" /> Filtros
               </Button>
-              <Button variant="ghost" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold">
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold"
+                disabled={!selectedPromoterId}
+                onClick={() => {
+                  if (!selectedPromoterId) {
+                    toast.error("Selecione um promotor para visualizar");
+                    return;
+                  }
+                  setPreviewPromoter({ id: selectedPromoterId, name: selectedPromoterName });
+                  navigate({ to: '/promoter' });
+                  toast.success(`Modo visualização ativado: ${selectedPromoterName}`);
+                }}
+              >
                 <Eye className="h-4 w-4" /> Visualizar como Promotor
               </Button>
           </div>
@@ -161,7 +184,13 @@ function RoutesPage() {
               <p>Nenhuma rota cadastrada ainda.</p>
             </div>
           ) : (
-            routes.map((route) => (
+            routes
+              .filter(r => !selectedPromoterId || r.promoter_id === selectedPromoterId)
+              .filter(r => 
+                r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                r.promoter_name?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((route) => (
               <Card key={route.id} className="hover:shadow-md transition-shadow overflow-hidden border-slate-200">
                 <CardHeader className="pb-3 bg-slate-50/50">
                   <div className="flex justify-between items-start">

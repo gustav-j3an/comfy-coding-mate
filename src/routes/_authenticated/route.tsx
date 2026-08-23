@@ -1,11 +1,12 @@
-import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate, Link } from '@tanstack/react-router';
 import { get, keys } from 'idb-keyval';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
 import { PWAUpdateNotification } from '@/components/common/pwa-updater';
+import { Button } from '@/components/ui/button';
 import { getSyncQueue, getVisitDraft } from '@/lib/offline';
 
 export const Route = createFileRoute('/_authenticated')({
@@ -13,7 +14,7 @@ export const Route = createFileRoute('/_authenticated')({
 });
 
 function AuthenticatedLayout() {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, previewPromoter, setPreviewPromoter } = useAuth();
   const navigate = useNavigate();
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [hasAwaitingMedia, setHasAwaitingMedia] = useState(false);
@@ -80,7 +81,34 @@ function AuthenticatedLayout() {
     <>
       <ConnectionStatus />
       <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
-      <Outlet />
+      
+      {previewPromoter && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-600 text-white px-4 py-2 flex justify-between items-center shadow-lg">
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <Eye className="h-4 w-4 animate-pulse" />
+            <span>VOCÊ ESTÁ VISUALIZANDO COMO: <span className="underline">{previewPromoter.name.toUpperCase()}</span></span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="bg-white text-amber-700 hover:bg-slate-100 border-none h-8 font-bold text-xs"
+            onClick={() => {
+              setPreviewPromoter(null);
+              navigate({ to: '/admin/routes' });
+            }}
+          >
+            <ArrowLeft className="h-3 w-3 mr-1" /> VOLTAR AO PAINEL ADMIN
+          </Button>
+        </div>
+      )}
+
+      <div className={cn(previewPromoter ? "pt-12" : "")}>
+        <Outlet />
+      </div>
     </>
   );
+}
+
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(' ');
 }

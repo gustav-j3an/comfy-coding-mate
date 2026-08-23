@@ -2,6 +2,8 @@ import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { useAuth } from '@/lib/auth/auth-context';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export const Route = createFileRoute('/_authenticated/admin')({
   component: AdminLayout,
@@ -30,7 +32,7 @@ function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       <AdminSidebar />
-      <main className="flex-1 md:pl-72 flex flex-col min-h-screen">
+      <main className="flex-1 flex flex-col min-h-screen">
         <Outlet />
       </main>
     </div>
