@@ -31,7 +31,8 @@ import {
   AlertTriangle,
   Loader2,
   CopyIcon,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import { 
   DropdownMenu, 
