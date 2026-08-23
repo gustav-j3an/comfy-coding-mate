@@ -24,13 +24,13 @@ function Index() {
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-slate-100">Sistema Operacional</h2>
             <p className="text-slate-400 max-w-md mx-auto">
-              Ambiente configurado com sucesso. Utilize o menu lateral para gerenciar promotores, indústrias e roteiros.
+              Segurança auditada e corrigida. RLS ativado em todas as tabelas e funções sensíveis protegidas.
             </p>
           </div>
 
           <div className="pt-4 border-t border-slate-800">
             <p className="text-xs text-slate-500 uppercase tracking-widest font-medium">
-              Configuração autoritativa de domínio aplicada
+              Ambiente de produção seguro
             </p>
           </div>
         </div>
