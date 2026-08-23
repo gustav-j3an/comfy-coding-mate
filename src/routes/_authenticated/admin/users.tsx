@@ -281,20 +281,20 @@ function UserManagement() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Usuários e Acessos</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Usuários e Acessos</h1>
           <p className="text-slate-500 text-sm">Gerencie permissões e convites do sistema.</p>
         </div>
         
         <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200">
+            <Button className="bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200 w-full sm:w-auto">
               <UserPlus className="w-4 h-4 mr-2" /> Convidar Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Convidar Novo Usuário</DialogTitle>
               <DialogDescription>
