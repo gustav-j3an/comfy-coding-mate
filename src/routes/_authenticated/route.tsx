@@ -3,9 +3,10 @@ import { get, keys } from 'idb-keyval';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Eye } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
 import { PWAUpdateNotification } from '@/components/common/pwa-updater';
+import { Button } from '@/components/ui/button';
 import { getSyncQueue, getVisitDraft } from '@/lib/offline';
 
 export const Route = createFileRoute('/_authenticated')({
