@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getPublicAppUrl } from "./app-config";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -29,11 +30,8 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     if (!isAdmin) throw new Error("Apenas administradores podem convidar usuários");
 
-    // Use PUBLIC_APP_URL as the source of truth for the site URL
-    const siteUrl = process.env['PUBLIC_APP_URL'];
-    if (!siteUrl) {
-      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
-    }
+    // Use getPublicAppUrl() as the source of truth for the site URL
+    const siteUrl = getPublicAppUrl();
 
     // 1. Invite user to Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
@@ -103,10 +101,7 @@ export const resendInvite = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Apenas administradores podem reenviar convites");
 
     // Get site URL
-    const siteUrl = process.env['PUBLIC_APP_URL'];
-    if (!siteUrl) {
-      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
-    }
+    const siteUrl = getPublicAppUrl();
 
     // Try to resend the invite (this invalidates the previous one)
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
