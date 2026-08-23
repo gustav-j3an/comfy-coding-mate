@@ -276,7 +276,7 @@ function ImportModule() {
           {isBlockerActive ? (
             <Badge variant="destructive" className="animate-pulse">BLOQUEADO: REQUER CORREÇÃO</Badge>
           ) : requiresRevision && (
-            <Badge variant="warning" className="bg-amber-500 text-white animate-pulse">REQUER REVISÃO</Badge>
+            <Badge variant="secondary" className="bg-amber-500 text-white animate-pulse hover:bg-amber-600">REQUER REVISÃO</Badge>
           )}
         </div>
 
