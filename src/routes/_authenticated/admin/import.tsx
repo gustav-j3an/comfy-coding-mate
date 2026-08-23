@@ -35,10 +35,18 @@ function ImportModule() {
   const [validFrom, setValidFrom] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
-  const [acceptedRevisionTerms, setAcceptedRevisionTerms] = useState(false);
-
-  const importFn = useServerFn(executeImport);
-  const [importStatus, setImportStatus] = useState<{ step: string; processed: number; total: number } | null>(null);
+  const [activeBatch, setActiveBatch] = useState<any>(null);
+  const startBatchFn = useServerFn(startImportBatch);
+  const processStepFn = useServerFn(processImportStep);
+  const finishBatchFn = useServerFn(finishImportBatch);
+  const failBatchFn = useServerFn(failImportBatch);
+  const getBatchStatusFn = useServerFn(getImportBatchStatus);
+  const [importStatus, setImportStatus] = useState<{ 
+    step: 'industries' | 'stores' | 'promoters' | 'routes' | 'stops'; 
+    processed: number; 
+    total: number;
+    results: any;
+  } | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
