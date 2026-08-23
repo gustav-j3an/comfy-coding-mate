@@ -23,6 +23,8 @@ import { ptBR } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
   component: PromoterDashboard,
