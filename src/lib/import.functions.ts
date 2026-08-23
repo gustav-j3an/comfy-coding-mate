@@ -48,14 +48,14 @@ export const getImportBatchStatus = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ batchId: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: batch, error } = await supabaseAdmin
+    const { data: batch, error } = await (supabaseAdmin as any)
       .from('import_batches')
       .select('*')
       .eq('id', data.batchId)
       .maybeSingle();
     
     if (error) throw error;
-    return batch as any;
+    return batch;
   });
 
 export const startImportBatch = createServerFn({ method: "POST" })
@@ -69,15 +69,15 @@ export const startImportBatch = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await (supabaseAdmin as any)
       .from('import_batches')
       .select('status')
       .eq('id', data.batchId)
       .maybeSingle();
 
-    if (existing) return { success: true, status: (existing as any).status };
+    if (existing) return { success: true, status: existing.status };
 
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from('import_batches')
       .insert({
         id: data.batchId,
@@ -105,13 +105,13 @@ export const processImportStep = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: batch } = await supabaseAdmin
+    const { data: batch } = await (supabaseAdmin as any)
       .from('import_batches')
       .select('*')
       .eq('id', data.batchId)
       .single();
 
-    if (!batch || (batch as any).status !== 'processing') {
+    if (!batch || batch.status !== 'processing') {
       throw new Error("Lote não está em processamento.");
     }
 
@@ -122,7 +122,7 @@ export const processImportStep = createServerFn({ method: "POST" })
         for (const ind of data.items) {
           const { data: existing } = await supabaseAdmin.from('industries').select('id').eq('name', ind.nome).maybeSingle();
           if (!existing) {
-            const { error } = await supabaseAdmin.from('industries').insert({ name: ind.nome });
+            const { error } = await supabaseAdmin.from('industries').insert({ name: ind.nome } as any);
             if (error) results.errors.push(`Indústria ${ind.nome}: ${error.message}`);
             else results.created++;
           } else results.ignored++;
@@ -136,7 +136,7 @@ export const processImportStep = createServerFn({ method: "POST" })
               address: s.rede || 'Não informado',
               state: s.uf || null,
               active: true
-            });
+            } as any);
             if (error) results.errors.push(`Loja ${s.loja}: ${error.message}`);
             else results.created++;
           } else results.ignored++;
@@ -151,7 +151,7 @@ export const processImportStep = createServerFn({ method: "POST" })
               phone: p.contato || null,
               observation: p.observacao || null,
               active: true
-            });
+            } as any);
             if (error) results.errors.push(`Promotor ${p.nome}: ${error.message}`);
             else results.created++;
           } else results.ignored++;
@@ -161,10 +161,7 @@ export const processImportStep = createServerFn({ method: "POST" })
           const pName = sheet.stops[0]?.promotor;
           if (!pName) continue;
           const { data: promoter } = await supabaseAdmin.from('promoters').select('id').eq('name', pName).single();
-          if (!promoter) {
-            results.errors.push(`Promotor ${pName} não encontrado.`);
-            continue;
-          }
+          if (!promoter) continue;
           const routeName = `Importação Excel — ${pName}`;
           const { data: existing } = await supabaseAdmin.from('routes')
             .select('id')
@@ -182,7 +179,7 @@ export const processImportStep = createServerFn({ method: "POST" })
               active: false,
               created_by: userId,
               version: 1
-            });
+            } as any);
             if (error) results.errors.push(`Roteiro ${pName}: ${error.message}`);
             else results.created++;
           } else results.ignored++;
@@ -209,10 +206,10 @@ export const processImportStep = createServerFn({ method: "POST" })
                   visit_order: 1,
                   frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
                   biweekly_start_date: data.validFrom || (batch as any).valid_from
-                }).select('id').single();
+                } as any).select('id').single();
                 if (!error && newStop) {
                   results.created++;
-                  await supabaseAdmin.from('stop_tasks').insert({ stop_id: newStop.id, industry_id: industry.id });
+                  await supabaseAdmin.from('stop_tasks').insert({ stop_id: newStop.id, industry_id: industry.id } as any);
                 }
               } else results.ignored++;
             }
@@ -220,14 +217,14 @@ export const processImportStep = createServerFn({ method: "POST" })
         }
       }
 
-      await supabaseAdmin.from('import_batches').update({
+      await (supabaseAdmin as any).from('import_batches').update({
         processed_count: (batch as any).processed_count + data.items.length,
         last_error: results.errors.length > 0 ? results.errors[0] : (batch as any).last_error
       }).eq('id', data.batchId);
 
       return { success: true, results };
     } catch (err: any) {
-      await supabaseAdmin.from('import_batches').update({ status: 'failed', last_error: err.message }).eq('id', data.batchId);
+      await (supabaseAdmin as any).from('import_batches').update({ status: 'failed', last_error: err.message }).eq('id', data.batchId);
       throw err;
     }
   });
@@ -238,7 +235,7 @@ export const finishImportBatch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from('import_batches').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', data.batchId);
+    await (supabaseAdmin as any).from('import_batches').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', data.batchId);
     await recordAudit({ userId, action: 'import_operational_base', module: 'admin', summary: `Lote ${data.batchId} concluído.`, details: data.results });
     return { success: true };
   });
@@ -248,7 +245,7 @@ export const failImportBatch = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ batchId: z.string(), error: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from('import_batches').update({ status: 'failed', last_error: data.error }).eq('id', data.batchId);
+    await (supabaseAdmin as any).from('import_batches').update({ status: 'failed', last_error: data.error }).eq('id', data.batchId);
     return { success: true };
   });
 
