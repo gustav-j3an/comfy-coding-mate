@@ -1,5 +1,6 @@
 import { useEffect, useState, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { clearUserOfflineData } from '@/lib/offline';
 import type { User, Session } from '@supabase/supabase-js';
 
 type AppRole = 'admin' | 'promoter' | 'industry';
@@ -99,6 +100,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     // Clean up sensitive local data
+    if (user?.id) {
+      await clearUserOfflineData(user.id);
+    }
+    
     localStorage.removeItem('sb-' + (import.meta.env['VITE_SUPABASE_URL']?.split('.')[0].split('//')[1] || '') + '-auth-token');
     sessionStorage.clear();
     

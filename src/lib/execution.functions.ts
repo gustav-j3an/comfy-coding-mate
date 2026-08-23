@@ -35,6 +35,15 @@ export const submitVisit = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // 0. Server-side validation for mandatory evidences
+    const requiredTypes = ['reposicao'];
+    const uploadedTypes = data.evidences.map(e => e.evidenceType);
+    const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
+    
+    if (missingTypes.length > 0) {
+      throw new Error(`Missing mandatory evidences: ${missingTypes.join(', ')}`);
+    }
+
     // 1. Update visit status and execution info
     const { error: visitError } = await supabaseAdmin
       .from('visits')
