@@ -161,15 +161,18 @@ export const resendInvite = createServerFn({ method: "POST" })
     // Record audit log
     await recordAudit({
       userId: adminId,
-      action: 'resend_invite',
+      action: mode === 'invite' ? 'resend_invite' : 'request_password_reset',
       module: 'users',
       entityType: 'user',
       entityId: data.userId,
-      summary: `Convite reenviado para: ${data.email}`,
+      summary: mode === 'invite'
+        ? `Convite reenviado para: ${data.email}`
+        : `E-mail de definição de senha enviado para: ${data.email}`,
       details: data
     });
     
-    return { success: true };
+    return { success: true, mode };
+
   });
 
 export const requestPasswordReset = createServerFn({ method: "POST" })
