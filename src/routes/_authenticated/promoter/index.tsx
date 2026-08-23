@@ -406,10 +406,15 @@ function PromoterDashboard() {
                             </div>
                             {getStatusBadge(visit)}
                           </div>
-                          <div className="flex items-center text-slate-400 text-xs mt-2">
+                          <div className="flex items-center text-slate-400 text-[10px] mt-1">
                             <MapPin className="h-3 w-3 mr-1" />
                             <span className="truncate">{(visit as any).store?.address}</span>
                           </div>
+                          {visit.observation && (
+                            <p className="text-[9px] text-slate-400 mt-1 italic line-clamp-1">
+                              Obs: {visit.observation}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
