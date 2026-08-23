@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate, Link } from '@tanstack/react-router';
 import { get, keys } from 'idb-keyval';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';

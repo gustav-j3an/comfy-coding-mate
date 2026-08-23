@@ -32,7 +32,7 @@ function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
       <AdminSidebar />
-      <main className="flex-1 md:pl-72 flex flex-col min-h-screen">
+      <main className="flex-1 flex flex-col min-h-screen">
         <Outlet />
       </main>
     </div>
