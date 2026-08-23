@@ -51,7 +51,7 @@ function Index() {
         - remover completamente `web.whatsapp.com/send`;
         - manter somente dígitos no telefone, com `55 + DDD + número`;
         - gerar a mensagem com `encodeURIComponent`;
-        - abrir o link por um elemento `<a>` real, com clique direto do Admin;
+        - abrir o link por um elemento {"<a>"} real, com clique direto do Admin;
         - manter fallback de copiar mensagem e copiar link de acesso;
         - não usar popup automático, iframe, API ou automação;
         - o Admin continua clicando manualmente em Enviar dentro do WhatsApp.
