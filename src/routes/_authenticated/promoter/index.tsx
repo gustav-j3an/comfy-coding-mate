@@ -35,9 +35,23 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 function PromoterDashboard() {
   const { user, profile, previewPromoter } = useAuth();
   
-  // Simulation states
-  const [simulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
+  // Weekly selection state
+  const [simulatedDay, setSimulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
   
+  // Memoize days of the week for the selector
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(new Date(), { weekStartsOn: 0 });
+    return Array.from({ length: 7 }).map((_, i) => {
+      const date = addDays(start, i);
+      return {
+        label: format(date, 'eee', { locale: ptBR }).toUpperCase().replace('.', ''),
+        fullLabel: ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][i],
+        day: i,
+        date
+      };
+    });
+  }, []);
+
   // Calculate simulated date based on today and simulatedDay
   const getSimulatedDate = () => {
     const today = new Date();
@@ -321,7 +335,33 @@ function PromoterDashboard() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Weekly Simulation for Admin removed */}
+        <PWAInstallBanner />
+
+        {/* Weekly Selector */}
+        <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex justify-between gap-1 overflow-x-auto no-scrollbar">
+          {weekDays.map((day) => {
+            const isToday = new Date().getDay() === day.day;
+            const isSelected = simulatedDay === day.day;
+            
+            return (
+              <button
+                key={day.day}
+                onClick={() => setSimulatedDay(day.day)}
+                className={cn(
+                  "flex-1 min-w-[44px] py-3 rounded-xl flex flex-col items-center justify-center transition-all active:scale-95",
+                  isSelected 
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-100" 
+                    : "text-slate-400 hover:bg-slate-50",
+                  isToday && !isSelected && "text-blue-600 font-bold"
+                )}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider mb-1">{day.label}</span>
+                <span className="text-sm font-black">{day.date.getDate()}</span>
+                {isToday && <div className={cn("w-1 h-1 rounded-full mt-1", isSelected ? "bg-white" : "bg-blue-600")} />}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Next Stop highlight */}
 
