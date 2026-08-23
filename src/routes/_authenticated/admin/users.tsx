@@ -57,7 +57,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset } from '@/lib/users.functions';
+import { inviteUser, updateUserStatus, deleteUser, resendInvite, requestPasswordReset, generateWhatsAppInvite } from '@/lib/users.functions';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -139,6 +139,8 @@ function UserManagement() {
 
   // Action states
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [whatsAppTarget, setWhatsAppTarget] = useState<any>(null);
+  const [generatingWA, setGeneratingWA] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -288,12 +290,34 @@ function UserManagement() {
     toast.success('Link de convite copiado!');
   };
 
-  const copyWhatsAppInvite = (user: any) => {
-    const link = `${window.location.origin}/auth/reset-password?email=${encodeURIComponent(user.email)}`;
-    const date = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'dd/MM/yyyy');
-    const message = `Olá, ${user.full_name}. Você foi convidado para acessar o Rota do Promotor. Crie sua senha pelo link seguro: ${link}. Este convite expira em ${date}.`;
-    navigator.clipboard.writeText(message);
-    toast.success('Mensagem para WhatsApp copiada!');
+  const handleWhatsAppInvite = async () => {
+    if (!whatsAppTarget) return;
+    
+    setGeneratingWA(true);
+    try {
+      const res: any = await generateWhatsAppInvite({ 
+        data: { 
+          userId: whatsAppTarget.id, 
+          email: whatsAppTarget.email,
+          promoterId: whatsAppTarget.promoter_id 
+        } 
+      });
+
+      if (res.success && res.actionLink) {
+        const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
+        
+        const encodedMessage = encodeURIComponent(message);
+        const waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
+        
+        window.open(waUrl, '_blank');
+        toast.success('WhatsApp aberto com a mensagem pronta!');
+      }
+    } catch (error: any) {
+      toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
+    } finally {
+      setGeneratingWA(false);
+      setWhatsAppTarget(null);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -527,8 +551,17 @@ function UserManagement() {
                             <DropdownMenuItem className="cursor-pointer" onClick={() => copyInviteLink(user.email)}>
                               <Copy className="w-4 h-4 mr-2" /> Copiar Link de Convite
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer font-semibold text-green-600" onClick={() => copyWhatsAppInvite(user)}>
-                              <MessageSquare className="w-4 h-4 mr-2" /> Convite para WhatsApp
+                            <DropdownMenuItem 
+                              className="cursor-pointer font-semibold text-green-600" 
+                              onClick={() => {
+                                if (!user.promoter_id) {
+                                  toast.error('Este usuário não está vinculado a um promotor.');
+                                  return;
+                                }
+                                setWhatsAppTarget(user);
+                              }}
+                            >
+                              <MessageSquare className="w-4 h-4 mr-2" /> Enviar convite por WhatsApp
                             </DropdownMenuItem>
                             {user.status === 'pending' ? (
                               <DropdownMenuItem className="cursor-pointer text-blue-600 font-semibold" onClick={() => handleResendInvite(user.id, user.email)}>
@@ -562,6 +595,33 @@ function UserManagement() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!whatsAppTarget} onOpenChange={() => setWhatsAppTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Convite via WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso gerará um link de acesso seguro e abrirá o WhatsApp para enviar a mensagem para <strong>{whatsAppTarget?.full_name}</strong>.
+              <br /><br />
+              Telefone: {whatsAppTarget && promoters.find(p => p.id === whatsAppTarget.promoter_id)?.phone?.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/, '+$1 ($2) $3-$4') || 'Não informado'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleWhatsAppInvite();
+              }} 
+              disabled={generatingWA}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {generatingWA ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MessageSquare className="w-4 h-4 mr-2" />}
+              Gerar e Abrir WhatsApp
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
