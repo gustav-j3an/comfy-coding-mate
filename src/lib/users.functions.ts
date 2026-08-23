@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { recordAuditLog } from "./audit.functions";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -50,6 +51,19 @@ export const inviteUser = createServerFn({ method: "POST" })
       }]);
 
     if (profileError) throw profileError;
+
+    // Record audit log
+    await recordAuditLog({
+      data: {
+        action: 'invite_user',
+        module: 'users',
+        entityType: 'user',
+        entityId: userId,
+        summary: `Usuário convidado: ${data.email} com papel ${data.role}`,
+        details: { email: data.email, role: data.role }
+      },
+      context: { userId: 'system' } // Fallback, context injection happens in handler
+    } as any);
     
     return { success: true, userId, email: data.email };
   });
@@ -65,6 +79,19 @@ export const updateUserStatus = createServerFn({ method: "POST" })
       .eq('id', data.userId);
 
     if (error) throw error;
+
+    // Record audit log
+    await recordAuditLog({
+      data: {
+        action: 'update_user_status',
+        module: 'users',
+        entityType: 'user',
+        entityId: data.userId,
+        summary: `Status do usuário ${data.userId} alterado para ${data.status}`,
+        details: data
+      },
+      context
+    });
     
     return { success: true };
   });

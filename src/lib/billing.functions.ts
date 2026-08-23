@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
+import { recordAuditLog } from "./audit.functions";
 
 export const getContracts = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -235,6 +236,23 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
       billingId: data.id,
       status: data.status,
       cancellationReason: data.cancellation_reason
+    });
+
+    // Record audit log
+    await recordAuditLog({
+      data: {
+        action: 'update_billing_status',
+        module: 'billing',
+        entityType: 'billing',
+        entityId: data.id,
+        summary: `Status da cobrança alterado para ${data.status}`,
+        details: {
+          billingId: data.id,
+          newStatus: data.status,
+          reason: data.cancellation_reason
+        }
+      },
+      context
     });
 
     return billing;

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
+import { recordAuditLog } from "./audit.functions";
 
 /**
  * Submits a visit for audit, uploading metadata and creating occurrences.
@@ -215,6 +216,23 @@ export const auditVisit = createServerFn({ method: "POST" })
       });
 
     if (auditError) throw auditError;
+
+    // Record audit log
+    await recordAuditLog({
+      data: {
+        action: data.decision === 'approved' ? 'approve_visit' : 'reject_visit',
+        module: 'visits',
+        entityType: 'visit',
+        entityId: data.visitId,
+        summary: `Visita ${data.decision} por admin. ${data.reason ? 'Motivo: ' + data.reason : ''}`,
+        details: {
+          visitId: data.visitId,
+          decision: data.decision,
+          reason: data.reason
+        }
+      },
+      context
+    });
 
     // 3. Trigger automation
     await triggerAutomationEvent(data.decision === 'approved' ? 'visit.approved' : 'visit.rejected', {
