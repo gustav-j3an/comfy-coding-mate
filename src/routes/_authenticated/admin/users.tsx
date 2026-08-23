@@ -623,66 +623,74 @@ function UserManagement() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={!!whatsAppTarget} onOpenChange={() => setWhatsAppTarget(null)}>
+      <AlertDialog 
+        open={!!whatsAppTarget} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setWhatsAppTarget(null);
+            setWaInviteData(null);
+          }
+        }}
+      >
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Convite via WhatsApp</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
-              <p>
-                Escolha como deseja enviar o convite para <strong>{whatsAppTarget?.full_name}</strong>.
-              </p>
-              
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Destinatário</span>
+                  <Badge variant="outline" className="text-[9px] h-4 uppercase">{whatsAppTarget?.email}</Badge>
+                </div>
+                <p className="text-sm font-bold text-slate-900">{whatsAppTarget?.full_name}</p>
+              </div>
+
               <div className="bg-blue-50 p-3 rounded-md text-xs text-blue-800 space-y-2">
                 <p className="font-bold flex items-center gap-1">
                   <Info className="w-3 h-3" /> Orientações:
                 </p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li>O WhatsApp abrirá em uma nova aba com a mensagem preenchida.</li>
-                  <li><strong>Você precisará clicar em "Enviar"</strong> dentro do WhatsApp.</li>
-                  <li>Se o bloqueio de pop-up impedir a abertura, use os botões de cópia abaixo.</li>
+                  <li>O botão abaixo abrirá o WhatsApp com a mensagem pronta.</li>
+                  <li><strong>O navegador não bloqueia este botão</strong> porque é um link direto.</li>
+                  <li>Após abrir, você deve clicar em "Enviar" no WhatsApp.</li>
                 </ul>
               </div>
 
               {!isMobile && (
                 <p className="text-[10px] text-slate-500 italic">
-                  * No computador, tentaremos abrir diretamente o WhatsApp Web.
+                  * Abrirá diretamente o <strong>WhatsApp Web</strong> no computador.
                 </p>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           
           <div className="grid gap-3 py-2">
-            <Button 
-              onClick={handleWhatsAppInvite} 
-              disabled={generatingWA}
-              className="bg-green-600 hover:bg-green-700 w-full font-bold h-11"
-            >
-              {generatingWA ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
-              {isMobile ? 'Abrir WhatsApp App' : 'Abrir WhatsApp Web'}
-            </Button>
+            {generatingWA ? (
+              <Button disabled className="w-full h-11 bg-slate-100 text-slate-400 border-none">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Gerando link seguro...
+              </Button>
+            ) : waInviteData ? (
+              <Button 
+                asChild
+                className="bg-green-600 hover:bg-green-700 w-full font-bold h-11 shadow-lg shadow-green-100"
+              >
+                <a href={waInviteData.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  {isMobile ? 'Abrir WhatsApp App' : 'Abrir WhatsApp Web'}
+                </a>
+              </Button>
+            ) : (
+              <Button disabled className="w-full h-11">
+                Aguardando dados...
+              </Button>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
                 className="text-xs h-9"
-                onClick={async () => {
-                  try {
-                    const res: any = await generateWhatsAppInvite({ 
-                      data: { 
-                        userId: whatsAppTarget.id, 
-                        email: whatsAppTarget.email,
-                        promoterId: whatsAppTarget.promoter_id 
-                      } 
-                    });
-                    if (res.success && res.actionLink) {
-                      const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
-                      await copyToClipboard(message, 'Mensagem de convite');
-                    }
-                  } catch (e: any) {
-                    toast.error("Erro ao gerar convite: " + e.message);
-                  }
-                }}
+                disabled={!waInviteData}
+                onClick={() => waInviteData && copyToClipboard(waInviteData.message, 'Mensagem de convite')}
               >
                 <CopyIcon className="w-3 h-3 mr-1" /> Copiar Mensagem
               </Button>
@@ -691,22 +699,8 @@ function UserManagement() {
                 variant="outline" 
                 size="sm"
                 className="text-xs h-9"
-                onClick={async () => {
-                  try {
-                    const res: any = await generateWhatsAppInvite({ 
-                      data: { 
-                        userId: whatsAppTarget.id, 
-                        email: whatsAppTarget.email,
-                        promoterId: whatsAppTarget.promoter_id 
-                      } 
-                    });
-                    if (res.success && res.actionLink) {
-                      await copyToClipboard(res.actionLink, 'Link de acesso');
-                    }
-                  } catch (e: any) {
-                    toast.error("Erro ao gerar link: " + e.message);
-                  }
-                }}
+                disabled={!waInviteData}
+                onClick={() => waInviteData && copyToClipboard(waInviteData.link, 'Link de acesso')}
               >
                 <LinkIcon className="w-3 h-3 mr-1" /> Copiar Link
               </Button>
@@ -718,6 +712,7 @@ function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
 
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
