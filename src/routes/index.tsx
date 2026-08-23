@@ -13,83 +13,96 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-A causa está confirmada: o convite ainda está sendo gerado pelo Supabase com `localhost:3000` como endereço de retorno. Isso não é erro do celular nem do promotor; é uma configuração de Auth que ainda não foi corrigida.
+Entendi. Não precisa de API: o sistema pode gerar o link de acesso e abrir o WhatsApp do promotor com a mensagem pronta. Você só confere e toca em **Enviar**.
 
-Não use esse link: ele contém um token de acesso e deve ser descartado. Depois da correção, envie um convite novo.
+Isso não é envio automático; é um atalho seguro pelo navegador/WhatsApp.
 
 Cole este prompt no Lovable:
 
-CORREÇÃO URGENTE — CONVITES DO SUPABASE AINDA REDIRECIONAM PARA `localhost:3000`
+MISSÃO — CONVITE MANUAL PELO WHATSAPP, SEM API
 
-O novo convite continua abrindo em:
+Implemente um fluxo de convite manual por WhatsApp no módulo Usuários e Acessos.
 
-`http://localhost:3000/#access_token=...`
+Não use API do WhatsApp, WhatsApp Web automatizado ou qualquer envio automático.
 
-Portanto, a correção anterior não alterou a configuração efetiva usada pelo Supabase Auth.
+OBJETIVO
 
-ISSO NÃO É APENAS UMA CORREÇÃO DE FRONTEND.
+O Admin seleciona um promotor, gera um link de primeiro acesso seguro e clica em:
 
-Investigue e corrija a configuração real do projeto Supabase conectado ao Lovable.
+`Enviar convite por WhatsApp`
 
-CONFIGURAÇÕES OBRIGATÓRIAS
+O sistema deve abrir o WhatsApp do promotor com uma mensagem já preenchida. O Admin apenas revisa e toca em Enviar.
 
-1. Supabase Auth → URL Configuration
+FLUXO
 
-Defina a URL pública oficial do aplicativo como `Site URL`.
+1. No cadastro/lista de Promotores, usar o telefone já cadastrado.
+2. Ao clicar em `Enviar convite por WhatsApp`:
+   - validar no servidor que o usuário atual é Admin;
+   - validar que existe promotor vinculado;
+   - validar que existe telefone válido;
+   - gerar um link único e temporário de primeiro acesso;
+   - abrir uma nova janela/aba usando:
+     `https://wa.me/[telefone-normalizado]?text=[mensagem-codificada]`
+3. Nunca enviar a mensagem automaticamente.
 
-Adicione às `Redirect URLs` autorizadas:
+NÚMERO DE TELEFONE
 
-- URL pública atual do Preview do Rota Promotor;
-- URL pública de produção do Rota Promotor, se já existir;
-- caminho `/auth/callback`;
-- caminho `/primeiro-acesso`.
+- Normalizar para somente dígitos.
+- Usar formato internacional do Brasil: `55` + DDD + número.
+- Remover `+`, espaços, parênteses e traços.
+- Se o número estiver inválido ou ausente, bloquear a ação e informar o Admin.
 
-Remova `localhost:3000` e `localhost:8080` das configurações usadas por convites de produção/Preview.
+LINK DE ACESSO
 
-2. Envio de convite
+- O link deve ser gerado exclusivamente no backend.
+- Não use localhost.
+- Use a URL pública oficial do aplicativo.
+- O link deve levar a `/primeiro-acesso`.
+- Deve ser de uso único e expirar em até 48 horas.
+- Ao gerar novo convite para o mesmo promotor, invalide o anterior.
+- Não grave token puro no banco, logs, histórico ou interface.
+- Armazene apenas hash/estado seguro do convite, se for necessário persistir.
+- Não exponha chave de serviço no frontend.
 
-Na função server-side de convite/reenvio:
+Use o mecanismo seguro de geração de link de convite do Supabase no backend, sem disparar e-mail. Se isso exigir uma confirmação adicional no Supabase, faça o fluxo de callback apontar para a URL pública já configurada.
 
-- use `inviteUserByEmail` com `redirectTo` construído a partir da URL pública oficial permitida;
-- o destino deve ser:
-  `[URL_PÚBLICA_OFICIAL]/auth/callback?next=/primeiro-acesso`
-- nunca use `localhost`;
-- nunca use URL recebida do frontend;
-- use variável de ambiente/configuração segura, por exemplo `PUBLIC_APP_URL`;
-- valide que o domínio pertence à lista permitida antes de enviar o convite.
+MENSAGEM PADRÃO
 
-3. Template de e-mail do Supabase
+Olá, [NOME DO PROMOTOR]! 👋
 
-Verifique o template de convite/confirmação:
+Você foi convidado para usar o Rota do Promotor.
 
-- ele deve usar a URL de confirmação fornecida pelo Supabase, como {"{{ .ConfirmationURL }}"};
-- não pode conter texto ou link fixo para `localhost`;
-- não pode sobrescrever o destino correto com URL estática.
+Acesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:
 
-4. Callback no aplicativo
+[LINK_DE_ACESSO]
 
-Na rota `/auth/callback`:
+Depois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.
 
-- trate corretamente o token retornado na URL/hash;
-- deixe o cliente Supabase criar/recuperar a sessão;
-- após sucesso, envie para `/primeiro-acesso`;
-- se o token for inválido ou expirado, mostre mensagem clara;
-- não exiba página vazia;
-- não registre token no console, banco ou tela.
+SEGURANÇA E EXPERIÊNCIA
 
-VALIDAÇÃO REAL OBRIGATÓRIA
+- Mostrar confirmação antes de abrir o WhatsApp.
+- Exibir apenas: nome do promotor e telefone parcialmente mascarado.
+- Registrar em auditoria somente que o convite foi gerado/aberto, sem salvar o link ou token.
+- Após usar o link, encaminhar o promotor ao primeiro acesso e depois ao próprio painel.
+- Link inválido, expirado ou já utilizado deve mostrar mensagem clara e botão para solicitar novo convite.
+- Usuário Promotor e Indústria não podem gerar links de convite.
 
-Depois da correção:
+TESTES
 
-1. Gere um convite totalmente novo para e-mail de teste.
-2. Abra em janela anônima ou outro celular.
-3. Confirme que a URL começa com o domínio público do aplicativo, nunca `localhost`.
-4. Confirme abertura da página de criação de senha/primeiro acesso.
-5. Confirme que, após criar senha, o promotor entra no próprio painel.
-6. Confirme que o link antigo continua inválido e não deve ser reutilizado.
-7. Informe a URL pública configurada, sem tokens nem dados sensíveis.
+1. Admin gera convite para promotor com telefone válido.
+2. WhatsApp abre com telefone correto e mensagem preenchida.
+3. O link abre o domínio público, nunca localhost.
+4. Promotor usa o link, cria senha e acessa o próprio painel.
+5. Link expirado/usado mostra mensagem clara.
+6. Novo convite invalida o anterior.
+7. Telefone ausente/inválido bloqueia a ação.
+8. Nenhum token aparece na interface, banco ou logs.
 
-Não marque como concluído sem abrir um convite novo real e confirmar que ele não redireciona para localhost.
+ENTREGA
+
+Informe os arquivos alterados, como o telefone foi normalizado e o resultado individual dos oito testes.
+
+Não implemente envio automático; apenas abrir o WhatsApp com a mensagem pronta.
         </div>
       </div>
     </div>

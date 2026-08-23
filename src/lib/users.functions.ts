@@ -275,3 +275,90 @@ export const deleteUser = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+export const generateWhatsAppInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ 
+    userId: z.string(),
+    email: z.string().email(),
+    promoterId: z.string() 
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    
+    // 1. Verify admin role
+    const { userId: adminId } = (context as any) || {};
+    if (!adminId) throw new Error("Não autorizado");
+
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+      _user_id: adminId,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) throw new Error("Apenas administradores podem gerar links de WhatsApp");
+
+    // 2. Get promoter data and phone
+    const { data: promoter, error: promoterError } = await supabaseAdmin
+      .from('promoters')
+      .select('name, phone')
+      .eq('id', data.promoterId)
+      .single();
+
+    if (promoterError || !promoter) throw new Error("Promotor não encontrado ou erro ao buscar dados");
+    
+    if (!promoter.phone) throw new Error("Promotor não possui telefone cadastrado");
+
+    // 3. Normalize phone (digits only, Brazil 55 prefix)
+    const digitsOnly = promoter.phone.replace(/\D/g, '');
+    let normalizedPhone = digitsOnly;
+    if (digitsOnly.length === 10 || digitsOnly.length === 11) {
+      normalizedPhone = '55' + digitsOnly;
+    } else if (digitsOnly.length > 11 && !digitsOnly.startsWith('55')) {
+       // Potentially already has international prefix but not 55? 
+       // Requirement says 55 + DDD + number.
+       // If it starts with 55 and has 12-13 digits, it's probably already correct.
+    }
+
+    if (normalizedPhone.length < 12) {
+      throw new Error(`Telefone inválido para convite WhatsApp: ${promoter.phone}. Use DDD + Número.`);
+    }
+
+    // 4. Get site URL
+    let siteUrl = process.env['SITE_URL'];
+    if (!siteUrl) {
+      const projectId = process.env['LOVABLE_PROJECT_ID'];
+      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
+      else siteUrl = 'https://rota-do-promotor.lovable.app';
+    }
+
+    // 5. Generate Link
+    // We'll use 'recovery' as it's the safest way to get a single-use link that forces password creation
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: data.email,
+      options: { redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso` },
+    });
+
+    if (linkError) throw linkError;
+
+    const actionLink = linkData?.properties?.action_link;
+    if (!actionLink) throw new Error("Não foi possível gerar o link de acesso");
+
+    // 6. Record audit log
+    await recordAudit({
+      userId: adminId,
+      action: 'generate_whatsapp_invite',
+      module: 'users',
+      entityType: 'user',
+      entityId: data.userId,
+      summary: `Link de WhatsApp gerado para promotor: ${promoter.name}`,
+      details: { email: data.email, phone: normalizedPhone }
+    });
+
+    return { 
+      success: true, 
+      actionLink, 
+      phone: normalizedPhone, 
+      promoterName: promoter.name 
+    };
+  });
