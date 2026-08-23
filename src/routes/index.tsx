@@ -83,10 +83,10 @@ function Index() {
             O formulário de “Novo Roteiro” abre corretamente, mas ao clicar em “Publicar Roteiro” ocorria o erro: <code className="text-red-300">insert or update on table "routes" violates foreign key constraint "routes_promoter_id_fkey"</code>.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>Causa Raiz: O campo <code className="text-blue-300">routes.promoter_id</code> referencia a tabela <code className="text-blue-300">promoters</code>, mas o formulário estava sujeito a enviar IDs de perfis ou usuários em cenários de dessincronização.</li>
-            <li>Correção: O seletor de promotores e o fluxo de inserção foram validados para garantir que apenas o UUID da tabela <code className="text-blue-300">promoters</code> seja enviado.</li>
-            <li>Integridade: Adicionada gravação explícita de <code className="text-blue-300">created_by</code> e validação de sessão antes da persistência.</li>
-            <li>Resultado: Roteiros agora são publicados com sucesso, gerando visitas automáticas sem violações de integridade referencial.</li>
+            <li>Causa Raiz: O campo <code className="text-blue-300">routes.promoter_id</code> referenciava incorretamente <code className="text-blue-300">auth.users(id)</code>, enquanto a lógica de negócio e a tabela <code className="text-blue-300">visits</code> usavam o ID da tabela <code className="text-blue-300">promoters</code>.</li>
+            <li>Correção: A constraint <code className="text-blue-300">routes_promoter_id_fkey</code> foi migrada para apontar para <code className="text-blue-300">public.promoters(id)</code>, unificando a integridade referencial.</li>
+            <li>Integridade: Sincronizadas as políticas de RLS e GRANTs para permitir que administradores gerenciem rotas e promotores acessem seus roteiros via vínculo de perfil.</li>
+            <li>Resultado: Roteiros agora são publicados e visitas geradas automaticamente sem erros de chave estrangeira.</li>
           </ul>
         </section>
       </div>
