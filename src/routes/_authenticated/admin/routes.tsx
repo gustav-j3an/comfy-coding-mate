@@ -184,7 +184,13 @@ function RoutesPage() {
               <p>Nenhuma rota cadastrada ainda.</p>
             </div>
           ) : (
-            routes.map((route) => (
+            routes
+              .filter(r => !selectedPromoterId || r.promoter_id === selectedPromoterId)
+              .filter(r => 
+                r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                r.promoter_name?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((route) => (
               <Card key={route.id} className="hover:shadow-md transition-shadow overflow-hidden border-slate-200">
                 <CardHeader className="pb-3 bg-slate-50/50">
                   <div className="flex justify-between items-start">
