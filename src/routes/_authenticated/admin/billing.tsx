@@ -204,25 +204,25 @@ function BillingPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight text-left">Faturamento</h2>
           <p className="text-sm text-slate-500 text-left">Cobranças e histórico financeiro por indústria</p>
         </div>
-        <div className="flex gap-2">
-          <Link to={"/admin/contracts" as any}>
-            <Button variant="outline" className="font-bold border-slate-200">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Link to={"/admin/contracts" as any} className="w-full sm:w-auto">
+            <Button variant="outline" className="font-bold border-slate-200 w-full sm:w-auto">
               <FileText className="mr-2 h-4 w-4" /> Contratos
             </Button>
           </Link>
-          <Button onClick={() => setIsNewBillingOpen(true)} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold">
+          <Button onClick={() => setIsNewBillingOpen(true)} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 font-bold w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Nova Cobrança
           </Button>
         </div>
       </header>
 
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="p-4 sm:p-6 space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card className="border-slate-200 shadow-sm bg-blue-600 text-white border-none">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-bold opacity-70 uppercase tracking-widest text-left text-white">Total Faturado</CardTitle>
@@ -283,7 +283,8 @@ function BillingPage() {
               </Link>
             </div>
           </div>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="font-bold text-slate-700 text-left">Indústria / Ref</TableHead>
@@ -375,13 +376,14 @@ function BillingPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
 
       {/* New Billing Dialog */}
       <Dialog open={isNewBillingOpen} onOpenChange={setIsNewBillingOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-left">Gerar Nova Cobrança</DialogTitle>
             <DialogDescription className="text-left">Selecione a indústria e a competência para calcular o faturamento.</DialogDescription>
