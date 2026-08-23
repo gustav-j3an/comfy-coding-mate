@@ -17,9 +17,9 @@ function LoginPage() {
       if (role === 'admin') {
         navigate({ to: '/admin' });
       } else if (role === 'promoter') {
-        navigate({ to: '/promoter/dashboard' });
+        navigate({ to: '/promoter' });
       } else if (role === 'industry') {
-        navigate({ to: '/industry/dashboard' });
+        navigate({ to: '/industry' });
       }
     }
   }, [user, role, loading, navigate]);

@@ -2,8 +2,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/auth/callback')({
-  loader: async ({ search }: { search: any }) => {
-    const { next } = search || {};
+  loader: async ({ search }) => {
+    const { next } = search as { next?: string };
     
     // O Supabase Auth Helper já deve ter processado o token na URL 
     // antes deste loader rodar se estivermos no client, mas no loader
