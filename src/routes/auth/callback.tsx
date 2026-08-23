@@ -7,8 +7,8 @@ export const Route = createFileRoute('/auth/callback')({
       next: (search['next'] as string) || '/',
     };
   },
-  loader: async ({ search }) => {
-    const { next } = search;
+  loader: async ({ deps }) => {
+    const { next } = deps as { next: string };
     
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -20,6 +20,7 @@ export const Route = createFileRoute('/auth/callback')({
 
     return { error: 'Sessão expirada ou convite inválido.' };
   },
+  loaderDeps: ({ search }) => search,
   component: AuthCallback,
 });
 
