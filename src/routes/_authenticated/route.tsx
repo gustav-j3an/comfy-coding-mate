@@ -14,7 +14,7 @@ export const Route = createFileRoute('/_authenticated')({
 });
 
 function AuthenticatedLayout() {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role, previewPromoter, setPreviewPromoter } = useAuth();
   const navigate = useNavigate();
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [hasAwaitingMedia, setHasAwaitingMedia] = useState(false);
