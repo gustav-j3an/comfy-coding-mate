@@ -90,7 +90,7 @@ function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Form states
@@ -158,6 +158,7 @@ function UserManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      console.log('Fetching user data...');
       // Fetch profiles
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
