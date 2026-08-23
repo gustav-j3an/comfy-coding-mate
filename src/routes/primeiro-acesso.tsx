@@ -3,20 +3,38 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Smartphone, Download, CheckCircle2, ArrowRight, Loader2, Info } from 'lucide-react';
+import { Smartphone, Download, CheckCircle2, ArrowRight, Loader2, Info, AlertCircle, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/primeiro-acesso')({
   component: PrimeiroAcesso,
 });
 
 function PrimeiroAcesso() {
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [errorState, setErrorState] = useState<{ type: 'expired' | 'invalid' | null }> (null);
+
+  useEffect(() => {
+    // Check URL parameters for errors from callback
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const errorCode = params.get('error_code');
+    const errorDescription = params.get('error_description');
+
+    if (error || errorCode) {
+      if (errorDescription?.toLowerCase().includes('expired') || errorCode === 'otp_expired') {
+        setErrorState({ type: 'expired' });
+      } else {
+        setErrorState({ type: 'invalid' });
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check if already in standalone mode
@@ -75,6 +93,35 @@ function PrimeiroAcesso() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (errorState.type) {
+    return (
+      <div className="min-h-screen bg-[#0F172A] text-white flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-slate-800 bg-slate-900 text-white shadow-2xl">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="mx-auto w-16 h-16 bg-red-600/20 rounded-2xl flex items-center justify-center shadow-lg shadow-red-900/20 mb-2 border border-red-500/30">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold tracking-tight">Acesso Expirado</CardTitle>
+            <CardDescription className="text-slate-400">
+              {errorState.type === 'expired' 
+                ? 'Este link de acesso expirou ou já foi utilizado. Peça ao administrador para reenviar o convite.'
+                : 'Este link de acesso é inválido ou já foi utilizado.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Button 
+              onClick={() => navigate({ to: '/' })}
+              className="w-full h-12 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl"
+            >
+              <LogIn className="mr-2 w-4 h-4" />
+              Voltar para o Login
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
