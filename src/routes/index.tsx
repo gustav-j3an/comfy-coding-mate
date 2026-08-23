@@ -22,7 +22,7 @@ PÁGINA ALVO:
 
 FUNCIONALIDADES IMPLEMENTADAS:
 1. Leitura Server-Side: Criada server function `getPromoterItineraryData` que valida permissão de Admin e busca roteiros vinculados ao promotor.
-2. Relacionamentos Reais: A consulta atravessa `routes -> route_stops -> stores` e `stop_tasks -> industries` para montar a visão completa.
+2. Relacionamentos Reais: A consulta atravessa {"routes -> route_stops -> stores"} e {"stop_tasks -> industries"} para montar a visão completa.
 3. Interface Detalhada:
    - Exibição clara do Status (Publicado, Rascunho, Arquivado, Pausado).
    - Listagem técnica de cada parada: Dia da Semana, Loja, Endereço, Indústria e Frequência.
