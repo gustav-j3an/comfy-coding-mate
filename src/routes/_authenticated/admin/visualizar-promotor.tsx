@@ -42,6 +42,8 @@ function VisualizarPromotorPage() {
     queryFn: async () => {
       if (!promoterId) throw new Error('ID do promotor não fornecido.');
 
+      // O fetchItineraryData já faz a validação de papel e existência no servidor
+      // Mas buscamos o nome para a UI aqui usando o cliente (RLS de admin permite)
       const { data, error } = await supabase
         .from('promoters')
         .select('*')
@@ -58,7 +60,18 @@ function VisualizarPromotorPage() {
 
   const { data: routes, isLoading: routesLoading, error: routesError } = useSuspenseQuery({
     queryKey: ['admin-preview-promoter-routes', promoterId],
-    queryFn: () => fetchItineraryData({ data: { promoterId } })
+    queryFn: async () => {
+      try {
+        return await fetchItineraryData({ data: { promoterId } });
+      } catch (err: any) {
+        // Tratar erros de autorização do servidor (Response 401/403/404)
+        if (err instanceof Response) {
+          const message = await err.text();
+          throw new Error(message || `Erro ${err.status}`);
+        }
+        throw err;
+      }
+    }
   });
 
   const isLoading = promoterLoading || routesLoading;

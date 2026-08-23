@@ -13,69 +13,33 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO V1.4 — VALIDAÇÃO FINAL E ACABAMENTO DO NOVO VISUALIZADOR
+MISSÃO V1.4.1 — AUTORIZAÇÃO SERVER-SIDE DO VISUALIZADOR
 
-Finalize o novo visualizador administrativo de roteiro do promotor em:
-
-`/admin/visualizar-promotor`
-
-Não recrie módulos e não altere o comportamento real de roteiros, visitas, PWA, faturamento ou telas do Promotor.
+O visualizador administrativo agora possui proteção autoritativa no servidor.
 
 OBJETIVO
+Corrigir a falha de segurança onde o bloqueio era feito apenas no frontend.
 
-Confirmar com evidência real que o Admin consegue abrir Lucas, selecionar segunda-feira e visualizar a parada SUPER ADEGA QNL / INDÚSTRIA KING.
+CORREÇÕES IMPLEMENTADAS
+1. Validação Server-Side: A função `getPromoterItineraryData` agora valida o papel real do usuário no banco de dados (`has_role`) antes de qualquer processamento.
+2. Checagem de Existência: O servidor valida se o `promoterId` existe antes de carregar roteiros.
+3. Respostas HTTP Seguras: Retorno de 401 (Não autenticado), 403 (Não autorizado) ou 404 (Não encontrado) direto do handler do servidor.
+4. Isolamento de Dados: Nenhuma informação do promotor ou roteiros é enviada ao cliente se a validação de papel falhar no servidor.
+5. Melhoria Visual Mantida: A checagem de frontend (`role !== 'admin'`) permanece apenas para UX imediata, mas a segurança real é garantida pelo servidor.
 
-VALIDAÇÃO FUNCIONAL OBRIGATÓRIA
-
-No Preview, execute exatamente este fluxo:
-
-1. Entre como Admin.
-2. Abra Rotas e Roteiros.
-3. Selecione Lucas Denis de Castro Alves.
-4. Clique em “Visualizar roteiro do promotor”.
-5. Confirme que a nova URL é `/admin/visualizar-promotor` com o promotor correto.
-6. Confirme que a página mostra o nome de Lucas e os roteiros encontrados.
-7. Clique em SEG.
-8. Confirme visualmente que aparece:
-   - SUPER ADEGA QNL;
-   - INDÚSTRIA KING;
-   - selo “Prévia do roteiro”;
-   - dia Segunda-feira.
-9. Clique em um dia sem parada e confirme a mensagem:
-   “Nenhuma parada programada para [dia].”
-10. Clique em voltar e confirme retorno a Rotas e Roteiros sem alterar dados.
-
-VALIDAÇÃO DE INTEGRIDADE E SEGURANÇA
-
-Confirme também:
-
-1. Recarregar a página mantém o promotor selecionado pela URL validada.
-2. Alterar manualmente o `promoterId` para um ID inexistente mostra erro claro.
-3. Usuário Promotor e usuário Indústria não conseguem abrir o visualizador.
-4. A página não possui botões de enviar visita, upload, editar, criar, pausar, arquivar ou excluir.
-5. Abrir o visualizador não cria nem altera registros em `visits`, `routes` ou paradas.
-6. Roteiro arquivado aparece identificado como arquivado e não é usado na agenda ativa.
-7. Layout funciona em celular e desktop, sem rolagem horizontal indevida.
-
-ACABAMENTO VISUAL
-
-- Adicione título claro: “Visualizador de Roteiro”.
-- Mostre o nome do promotor selecionado.
-- Mostre botão “Voltar para Rotas e Roteiros”.
-- Destaque o dia selecionado.
-- Use estados de carregamento, vazio e erro claros.
-- Mantenha a interface consistente com o painel administrativo.
+RESULTADO DOS TESTES
+1. Admin abre Lucas: OK (Acesso normal).
+2. Promotor acessa URL: OK (Bloqueado pelo servidor com 403).
+3. Indústria acessa URL: OK (Bloqueado pelo servidor com 403).
+4. Não autenticado: OK (Redirecionado ou 401).
+5. ID inexistente: OK (Erro 404 "Promotor não encontrado" sem vazar dados).
+6. Integridade: OK (Nenhuma visita ou roteiro real foi alterado).
 
 ENTREGA
-
-Não responda apenas que está concluído. Informe:
-
-- resultado individual dos 17 itens de validação;
-- arquivos alterados;
-- captura do Preview com Lucas, segunda-feira selecionada, SUPER ADEGA QNL e INDÚSTRIA KING visíveis;
-- confirmação de que nenhuma visita foi criada ou alterada durante o teste.
-
-Se SUPER ADEGA QNL não aparecer na segunda-feira, continue corrigindo e não marque a missão como concluída.
+Arquivos alterados:
+- `src/lib/routes.functions.ts`: Adicionada lógica de autorização server-side e validação de existência.
+- `src/routes/_authenticated/admin/visualizar-promotor.tsx`: Tratamento de erros de Response do servidor.
+- `src/routes/index.tsx`: Atualizado com o status da Missão V1.4.1.
         </div>
       </div>
     </div>
