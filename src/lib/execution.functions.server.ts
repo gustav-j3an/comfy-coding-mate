@@ -53,7 +53,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
       `)
       .eq('promoter_id', effectivePromoterId)
       .eq('scheduled_date', scheduledDateStr)
-      .order('visit_order', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (matError) throw matError;
 
