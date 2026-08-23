@@ -176,9 +176,10 @@ function PromoterDashboard() {
                       visit_order: stop.visit_order,
                       store: stop.store,
                       industry: task.industry,
-                      observation: stop.observation,
-                      is_theoretical: true
-                    });
+                       observation: stop.observation,
+                       frequency: stop.frequency,
+                       is_theoretical: true
+                     });
                   }
                 });
               }
