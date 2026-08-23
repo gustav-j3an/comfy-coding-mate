@@ -231,6 +231,10 @@ function PromoterDashboard() {
   }, [visits, user?.id]);
 
   const getStatusBadge = (visit: any) => {
+    if (visit.is_theoretical) {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Visita Planejada</Badge>;
+    }
+
     const draft = offlineDrafts[visit.id];
     const status = draft ? draft.status : visit.status;
 
@@ -244,7 +248,6 @@ function PromoterDashboard() {
       case 'approved': return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Aprovada</Badge>;
       case 'rejected': return <Badge variant="destructive">Reprovada</Badge>;
       default: return <Badge variant="outline" className="border-slate-200">{status}</Badge>;
-
     }
   };
 
