@@ -225,11 +225,13 @@ function ImportModule() {
     setIsImporting(true);
     try {
       const res = await importFn({
-        validFrom,
-        promoters: previewData.promoters,
-        stores: previewData.stores,
-        industries: previewData.industries,
-        routes: previewData.routes
+        data: {
+          validFrom,
+          promoters: previewData.promoters,
+          stores: previewData.stores,
+          industries: previewData.industries,
+          routes: previewData.routes
+        }
       });
 
       if (res.success) {
