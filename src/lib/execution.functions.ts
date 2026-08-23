@@ -79,13 +79,18 @@ export const submitVisit = createServerFn({ method: "POST" })
       return { success: true, message: "Visita já foi enviada anteriormente." };
     }
 
-    // 2. Validate mandatory evidences existence and status
-    const requiredTypes = ['reposicao'];
+    // 2. Validate mandatory evidences existence and status per industry
+    // KING, DON LUIZ e FRUTA POLPA - Required: Report and Replenishment photo
+    const requiredTypes = ['reposicao', 'relatorio'];
     const uploadedTypes = data.evidences.map(e => e.evidenceType);
     const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
     
     if (missingTypes.length > 0) {
-      throw new Error(`Evidências obrigatórias ausentes: ${missingTypes.join(', ')}`);
+      const labels: Record<string, string> = {
+        'reposicao': 'Foto da Reposição',
+        'relatorio': 'Relatório da Indústria'
+      };
+      throw new Error(`Evidências obrigatórias ausentes: ${missingTypes.map(t => labels[t] || t).join(', ')}`);
     }
 
     // 3. Verify files actually exist in Storage
