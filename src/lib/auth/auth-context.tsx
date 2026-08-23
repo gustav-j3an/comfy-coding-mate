@@ -26,6 +26,8 @@ const defaultAuthContext: AuthContextType = {
   profile: null,
   loading: true,
   signOut: async () => {},
+  previewPromoter: null,
+  setPreviewPromoter: () => {},
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [previewPromoter, setPreviewPromoter] = useState<{ id: string; name: string } | null>(null);
 
   async function fetchRole(userId: string) {
     try {
