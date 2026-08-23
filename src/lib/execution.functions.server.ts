@@ -1,10 +1,13 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
  * Gets the promoter's agenda for a specific date, merging planned route stops and materialized visits.
  */
 export const getPromoterAgenda = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({
+  .inputValidator((data: unknown) => z.object({
     date: z.string(), // ISO date string (YYYY-MM-DD)
     promoterId: z.string().optional() // Optional, used for admin preview
   }).parse(data))
@@ -37,7 +40,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
     }
 
     const scheduledDateStr = data.date;
-    const dateObj = new Date(scheduledDateStr + 'T12:00:00Z'); // Midday UTC to avoid timezone issues
+    const dateObj = new Date(scheduledDateStr + 'T12:00:00Z'); // Midday UTC
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday...
 
     // 2. Fetch materialized visits
