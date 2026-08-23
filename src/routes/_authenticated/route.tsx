@@ -55,8 +55,8 @@ function AuthenticatedLayout() {
       // If we are exactly at the root of authenticated or index, redirect to dashboard
       if (path === '/_authenticated' || path === '/') {
         if (role === 'admin') navigate({ to: '/admin' });
-        else if (role === 'promoter') navigate({ to: '/promoter' });
-        else if (role === 'industry') navigate({ to: '/industry' });
+        else if (role === 'promoter') navigate({ to: '/promoter/' as any });
+        else if (role === 'industry') navigate({ to: '/industry/' as any });
       }
     }
   }, [user, role, loading, navigate]);
