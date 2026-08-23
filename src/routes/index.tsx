@@ -1,22 +1,25 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 
 /**
- * MISSÃO 9.2.2 — AJUSTE FINAL: ESTADO EXPLÍCITO DE MÍDIA PENDENTE
+ * MISSÃO 9.3 — LOG DE AUDITORIA ADMINISTRATIVA
  * 
- * 1. ESTADO AWAITING_MEDIA IMPLEMENTADO
- * - Incluído o estado `awaiting_media` no ciclo de vida offline (`src/lib/offline.ts`).
- * - A interface agora reflete este estado com badge "Mídia Pendente" no dashboard e alerta na execução.
- * - Regra: Se faltam evidências obrigatórias, o rascunho entra em `awaiting_media`.
+ * 1. ESTRUTURA DE AUDITORIA
+ * - Criada tabela `admin_audit_logs` com rastreamento de usuário, e-mail, papel, ação, módulo, resumo e metadados técnicos (IP/User-Agent).
+ * - Implementado RLS: apenas administradores visualizam; logs são imutáveis (sem update/delete).
  * 
- * 2. TRANSIÇÕES DE ESTADO
- * - `awaiting_media` -> `ready_to_send`: Ocorre automaticamente quando todas as evidências obrigatórias são confirmadas.
- * - `ready_to_send` -> `sent`: Ocorre após confirmação bem-sucedida do servidor.
+ * 2. REGISTRO DE AÇÕES CRÍTICAS
+ * - Implementado helper `recordAudit` em `audit.server.ts` para registros seguros no backend.
+ * - Integrado auditoria em:
+ *   - `execution.functions.ts`: Aprovação/rejeição de visitas.
+ *   - `billing.functions.ts`: Alteração de status de cobranças.
+ *   - `automation.functions.ts`: Limpeza manual de mídias e alteração de configurações.
+ *   - `users.functions.ts`: Convites de usuários e alteração de status.
  * 
- * 3. INTEGRIDADE E PWA
- * - Bloqueio de submissão se em `awaiting_media`.
- * - Bloqueio de atualização do PWA enquanto houver itens em `awaiting_media`.
- * - Validação autoritativa mantida no backend para garantir que nenhuma visita seja concluída sem mídias reais.
+ * 3. TELA DE AUDITORIA
+ * - Nova rota `/admin/audit` com lista paginada, filtros por módulo/resultado e busca textual.
+ * - Dados sensíveis (senhas, coordenadas GPS completas, URLs secretas) deliberadamente excluídos dos logs.
  */
+
 
 export const Route = createFileRoute('/')({
   head: () => ({

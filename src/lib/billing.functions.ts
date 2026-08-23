@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
+import { recordAudit } from "./audit.server";
 
 export const getContracts = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -207,7 +208,7 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
     cancellation_reason: z.string().optional(),
     payment_link: z.string().optional(),
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
     const updates: any = {
@@ -235,6 +236,20 @@ export const updateBillingStatus = createServerFn({ method: "POST" })
       billingId: data.id,
       status: data.status,
       cancellationReason: data.cancellation_reason
+    });
+
+    await recordAudit({
+      userId: (context as any).userId || 'system',
+      action: 'update_billing_status',
+      module: 'billing',
+      entityType: 'billing',
+      entityId: data.id,
+      summary: `Status da cobrança alterado para ${data.status}`,
+      details: {
+        billingId: data.id,
+        newStatus: data.status,
+        reason: data.cancellation_reason
+      }
     });
 
     return billing;

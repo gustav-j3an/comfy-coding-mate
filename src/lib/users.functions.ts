@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { recordAudit } from "./audit.server";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -50,13 +51,24 @@ export const inviteUser = createServerFn({ method: "POST" })
       }]);
 
     if (profileError) throw profileError;
+
+    // Record audit log
+    await recordAudit({
+      userId: 'system',
+      action: 'invite_user',
+      module: 'users',
+      entityType: 'user',
+      entityId: userId,
+      summary: `Usuário convidado: ${data.email} com papel ${data.role}`,
+      details: { email: data.email, role: data.role }
+    });
     
     return { success: true, userId, email: data.email };
   });
 
 export const updateUserStatus = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ userId: z.string(), status: z.enum(['active', 'blocked', 'pending']) }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     const { error } = await supabaseAdmin
@@ -65,6 +77,19 @@ export const updateUserStatus = createServerFn({ method: "POST" })
       .eq('id', data.userId);
 
     if (error) throw error;
+
+    const { userId: currentAdminId } = (context as any) || {};
+
+    // Record audit log
+    await recordAudit({
+      userId: currentAdminId || 'system',
+      action: 'update_user_status',
+      module: 'users',
+      entityType: 'user',
+      entityId: data.userId,
+      summary: `Status do usuário ${data.userId} alterado para ${data.status}`,
+      details: data
+    });
     
     return { success: true };
   });

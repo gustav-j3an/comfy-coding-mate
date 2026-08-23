@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
+import { recordAudit } from "./audit.server";
 
 /**
  * Submits a visit for audit, uploading metadata and creating occurrences.
@@ -190,7 +191,7 @@ export const auditVisit = createServerFn({ method: "POST" })
     decision: z.enum(['approved', 'rejected']),
     reason: z.string().optional()
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Update visit status
@@ -215,6 +216,21 @@ export const auditVisit = createServerFn({ method: "POST" })
       });
 
     if (auditError) throw auditError;
+
+    // Record audit log
+    await recordAudit({
+      userId: (context as any).userId || 'system',
+      action: data.decision === 'approved' ? 'approve_visit' : 'reject_visit',
+      module: 'visits',
+      entityType: 'visit',
+      entityId: data.visitId,
+      summary: `Visita ${data.decision} por admin. ${data.reason ? 'Motivo: ' + data.reason : ''}`,
+      details: {
+        visitId: data.visitId,
+        decision: data.decision,
+        reason: data.reason
+      }
+    });
 
     // 3. Trigger automation
     await triggerAutomationEvent(data.decision === 'approved' ? 'visit.approved' : 'visit.rejected', {

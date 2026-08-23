@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { recordAudit } from "./audit.server";
 
 export const getCleanupPreview = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -93,6 +94,15 @@ export const executeManualCleanup = createServerFn({ method: "POST" })
       confirmation_text: data.confirmation
     } as any);
 
+    // Record audit log
+    await recordAudit({
+      userId: userId || 'system',
+      action: 'manual_cleanup',
+      module: 'automation',
+      summary: `Limpeza manual executada. Arquivos deletados: ${deletedFiles}`,
+      details: preview
+    });
+
     return { success: true, deleted_files: deletedFiles };
   });
 
@@ -116,6 +126,16 @@ export const updateAutomationSettings = createServerFn({ method: "POST" })
       .single();
 
     if (error) throw error;
+
+    // Record audit log
+    await recordAudit({
+      userId: 'system',
+      action: 'update_automation_settings',
+      module: 'automation',
+      summary: 'Configurações de automação atualizadas',
+      details: data
+    });
+
     return settings;
   });
 
