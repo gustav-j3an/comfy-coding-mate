@@ -13,33 +13,85 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-MISSÃO IMPORTAÇÃO 1 — BASE SEGURA DE IMPORTAÇÃO OPERACIONAL
+MISSÃO IMPORTAÇÃO 2 — CORRIGIR CONTAGEM E VALIDAÇÃO ANTES DE LIBERAR A GRAVAÇÃO
 
-O novo módulo de importação foi criado em `/admin/import`.
+Ainda não implemente a gravação no banco.
 
-OBJETIVO
-Criar a estrutura de upload, leitura, prévia e validação de planilhas Excel sem gravar dados no banco.
+A tela de importação reconhece as abas, mas os totais estão errados. Para o arquivo de referência, a prévia está exibindo números como 994 promotores, 999 lojas e 992 indústrias, o que não corresponde aos dados reais.
 
-FUNCIONALIDADES IMPLEMENTADAS
-1. Mapeamento Excel: Leitura das abas PROMOTORES, LOJAS, INDUSTRIA e ROTEIROS.
-2. Filtro de Abas: Abas CONSULTA e FREQUÊNCIA INDÚSTRIA são ignoradas automaticamente.
-3. Normalização: Dados de roteiro (indústria, loja, promotor, frequência e dias da semana) normalizados para prévia.
-4. Validação de Referência: Detecção de promotores, lojas ou indústrias citadas em roteiros que não existem em seus respectivos cadastros.
-5. Detecção de Inconsistências:
-   - Campos obrigatórios vazios.
-   - Duplicidade de paradas/roteiros.
-   - Frequências ou marcações de dias inválidas.
-6. Interface Administrativa:
-   - Resumo com contagens totais.
-   - Aba de Inconsistências com alertas detalhados.
-   - Aba de Prévia com as primeiras 20 linhas de dados normalizados.
-7. Segurança: Acesso restrito a administradores e gravação desabilitada nesta fase.
+A causa provável é que o leitor está contando linhas vazias, células apenas formatadas, fórmulas, cabeçalhos, intervalos reservados ou valores de fallback como registros.
 
-ESTRATÉGIA DE LEITURA
-Utilização da biblioteca `xlsx` no frontend para processamento seguro e rápido, permitindo validações imediatas antes de qualquer interação com o servidor.
+CORRIJA O LEITOR DO EXCEL
 
-PRÓXIMA ETAPA
-Implementação da gravação definitiva e sincronização com as tabelas operacionais.
+Considere registro válido somente quando os campos mínimos reais estiverem preenchidos:
+
+PROMOTORES:
+- contar apenas linhas com NOME preenchido;
+- ignorar cabeçalho, linha vazia e células com fórmulas sem dado real.
+
+LOJAS:
+- contar apenas linhas com LOJA preenchida;
+- ignorar cabeçalho e linhas vazias.
+
+INDÚSTRIAS:
+- contar apenas linhas com INDUSTRIA preenchida;
+- ignorar cabeçalho e linhas vazias.
+
+ROTEIROS:
+- ler somente abas cujo nome começa com `ROTEIRO `;
+- contar somente linhas que possuam, no mínimo:
+  - INDUSTRIA;
+  - LOJA;
+  - PROMOTORES;
+  - FREQ;
+  - ao menos uma marcação de dia válida.
+- aceitar `✓` como marcação válida;
+- ignorar linhas vazias, totais, fórmulas, cabeçalhos e áreas formatadas além do fim dos dados.
+
+RESULTADO ESPERADO PARA O ARQUIVO DE REFERÊNCIA
+
+A prévia deve apresentar estes valores:
+
+- Promotores: 42
+- Lojas: 419
+- Indústrias: 26
+- Linhas de roteiro válidas: 413
+
+Além disso, apresente:
+
+- 28 promotores distintos presentes nas linhas de roteiro;
+- 188 lojas distintas usadas nos roteiros;
+- 20 indústrias distintas usadas nos roteiros;
+- total de 522 marcações semanais de paradas.
+
+DUPLICIDADE E INCONSISTÊNCIAS
+
+- Detecte a duplicidade encontrada nas linhas de roteiro.
+- Mostre a linha/origem da duplicidade na aba Inconsistências.
+- Não bloqueie a prévia, mas marque a importação como “requer revisão” enquanto houver duplicidade ou vínculo ausente.
+- Corrija a interface para não usar contadores fictícios, valores fixos ou fallback.
+
+TESTE NO PREVIEW
+
+1. Faça upload do arquivo de referência.
+2. Confirme que os quatro totais principais são exatamente 42, 419, 26 e 413.
+3. Confirme os quatro totais complementares: 28, 188, 20 e 522.
+4. Confirme que a duplicidade aparece em Inconsistências.
+5. Confirme que linhas vazias e fórmulas não entram na contagem.
+6. Confirme que nenhuma tabela operacional é alterada.
+7. Mantenha “Confirmar Importação” desabilitado nesta missão.
+
+ENTREGA
+
+Informe:
+
+- causa raiz dos totais errados;
+- regra usada para reconhecer uma linha válida;
+- arquivos alterados;
+- resultado dos sete testes;
+- captura do Preview com os totais corretos.
+
+Não implemente gravação enquanto os totais não coincidirem com os valores esperados.
         </div>
       </div>
     </div>
