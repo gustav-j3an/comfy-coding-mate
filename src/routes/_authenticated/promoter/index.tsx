@@ -390,8 +390,14 @@ function PromoterDashboard() {
               (visits as any[]).map((visit, index) => (
                 <Link 
                   key={visit.id} 
-                  to={"/promoter/visit/$visitId" as any}
-                  params={{ visitId: String(visit.id) } as any}
+                  to={visit.is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)}
+                  params={visit.is_theoretical ? {} : ({ visitId: String(visit.id) } as any)}
+                  onClick={(e) => {
+                    if (visit.is_theoretical) {
+                      e.preventDefault();
+                      toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
+                    }
+                  }}
                   className="block"
                 >
                   <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
