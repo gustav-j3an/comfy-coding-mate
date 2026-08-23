@@ -12,6 +12,8 @@ interface AuthContextType {
   profile: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  previewPromoter: { id: string; name: string } | null;
+  setPreviewPromoter: (promoter: { id: string; name: string } | null) => void;
 }
 
 // A safe default keeps consumers rendering (in a loading state) even if they
