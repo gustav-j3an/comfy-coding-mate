@@ -14,7 +14,19 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// A safe default keeps consumers rendering (in a loading state) even if they
+// mount in a module/render context where the provider isn't visible yet
+// (e.g. code-split route components during hydration).
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  session: null,
+  role: null,
+  profile: null,
+  loading: true,
+  signOut: async () => {},
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
