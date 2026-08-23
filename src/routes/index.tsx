@@ -13,92 +13,97 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-Não clique novamente nem atualize a página agora. O sistema pode estar preso no processamento ou ter gravado apenas uma parte; uma nova tentativa sem verificação poderia duplicar cadastros.
+Então não vamos insistir nessa versão. O erro mostra que o importador ainda está tentando fazer trabalho demais em uma única operação. Precisamos transformar a gravação em um processo por etapas, com lotes pequenos e retomáveis.
 
-Também há um alerta: a prévia tinha **409 linhas válidas**, mas a tela está processando apenas **336 paradas únicas**. Isso pode ser correto se ela estiver agrupando paradas repetidas, mas precisa provar que nenhum dia, indústria ou frequência foi perdido.
+Não tente importar de novo agora. Cole este prompt no Lovable:
 
-Cole este prompt no Lovable:
+CORREÇÃO DEFINITIVA — IMPORTAÇÃO AINDA TRAVA, DEMORA E TERMINA EM ERRO
 
-BUG CRÍTICO — IMPORTAÇÃO FICA PRESA EM “GRAVANDO...”
+A importação continua falhando na prática: fica muito tempo em “Gravando...” e depois apresenta erro.
 
-A importação foi iniciada e a interface ficou indefinidamente em:
+Não faça mais ajustes pequenos dentro da função atual. Reestruture a execução da importação para não depender de uma única função server-side longa.
 
-`Gravando...`
+PRESERVE OS DADOS JÁ EXISTENTES
 
-Não permita nova tentativa, não limpe dados e não declare a importação concluída sem investigar o estado real do banco.
+Há registros parciais de tentativas anteriores. Não delete, recrie ou duplique dados automaticamente.
 
-ETAPA 1 — VERIFICAR O ESTADO DA TENTATIVA ATUAL
+Primeiro, identifique e informe:
 
-Antes de alterar código, consulte o banco e informe:
+- quais roteiros/paradas foram criados parcialmente;
+- a qual lote de importação pertencem;
+- quais podem ser retomados com segurança;
+- quais conflitos existem.
 
-- quantos promotores foram criados/atualizados;
-- quantas lojas foram criadas/atualizadas;
-- quantas indústrias foram criadas/atualizadas;
-- quantos roteiros em rascunho foram criados;
-- quantas paradas foram criadas;
-- se houve erro, timeout ou operação pendente;
-- se existem registros parciais da tentativa atual.
+NOVA ARQUITETURA OBRIGATÓRIA
 
-Se houver gravação parcial, não reinicie cegamente. Faça a próxima execução ser idempotente e capaz de continuar sem duplicar dados.
+Implemente importação em etapas curtas e retomáveis:
 
-ETAPA 2 — DESCOBRIR A CAUSA DO TRAVAMENTO
+1. Criar lote
+- Ao confirmar, crie um `import_batch` com ID único.
+- Salve origem, data, Admin responsável, vigência, status e resumo.
 
-Inspecione a função `executeImport` e identifique a causa real. Verifique especialmente:
+2. Processar por etapas
+- Cada chamada server-side deve processar no máximo 25 registros ou um volume comprovadamente abaixo do timeout.
+- Ordem:
+  - indústrias;
+  - lojas;
+  - promotores;
+  - roteiros;
+  - paradas.
+- Não faça loops longos, `Promise.all` gigante ou centenas de inserts em uma única chamada.
 
-- `await` ou Promise que nunca termina;
-- inserções em sequência muito lentas;
-- `Promise.all` grande demais;
-- consulta dentro de loop;
-- timeout de função server-side;
-- erro do servidor que não está chegando ao frontend;
-- erro de RLS, foreign key ou validação oculto;
-- estado de loading que não é resetado em `finally`.
+3. Progresso visível
+- Mostrar etapa atual.
+- Mostrar quantidade concluída / total.
+- Mostrar erros por item sem travar toda a tela.
+- O usuário deve ver avanço real, por exemplo:
+  `Lojas: 125 de 419`.
 
-ETAPA 3 — CORRIGIR A IMPORTAÇÃO
+4. Retomada segura
+- Se a página fechar, internet cair ou uma chamada falhar, o lote deve ficar como `falhou` ou `pausado`, nunca preso em “processando”.
+- Ao voltar à tela, o Admin deve poder clicar em `Retomar importação`.
+- Retomar deve continuar apenas itens pendentes.
+- Nenhum item já processado pode ser duplicado.
 
-Implemente um processo seguro, com progresso e idempotência:
+5. Finalização
+- Só marque o lote como `concluído` após todas as etapas terminarem.
+- Exiba relatório final com criados, vinculados, ignorados, pendentes e erros.
+- Mantenha as quatro linhas sem dia como pendências; não tente importá-las.
+- Não gere visitas e não publique roteiros.
 
-- crie um identificador único de lote de importação;
-- registre status: preparado, processando, concluído ou falhou;
-- processe cadastros em ordem: indústrias → lojas → promotores → roteiros → paradas;
-- use operações em lote ou chunks pequenos, evitando centenas de requisições individuais;
-- cada etapa deve registrar progresso real;
-- mostre na interface: etapa atual, quantidade processada e erros;
-- se falhar, encerre o loading e mostre uma mensagem clara;
-- permita retomar o mesmo lote sem duplicar dados;
-- bloqueie clique duplo;
-- ao concluir, atualize a tela com relatório final.
+TRATAMENTO DE ERROS
 
-INTEGRIDADE DAS PARADAS
+- Todo erro do servidor deve aparecer na tela em linguagem clara.
+- Registre o detalhe técnico em log seguro para diagnóstico.
+- Use `try/catch/finally` para sempre encerrar o estado de carregamento.
+- Não deixe o botão permanentemente em “Gravando...”.
+- Se houver timeout, mostre “Importação pausada; retome para continuar”, não uma mensagem genérica.
 
-A tela mostra 409 linhas válidas, mas o resumo diz “Processar 336 paradas únicas”.
+VALIDE NO PREVIEW
 
-Antes de importar, explique a regra de agrupamento:
-
-- mostre quantas das 409 linhas foram agrupadas;
-- confirme que cada agrupamento preserva todos os dias marcados;
-- confirme que não mistura indústrias, frequência ou promotores diferentes;
-- se houver risco de perda de dados, importe as 409 linhas como paradas distintas ou corrija a chave de agrupamento;
-- não reduza 409 para 336 sem relatório detalhado e validação.
-
-TESTE OBRIGATÓRIO
-
-Use uma execução controlada da planilha de referência e confirme:
-
-1. A importação não fica mais indefinidamente em “Gravando...”.
-2. O progresso mostra cada etapa.
-3. Em caso de falha, o botão volta ao estado normal e mostra o motivo.
-4. Repetir a mesma importação não duplica cadastros, roteiros ou paradas.
-5. São criados/vinculados 28 roteiros em rascunho.
-6. O relatório explica claramente a diferença entre 409 linhas válidas e 336 paradas únicas, se ela continuar existindo.
-7. Nenhuma visita é criada automaticamente.
-8. O resultado final informa exatamente o que foi criado, atualizado, ignorado, pendente e falhou.
+1. Inicie a importação da planilha.
+2. Confirme progresso por etapa e por quantidade.
+3. Simule falha no meio do processo.
+4. Confirme que o lote fica pausado/falhou com erro visível.
+5. Retome o mesmo lote.
+6. Confirme que não duplica os registros já processados.
+7. Confirme a criação total de 28 roteiros em rascunho.
+8. Confirme que nenhuma visita foi criada.
+9. Confirme relatório final e encerramento do loading.
+10. Confirme que não existe mais cenário em que a tela fica indefinidamente “Gravando...”.
 
 ENTREGA
 
-Informe a causa raiz real do travamento, o estado encontrado da tentativa atual, os arquivos alterados e o resultado dos oito testes.
+Informe:
 
-Não marque como concluído sem realizar uma importação completa no Preview que termine com relatório final, sem ficar em “Gravando...”.
+- causa exata do erro atual;
+- estrutura criada para lotes;
+- tamanho do chunk;
+- estado dos dados parciais existentes;
+- resultado individual dos dez testes;
+- captura do Preview mostrando progresso e relatório final concluído.
+
+Não declare concluído sem uma importação real terminando no Preview.
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, ChevronLeft, Loader2, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronLeft, Loader2, Save, Play, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useServerFn } from '@tanstack/react-start';
-import { executeImport } from '@/lib/import.functions';
+import { 
+  startImportBatch, 
+  processImportStep, 
+  finishImportBatch, 
+  failImportBatch, 
+  getImportBatchStatus 
+} from '@/lib/import.functions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -30,9 +36,18 @@ function ImportModule() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
   const [acceptedRevisionTerms, setAcceptedRevisionTerms] = useState(false);
-
-  const importFn = useServerFn(executeImport);
-  const [importStatus, setImportStatus] = useState<{ step: string; processed: number; total: number } | null>(null);
+  const [activeBatch, setActiveBatch] = useState<any>(null);
+  const startBatchFn = useServerFn(startImportBatch);
+  const processStepFn = useServerFn(processImportStep);
+  const finishBatchFn = useServerFn(finishImportBatch);
+  const failBatchFn = useServerFn(failImportBatch);
+  const getBatchStatusFn = useServerFn(getImportBatchStatus);
+  const [importStatus, setImportStatus] = useState<{ 
+    step: 'industries' | 'stores' | 'promoters' | 'routes' | 'stops'; 
+    processed: number; 
+    total: number;
+    results: any;
+  } | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -245,33 +260,105 @@ function ImportModule() {
     if (!previewData || !validFrom || !acceptedTerms) return;
     
     setIsImporting(true);
-    const batchId = `BATCH-${Date.now()}`;
+    const batchId = activeBatch?.id || `BATCH-${Date.now()}`;
     
     try {
-      const res = await importFn({
+      // 1. Start Batch
+      const startRes = await startBatchFn({
         data: {
-          importBatchId: batchId,
+          batchId,
           validFrom,
-          promoters: previewData.promoters,
-          stores: previewData.stores,
-          industries: previewData.industries,
-          routes: previewData.routes
+          summary: {
+            promoters: previewData.promoters.length,
+            stores: previewData.stores.length,
+            industries: previewData.industries.length,
+            routes: previewData.metrics.distinctPromoters,
+            stops: previewData.metrics.validStopsCount
+          }
         }
       });
 
-      if (res.success) {
-        setImportResult(res.results);
-        toast.success('Importação realizada com sucesso!');
-      } else {
-        toast.error(`Erro na importação: ${res.error}`);
-        // If we got partial results back, show them so the user knows what was saved
-        if (res.results) setImportResult(res.results);
+      if (!startRes.success) throw new Error("Falha ao iniciar lote.");
+
+      const results = {
+        promoters: { created: 0, ignored: 0 },
+        stores: { created: 0, ignored: 0 },
+        industries: { created: 0, ignored: 0 },
+        routes: { created: 0, ignored: 0 },
+        stops: { created: 0, ignored: 0 },
+        errors: [] as string[]
+      };
+
+      const CHUNK_SIZE = 25;
+
+      // 2. Process Industries
+      setImportStatus({ step: 'industries', processed: 0, total: previewData.industries.length, results });
+      for (let i = 0; i < previewData.industries.length; i += CHUNK_SIZE) {
+        const chunk = previewData.industries.slice(i, i + CHUNK_SIZE);
+        const res = await processStepFn({ data: { batchId, step: 'industries', items: chunk } });
+        results.industries.created += res.results.created;
+        results.industries.ignored += res.results.ignored;
+        results.errors.push(...res.results.errors);
+        setImportStatus(prev => prev ? { ...prev, processed: i + chunk.length } : null);
       }
+
+      // 3. Process Stores
+      setImportStatus({ step: 'stores', processed: 0, total: previewData.stores.length, results });
+      for (let i = 0; i < previewData.stores.length; i += CHUNK_SIZE) {
+        const chunk = previewData.stores.slice(i, i + CHUNK_SIZE);
+        const res = await processStepFn({ data: { batchId, step: 'stores', items: chunk } });
+        results.stores.created += res.results.created;
+        results.stores.ignored += res.results.ignored;
+        results.errors.push(...res.results.errors);
+        setImportStatus(prev => prev ? { ...prev, processed: i + chunk.length } : null);
+      }
+
+      // 4. Process Promoters
+      setImportStatus({ step: 'promoters', processed: 0, total: previewData.promoters.length, results });
+      for (let i = 0; i < previewData.promoters.length; i += CHUNK_SIZE) {
+        const chunk = previewData.promoters.slice(i, i + CHUNK_SIZE);
+        const res = await processStepFn({ data: { batchId, step: 'promoters', items: chunk } });
+        results.promoters.created += res.results.created;
+        results.promoters.ignored += res.results.ignored;
+        results.errors.push(...res.results.errors);
+        setImportStatus(prev => prev ? { ...prev, processed: i + chunk.length } : null);
+      }
+
+      // 5. Process Routes
+      setImportStatus({ step: 'routes', processed: 0, total: previewData.routes.length, results });
+      for (let i = 0; i < previewData.routes.length; i += 1) { // Routes are already grouped by promoter
+        const chunk = previewData.routes.slice(i, i + 1);
+        const res = await processStepFn({ data: { batchId, step: 'routes', items: chunk, validFrom } });
+        results.routes.created += res.results.created;
+        results.routes.ignored += res.results.ignored;
+        results.errors.push(...res.results.errors);
+        setImportStatus(prev => prev ? { ...prev, processed: i + 1 } : null);
+      }
+
+      // 6. Process Stops
+      const allStops = previewData.routes.flatMap((r: any) => r.stops);
+      setImportStatus({ step: 'stops', processed: 0, total: allStops.length, results });
+      for (let i = 0; i < allStops.length; i += CHUNK_SIZE) {
+        const chunk = allStops.slice(i, i + CHUNK_SIZE);
+        const res = await processStepFn({ data: { batchId, step: 'stops', items: chunk, validFrom } });
+        results.stops.created += res.results.created;
+        results.stops.ignored += res.results.ignored;
+        results.errors.push(...res.results.errors);
+        setImportStatus(prev => prev ? { ...prev, processed: i + chunk.length } : null);
+      }
+
+      // 7. Finish
+      await finishBatchFn({ data: { batchId, results } });
+      setImportResult(results);
+      toast.success('Importação concluída com sucesso!');
+      setActiveBatch(null);
     } catch (err: any) {
-      toast.error('Erro crítico na importação. Verifique o console.');
       console.error(err);
+      toast.error(`Erro na importação: ${err.message}`);
+      await failBatchFn({ data: { batchId, error: err.message } });
     } finally {
       setIsImporting(false);
+      setImportStatus(null);
     }
   };
 
@@ -623,7 +710,7 @@ function ImportModule() {
                   {isImporting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Gravando...
+                      {importStatus ? `Gravando ${importStatus.step}: ${importStatus.processed}/${importStatus.total}...` : 'Gravando...'}
                     </>
                   ) : (
                     <>
