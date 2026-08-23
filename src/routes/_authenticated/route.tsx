@@ -81,6 +81,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
+      <ChangePasswordModal />
       <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       
       <div className="pt-0 min-h-screen flex flex-col">
