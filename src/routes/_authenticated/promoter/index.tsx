@@ -83,14 +83,29 @@ function PromoterDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 safe-area-inset-bottom">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg">
-        <div className="flex justify-between items-start mb-6">
+      <div className="bg-blue-600 text-white p-6 rounded-b-3xl shadow-lg relative overflow-hidden">
+        {/* Connection Indicator */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          {syncQueueSize > 0 && (
+            <Badge className="bg-orange-500 text-white border-none animate-pulse">
+              <RefreshCw className="h-3 w-3 mr-1" /> {syncQueueSize} pendentes
+            </Badge>
+          )}
+          {online ? (
+            <Badge className="bg-green-500/20 text-green-100 border-none backdrop-blur-sm">
+              <Wifi className="h-3 w-3 mr-1" /> Online
+            </Badge>
+          ) : (
+            <Badge className="bg-red-500 text-white border-none shadow-lg">
+              <WifiOff className="h-3 w-3 mr-1" /> Offline
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex justify-between items-start mb-6 pt-2">
           <div>
             <h1 className="text-2xl font-bold">Olá, {profile?.full_name?.split(' ')[0]}</h1>
             <p className="text-blue-100 opacity-90">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-          </div>
-          <div className="bg-white/20 p-2 rounded-full">
-            <LayoutDashboard className="h-6 w-6" />
           </div>
         </div>
 
