@@ -29,15 +29,17 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     if (!isAdmin) throw new Error("Apenas administradores podem convidar usuários");
 
-    // Get site URL from env or build preview URL
+    // Get site URL from env or fallback to a reliable default
     let siteUrl = process.env['SITE_URL'];
     if (!siteUrl) {
-      // Fallback for preview environments if SITE_URL is missing
+      // In Lovable environments, we can construct the preview URL if we have the project ID
       const projectId = process.env['LOVABLE_PROJECT_ID'];
       if (projectId) {
-        siteUrl = `https://project--${projectId}.lovable.app`;
+        // Use the standard Lovable preview URL format
+        siteUrl = `https://id-preview--${projectId}.lovable.app`;
       } else {
-        siteUrl = 'https://rota-do-promotor.lovable.app'; // Final fallback
+        // Final fallback - should be updated by user in Supabase dashboard
+        siteUrl = 'https://rota-do-promotor.lovable.app';
       }
     }
 
@@ -112,7 +114,7 @@ export const resendInvite = createServerFn({ method: "POST" })
     let siteUrl = process.env['SITE_URL'];
     if (!siteUrl) {
       const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://project--${projectId}.lovable.app`;
+      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
       else siteUrl = 'https://rota-do-promotor.lovable.app';
     }
 
@@ -150,7 +152,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     let siteUrl = process.env['SITE_URL'];
     if (!siteUrl) {
       const projectId = process.env['LOVABLE_PROJECT_ID'];
-      if (projectId) siteUrl = `https://project--${projectId}.lovable.app`;
+      if (projectId) siteUrl = `https://id-preview--${projectId}.lovable.app`;
       else siteUrl = 'https://rota-do-promotor.lovable.app';
     }
 

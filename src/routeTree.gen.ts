@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as PrimeiroAcessoRouteImport } from './routes/primeiro-acesso'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -59,6 +60,11 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/auth/forgot-password',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/primeiro-acesso': typeof PrimeiroAcessoRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/'
     | '/primeiro-acesso'
     | '/admin'
+    | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/admin/audit'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/primeiro-acesso'
+    | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/admin/audit'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/primeiro-acesso'
     | '/_authenticated/admin'
+    | '/auth/callback'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/_authenticated/admin/audit'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PrimeiroAcessoRoute: typeof PrimeiroAcessoRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   ApiPublicWebhookRoute: typeof ApiPublicWebhookRoute
@@ -451,6 +464,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/forgot-password': {
       id: '/auth/forgot-password'
@@ -719,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PrimeiroAcessoRoute: PrimeiroAcessoRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   ApiPublicWebhookRoute: ApiPublicWebhookRoute,
