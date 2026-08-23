@@ -3,7 +3,7 @@ import { z } from "zod";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getPublicAppUrl } from "./app-config";
-import { randomBytes } from "crypto";
+
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -376,6 +376,7 @@ export const generateTemporaryAccess = createServerFn({ method: "POST" })
     if (promoterError || !promoter) throw new Error("Promotor não encontrado");
 
     // 3. Generate random password (16 chars for strength)
+    const { randomBytes } = await import('crypto');
     const tempPassword = randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
     if (tempPassword.length < 12) throw new Error("Falha ao gerar senha segura");
 

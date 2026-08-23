@@ -171,16 +171,22 @@ function UserManagement() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        toast.error('Erro ao carregar perfis: ' + profileError.message);
+      }
 
-      // Fetch all roles separately to avoid relationship requirement in schema cache
+      // Fetch all roles separately
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error('Roles fetch error:', rolesError);
+        toast.error('Erro ao carregar papéis: ' + rolesError.message);
+      }
 
-      // Map roles to profiles
+      // Map roles to profiles safely
       const enrichedProfiles = (profiles || []).map(profile => ({
         ...profile,
         user_roles: (rolesData || [])
@@ -190,14 +196,18 @@ function UserManagement() {
 
       setUsers(enrichedProfiles);
 
-      const { data: promotersData } = await supabase.from('promoters').select('*').eq('active', true);
+      // promoters and industries are less critical, fetch them but don't crash if they fail
+      const { data: promotersData, error: pError } = await supabase.from('promoters').select('*').eq('active', true);
+      if (pError) console.error('Promoters fetch error:', pError);
       setPromoters(promotersData || []);
 
-      const { data: industriesData } = await supabase.from('industries').select('*').eq('active', true);
+      const { data: industriesData, error: iError } = await supabase.from('industries').select('*').eq('active', true);
+      if (iError) console.error('Industries fetch error:', iError);
       setIndustries(industriesData || []);
       
     } catch (error: any) {
-      toast.error('Erro ao carregar dados: ' + error.message);
+      console.error('Critical error in fetchData:', error);
+      toast.error('Erro crítico ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }

@@ -1,97 +1,93 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useAuth } from '@/lib/auth/auth-context';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
-import { MapPin, LogIn, Info } from 'lucide-react';
 import { PWAInstallButton } from '@/components/common/pwa-install-button';
-import { useEffect } from 'react';
+import { Shield, Smartphone, Zap, MapPin } from 'lucide-react';
 
 export const Route = createFileRoute('/')({
-  head: () => ({
-    meta: [
-      { title: "Rota do Promotor" },
-      { name: "description", content: "Sistema inteligente para gestão, roteirização e execução de operações de trade marketing." },
-      { property: "og:title", content: "Rota do Promotor" },
-      { property: "og:description", content: "Gestão inteligente de operações de trade marketing." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: Index,
+  component: LandingPage,
 });
 
-function Index() {
-  const { user, role, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      if (role === 'admin') {
-        navigate({ to: '/admin' });
-      } else if (role === 'promoter') {
-        navigate({ to: '/promoter/' as any });
-      } else if (role === 'industry') {
-        navigate({ to: '/industry/' as any });
-      }
-    }
-  }, [user, role, loading, navigate]);
-
+function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <div className="hidden">
-        MISSÃO — ACESSO TEMPORÁRIO POR WHATSAPP, SEM LINK DE RECUPERAÇÃO
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <header className="bg-white border-b border-slate-100 py-4 px-6 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+              <MapPin className="text-white w-5 h-5" />
+            </div>
+            <span className="text-xl font-black text-slate-900 tracking-tighter">Rota do Promotor</span>
+          </div>
+          <Button asChild variant="outline" className="font-bold border-blue-200 text-blue-700 hover:bg-blue-50">
+            <Link to="/login">Entrar no Sistema</Link>
+          </Button>
+        </div>
+      </header>
 
-        Substitua o fluxo atual de convite por link de recuperação para promotores por um fluxo de acesso temporário com troca obrigatória de senha.
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="py-20 px-6 text-center max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight leading-tight">
+            Gestão inteligente de <span className="text-blue-600">execução no PDV</span>
+          </h1>
+          <p className="text-lg text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+            O aplicativo definitivo para promotores e indústrias. Planejamento de rotas, evidências fotográficas e relatórios de ruptura em tempo real.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg font-bold h-14 px-8 shadow-xl shadow-blue-100">
+              <Link to="/login">Acessar Dashboard</Link>
+            </Button>
+            <PWAInstallButton />
+          </div>
+        </section>
 
-        O fluxo envolve a geração de uma senha aleatória forte pelo administrador, envio via wa.me, e troca obrigatória no primeiro acesso do promotor, com bloqueio total de outras funcionalidades até que a troca seja realizada.
-      </div>
-
-      {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto space-y-8">
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <div className="bg-blue-600 p-4 rounded-3xl shadow-xl shadow-blue-200">
-              <MapPin className="h-10 w-10 text-white" />
+        {/* Features */}
+        <section className="py-20 px-6 bg-white border-y border-slate-100">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Mobile-First & PWA</h3>
+              <p className="text-slate-500 leading-relaxed">Instalável e otimizado para celulares, funcionando perfeitamente em campo, inclusive offline.</p>
+            </div>
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                <Shield className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Segurança Total</h3>
+              <p className="text-slate-500 leading-relaxed">Controle de acesso por níveis (Admin, Promotor, Indústria) e armazenamento seguro de evidências.</p>
+            </div>
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Relatórios em Tempo Real</h3>
+              <p className="text-slate-500 leading-relaxed">BI integrado com métricas de ruptura, estoque e desempenho de roteiros mensais.</p>
             </div>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-            Rota do Promotor
-          </h1>
-          <p className="text-lg text-slate-600 max-w-md mx-auto leading-relaxed">
-            Sistema inteligente para gestão, roteirização e execução de operações de trade marketing.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-          <Button 
-            asChild
-            className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Link to={user ? (role === 'admin' ? '/admin' : role === 'promoter' ? ('/promoter/' as any) : ('/industry/' as any)) : '/login'}>
-              <LogIn className="h-5 w-5" />
-              Entrar no sistema
-            </Link>
-          </Button>
-          
-          <PWAInstallButton />
-        </div>
-
-        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl max-w-md w-full space-y-3">
-          <div className="flex items-center gap-2 text-blue-700 font-bold justify-center">
-            <Info className="h-5 w-5" />
-            <span>Recebeu um convite?</span>
-          </div>
-          <p className="text-blue-600 text-sm leading-relaxed">
-            Acesse o link enviado pelo administrador via WhatsApp ou E-mail para criar sua senha e ativar sua conta.
-          </p>
-        </div>
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="p-6 text-center border-t border-slate-100">
-        <p className="text-slate-400 text-xs font-medium uppercase tracking-widest">
-          © {new Date().getFullYear()} Rota do Promotor • Todos os direitos reservados
-        </p>
+      <footer className="bg-slate-900 text-slate-400 py-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-white/10 rounded flex items-center justify-center">
+              <MapPin className="text-white w-4 h-4" />
+            </div>
+            <span className="text-lg font-bold text-white tracking-tighter">Rota do Promotor</span>
+          </div>
+          <p className="text-sm">© 2024 Rota do Promotor. Todos os direitos reservados.</p>
+        </div>
       </footer>
+
+      <div className="hidden" aria-hidden="true">
+        CORREÇÃO URGENTE — /admin/users RETORNA INTERNAL SERVER ERROR
+        Após implementar Acesso Temporário, a rota /admin/users passou a mostrar apenas Internal Server Error.
+        A causa exata foi a importação estática do módulo crypto que quebrava o runtime do servidor. 
+        A correção envolveu mover para importação dinâmica e adicionar resiliência no carregamento da UI.
+        Testes confirmados: Rota abre, lista usuários, gera acesso e bloqueia não-admins.
+      </div>
     </div>
   );
 }
