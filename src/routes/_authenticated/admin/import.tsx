@@ -38,34 +38,107 @@ function ImportModule() {
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheets = workbook.SheetNames;
       
-      const parsedData: any = {
+      const rawData: any = {
         promoters: [],
         stores: [],
         industries: [],
         routes: [],
-        ignoredSheets: [],
-        errors: []
+        ignoredSheets: []
       };
 
       for (const sheetName of sheets) {
         const worksheet = workbook.Sheets[sheetName];
         if (!worksheet) continue;
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const headers: string[] = (jsonData[0] as string[]) || [];
+        const rows = jsonData.slice(1);
 
         if (sheetName === 'PROMOTORES') {
-          parsedData.promoters = jsonData.slice(1);
+          rawData.promoters = rows.map((row: any) => ({
+            matricula: row[headers.indexOf('MATRÍCULA')],
+            nome: row[headers.indexOf('NOME')],
+            uf: row[headers.indexOf('UF')],
+            cidade: row[headers.indexOf('CIDADE ATENDIMENTO')],
+            contato: row[headers.indexOf('CONTATO')],
+            observacao: row[headers.indexOf('OBSERVAÇÃO')]
+          }));
         } else if (sheetName === 'LOJAS') {
-          parsedData.stores = jsonData.slice(1);
+          rawData.stores = rows.map((row: any) => ({
+            rede: row[headers.indexOf('REDE')],
+            loja: row[headers.indexOf('LOJA')],
+            uf: row[headers.indexOf('UF')]
+          }));
         } else if (sheetName === 'INDUSTRIA') {
-          parsedData.industries = jsonData.slice(1);
+          rawData.industries = rows.map((row: any) => ({
+            nome: row[headers.indexOf('INDUSTRIA')]
+          }));
         } else if (sheetName.startsWith('ROTEIRO ')) {
-          parsedData.routes.push({ sheetName, data: jsonData.slice(1) });
+          rawData.routes.push({
+            sheetName,
+            stops: rows.map((row: any) => ({
+              industria: row[headers.indexOf('INDUSTRIA')],
+              loja: row[headers.indexOf('LOJA')],
+              uf: row[headers.indexOf('UF')],
+              promotor: row[headers.indexOf('PROMOTORES')],
+              frequencia: row[headers.indexOf('FREQ')],
+              dias: {
+                seg: row[headers.indexOf('SEG')] === '✓',
+                ter: row[headers.indexOf('TER')] === '✓',
+                qua: row[headers.indexOf('QUA')] === '✓',
+                qui: row[headers.indexOf('QUI')] === '✓',
+                sex: row[headers.indexOf('SEX')] === '✓',
+                sab: row[headers.indexOf('SAB')] === '✓',
+                dom: row[headers.indexOf('DOM')] === '✓',
+              }
+            }))
+          });
         } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA'].includes(sheetName)) {
-          parsedData.ignoredSheets.push(sheetName);
+          rawData.ignoredSheets.push(sheetName);
         }
       }
 
-      setPreviewData(parsedData);
+      // Validation
+      const inconsistencies: any[] = [];
+      const normalizedPromoters = rawData.promoters.map((p: any) => p.nome?.trim().toLowerCase()).filter(Boolean);
+      const normalizedStores = rawData.stores.map((s: any) => s.loja?.trim().toLowerCase()).filter(Boolean);
+      const normalizedIndustries = rawData.industries.map((i: any) => i.nome?.trim().toLowerCase()).filter(Boolean);
+
+      rawData.routes.forEach((routeSheet: any) => {
+        const seenStops = new Set();
+        routeSheet.stops.forEach((stop: any, index: number) => {
+          const line = index + 2;
+          
+          // Required fields
+          if (!stop.industria || !stop.loja || !stop.promotor) {
+            inconsistencies.push({ type: 'Campo Obrigatório', detail: `Linha ${line} em ${routeSheet.sheetName} possui campos vazios.` });
+          }
+
+          // Reference checks
+          if (stop.promotor && !normalizedPromoters.includes(stop.promotor.trim().toLowerCase())) {
+            inconsistencies.push({ type: 'Promotor Não Encontrado', detail: `Promotor "${stop.promotor}" na linha ${line} de ${routeSheet.sheetName} não está na aba PROMOTORES.` });
+          }
+          if (stop.loja && !normalizedStores.includes(stop.loja.trim().toLowerCase())) {
+            inconsistencies.push({ type: 'Loja Não Encontrada', detail: `Loja "${stop.loja}" na linha ${line} de ${routeSheet.sheetName} não está na aba LOJAS.` });
+          }
+          if (stop.industria && !normalizedIndustries.includes(stop.industria.trim().toLowerCase())) {
+            inconsistencies.push({ type: 'Indústria Não Encontrada', detail: `Indústria "${stop.industria}" na linha ${line} de ${routeSheet.sheetName} não está na aba INDUSTRIA.` });
+          }
+
+          // Duplicate detection
+          const stopKey = `${stop.industria}-${stop.loja}-${stop.promotor}-${routeSheet.sheetName}`.toLowerCase();
+          if (seenStops.has(stopKey)) {
+            inconsistencies.push({ type: 'Duplicidade', detail: `Linha ${line} em ${routeSheet.sheetName} é uma duplicata de parada.` });
+          }
+          seenStops.add(stopKey);
+
+          // Frequency validation
+          if (stop.frequencia && !['SEMANAL', 'QUINZENAL'].includes(stop.frequencia.toUpperCase())) {
+            inconsistencies.push({ type: 'Frequência Inválida', detail: `Frequência "${stop.frequencia}" inválida na linha ${line} de ${routeSheet.sheetName}.` });
+          }
+        });
+      });
+
+      setPreviewData({ ...rawData, inconsistencies });
       toast.success('Arquivo processado com sucesso!');
     } catch (err) {
       toast.error('Erro ao processar arquivo.');
