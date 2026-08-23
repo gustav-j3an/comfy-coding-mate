@@ -18,7 +18,7 @@ function PrimeiroAcesso() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [errorState, setErrorState] = useState<{ type: 'expired' | 'invalid' | null }> (null);
+  const [errorState, setErrorState] = useState<{ type: 'expired' | 'invalid' | null }>({ type: null });
 
   useEffect(() => {
     // Check URL parameters for errors from callback
