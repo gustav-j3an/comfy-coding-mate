@@ -157,6 +157,8 @@ function RouteEditorPage() {
 
     setSaving(true);
     try {
+      const user = (await supabase.auth.getUser()).data.user;
+      
       const { data: route, error: routeError } = await supabase
         .from('routes')
         .insert({
@@ -165,7 +167,8 @@ function RouteEditorPage() {
           valid_from: validFrom,
           active: publish,
           status: (publish ? 'published' : 'draft') as any,
-          version: 1
+          version: 1,
+          created_by: user?.id || null
         })
         .select()
         .single();

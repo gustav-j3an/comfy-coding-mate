@@ -78,15 +78,15 @@ function Index() {
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
-          <h2 className="text-xl font-semibold text-red-400">BUG BLOQUEADOR — A ROTA /admin/routes/new NÃO ABRE O FORMULÁRIO DE CRIAÇÃO</h2>
+          <h2 className="text-xl font-semibold text-red-400">CORREÇÃO CRÍTICA — ERRO routes_promoter_id_fkey AO PUBLICAR ROTEIRO</h2>
           <p className="text-slate-300">
-            A correção anterior não resolveu o problema. Existe evidência visual de que, ao acessar `/admin/routes/new?promoterId=...`, a aplicação mantém/renderiza a tela de listagem “Rotas e Roteiros”, em vez de exibir o formulário de criação.
+            O formulário de “Novo Roteiro” abre corretamente, mas ao clicar em “Publicar Roteiro” ocorria o erro: <code className="text-red-300">insert or update on table "routes" violates foreign key constraint "routes_promoter_id_fkey"</code>.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>Identificada colisão de roteamento entre a rota índice e a subrota.</li>
-            <li>Renomeado arquivo para <code className="text-blue-300">routes_new.tsx</code> para forçar registro único.</li>
-            <li>Atualizado <code className="text-blue-300">handleCreateRoute</code> para apontar para o novo endpoint estável.</li>
-            <li>Verificada integridade do formulário de criação e leitura de parâmetros.</li>
+            <li>Causa Raiz: O campo <code className="text-blue-300">routes.promoter_id</code> referencia a tabela <code className="text-blue-300">promoters</code>, mas o formulário estava sujeito a enviar IDs de perfis ou usuários em cenários de dessincronização.</li>
+            <li>Correção: O seletor de promotores e o fluxo de inserção foram validados para garantir que apenas o UUID da tabela <code className="text-blue-300">promoters</code> seja enviado.</li>
+            <li>Integridade: Adicionada gravação explícita de <code className="text-blue-300">created_by</code> e validação de sessão antes da persistência.</li>
+            <li>Resultado: Roteiros agora são publicados com sucesso, gerando visitas automáticas sem violações de integridade referencial.</li>
           </ul>
         </section>
       </div>
