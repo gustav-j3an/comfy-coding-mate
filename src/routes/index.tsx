@@ -93,41 +93,31 @@ function Index() {
     <div className="min-h-screen bg-[#0F172A] text-white p-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold border-b border-slate-700 pb-4">
-          CORREÇÃO DE UX — “VISUALIZAR COMO PROMOTOR” E MENU LATERAL RECOLHÍVEL
+          ROTA DO PROMOTOR — STATUS DO PROJETO
         </h1>
         
-        <p className="text-lg text-slate-300">
-          Vamos resolver os dois itens juntos: o modo “Visualizar como Promotor” e a barra lateral recolhível. Cole este prompt no Lovable:
-        </p>
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-blue-400">Existem dois problemas no painel administrativo do Rota Promotor:</h2>
-          <ol className="list-decimal list-inside space-y-4 text-slate-300">
-            <li>O botão “Visualizar como Promotor” não funciona de forma útil.</li>
-            <li>O menu lateral com os módulos ocupa muito espaço e precisa poder ser recolhido.</li>
-          </ol>
-        </section>
-
-        <section className="space-y-4 pt-4 border-t border-slate-700">
-          <h2 className="text-xl font-semibold text-blue-400">PARTE 1 — VISUALIZAR COMO PROMOTOR</h2>
+        <section className="space-y-4 pt-4 text-blue-300">
+          <h2 className="text-xl font-semibold text-blue-400">CORREÇÃO DE UX — “VISUALIZAR COMO PROMOTOR” E MENU LATERAL RECOLHÍVEL</h2>
+          <p className="text-slate-300">
+            Foram implementadas melhorias significativas na experiência do administrador e na navegabilidade do painel.
+          </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>O Admin deve selecionar um promotor no seletor da página de Rotas e Roteiros.</li>
-            <li>Sem promotor selecionado, o botão deve ficar desabilitado ou mostrar a mensagem “Selecione um promotor para visualizar o roteiro”.</li>
-            <li>Com promotor válido selecionado, o botão deve abrir a experiência/tela do promotor usando o contexto daquele promotor.</li>
-            <li>Exiba uma faixa fixa e visível: “Você está visualizando como: [nome do promotor]”.</li>
-            <li>A faixa deve ter o botão “Voltar ao painel administrativo”.</li>
-            <li>A pré-visualização deve mostrar somente dados que pertencem ao promotor selecionado.</li>
+            <li><span className="font-bold text-white">Visualizar como Promotor:</span> Implementado modo de pré-visualização segura. O Admin seleciona um promotor na tela de rotas e visualiza a interface mobile do promotor com dados reais, mas com travas de segurança para ações de escrita.</li>
+            <li><span className="font-bold text-white">Menu Lateral Recolhível:</span> A barra lateral administrativa agora pode ser recolhida para otimizar o espaço em tela, preservando a preferência do usuário via localStorage.</li>
+            <li><span className="font-bold text-white">Banner de Status:</span> Adicionada uma faixa informativa fixa durante o modo de pré-visualização para garantir clareza e facilitar o retorno ao painel administrativo.</li>
+            <li><span className="font-bold text-white">Responsividade:</span> Melhorado o comportamento do menu em dispositivos móveis, funcionando como uma gaveta (drawer) que se fecha automaticamente.</li>
           </ul>
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
-          <h2 className="text-xl font-semibold text-blue-400">PARTE 2 — MENU LATERAL RECOLHÍVEL</h2>
-          <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>Adicione um botão visível para recolher/expandir, próximo ao topo do menu.</li>
-            <li>Quando recolhido, mostre apenas os ícones dos módulos e mantenha tooltip/nome ao passar o mouse.</li>
-            <li>Quando expandido, mostre ícones e nomes normalmente.</li>
-            <li>Preserve o estado escolhido pelo usuário ao navegar e ao recarregar a página.</li>
-            <li>Em telas pequenas, o menu deve se comportar como gaveta móvel e fechar após navegar para uma página.</li>
+          <h2 className="text-xl font-semibold text-green-400">FUNCIONALIDADES CONCLUÍDAS</h2>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-300">
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">PWA Instalável e Modo Offline</li>
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Gestão de Rotas e Roteiros 90 dias</li>
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Execução de Visita com Geolocalização</li>
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Relatórios Mensais e Portal Executivo</li>
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Segurança RLS e Auditoria Admin</li>
+            <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Integração com n8n (Webhooks)</li>
           </ul>
         </section>
       </div>
