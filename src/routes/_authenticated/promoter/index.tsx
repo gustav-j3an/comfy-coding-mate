@@ -319,42 +319,7 @@ function PromoterDashboard() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Weekly Simulation for Admin */}
-        {previewPromoter && (
-          <div className="bg-white p-4 rounded-2xl shadow-sm border-2 border-amber-100">
-            <h3 className="text-sm font-black text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Roteiro da Semana (Simulação)
-            </h3>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
-                const dayName = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][day];
-                const isSelected = simulatedDay === day;
-                const isRealToday = new Date().getDay() === day;
-                
-                return (
-                  <button
-                    key={day}
-                    onClick={() => setSimulatedDay(day)}
-                    className={cn(
-                      "flex-shrink-0 w-14 h-16 rounded-xl flex flex-col items-center justify-center transition-all border-2",
-                      isSelected 
-                        ? "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-100" 
-                        : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
-                    )}
-                  >
-                    <span className="text-[10px] font-bold uppercase">{dayName}</span>
-                    <span className="text-lg font-black">{isRealToday ? "HOJE" : ""}</span>
-                    {isRealToday && !isSelected && <div className="w-1 h-1 bg-amber-500 rounded-full mt-1" />}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-amber-600 mt-2 font-bold leading-tight">
-              Selecione um dia para simular a agenda do promotor.
-              <br />Ações de escrita continuam bloqueadas.
-            </p>
-          </div>
-        )}
+        {/* Weekly Simulation for Admin removed */}
 
         {/* Next Stop highlight */}
 
