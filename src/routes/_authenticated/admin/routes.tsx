@@ -151,7 +151,20 @@ function RoutesPage() {
              <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" /> Filtros
               </Button>
-              <Button variant="ghost" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold">
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold"
+                disabled={!selectedPromoterId}
+                onClick={() => {
+                  if (!selectedPromoterId) {
+                    toast.error("Selecione um promotor para visualizar");
+                    return;
+                  }
+                  setPreviewPromoter({ id: selectedPromoterId, name: selectedPromoterName });
+                  navigate({ to: '/promoter' });
+                  toast.success(`Modo visualização ativado: ${selectedPromoterName}`);
+                }}
+              >
                 <Eye className="h-4 w-4" /> Visualizar como Promotor
               </Button>
           </div>
