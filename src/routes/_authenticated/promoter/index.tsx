@@ -352,10 +352,16 @@ function PromoterDashboard() {
                 </div>
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-blue-200 shadow-lg active:scale-[0.98] transition-transform">
                   <Link 
-                    to={"/promoter/visit/$visitId" as any} 
-                    params={{ visitId: String(nextStop.id) } as any}
+                    to={visit.is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)} 
+                    params={visit.is_theoretical ? {} : ({ visitId: String(nextStop.id) } as any)}
+                    onClick={(e) => {
+                      if (visit.is_theoretical) {
+                        e.preventDefault();
+                        toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
+                      }
+                    }}
                   >
-                    Iniciar Visita
+                    {visit.is_theoretical ? "Visualizar Planejamento" : "Iniciar Visita"}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
