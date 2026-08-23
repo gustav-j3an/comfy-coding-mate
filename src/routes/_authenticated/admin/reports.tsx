@@ -244,14 +244,14 @@ function ReportsPage() {
               />
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
             <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="font-bold text-slate-700">Indústria</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Competência</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Execução</TableHead>
-                <TableHead className="font-bold text-slate-700 text-center">Status</TableHead>
+                <TableHead className="font-bold text-slate-700 whitespace-nowrap">Indústria</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Competência</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Execução</TableHead>
+                <TableHead className="font-bold text-slate-700 text-center whitespace-nowrap">Status</TableHead>
                 <TableHead className="w-[200px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -271,18 +271,18 @@ function ReportsPage() {
               ) : (
                 filteredReports.map((rep) => (
                   <TableRow key={rep.id} className="hover:bg-slate-50 group">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-500 border">
+                        <div className="w-8 h-8 rounded bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-500 border">
                           <Factory className="h-4 w-4" />
                         </div>
                         <span className="font-bold text-slate-900">{rep.industry?.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center font-medium text-slate-600">
+                    <TableCell className="text-center font-medium text-slate-600 whitespace-nowrap">
                       {months.find(m => m.value === rep.month)?.label} / {rep.year}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       <div className="flex flex-col items-center">
                         <span className="text-sm font-bold text-slate-900">
                           {rep.total_visits_planned > 0 
@@ -294,7 +294,7 @@ function ReportsPage() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center whitespace-nowrap">
                       {getStatusBadge(rep.status)}
                     </TableCell>
                     <TableCell>
@@ -329,6 +329,7 @@ function ReportsPage() {
             </TableBody>
             </Table>
           </div>
+        </div>
         </div>
       </div>
     </div>
