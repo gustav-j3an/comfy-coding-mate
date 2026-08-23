@@ -82,10 +82,10 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO PRIORITÁRIA — ROTEIRO REAL DO PROMOTOR + INSTALAÇÃO DO PWA APÓS LOGIN
-        Causa Raiz Identificada: A exibição do dashboard dependia de visitas já materializadas, ignorando roteiros publicados para o dia selecionado.
-        Solução: Refatoração da query 'promoter-visits' para mesclar visitas reais com previsões de roteiro, adição de seletor de dias da semana e banner de instalação PWA.
-        Resultados: Gustavo agora visualiza sua agenda completa de segunda a domingo, com paradas programadas claramente identificadas.
+        MISSÃO CRÍTICA — LIGAR ROTEIRO PUBLICADO AO APP REAL DO PROMOTOR E EXECUÇÃO DE VISITA
+        Implementação: Criada função de servidor unificada `getPromoterAgenda` para garantir fonte única de verdade.
+        Execução: Refatorado fluxo de visita para suporte multi-indústria (KING, DON LUIZ, FRUTA POLPA) com evidências obrigatórias (Reposicão + Relatório).
+        Dashboard: Dashboard do promotor agora consome agenda autoritativa, resolvendo a divergência entre admin e mobile.
       </div>
     </div>
   );
