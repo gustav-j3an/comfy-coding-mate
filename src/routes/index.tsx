@@ -37,6 +37,63 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      <div className="hidden">
+        O bloqueio acontece porque o sistema está tentando abrir `api.whatsapp.com`. Para o seu computador, onde você já está logado no WhatsApp Web, ele deve abrir diretamente `web.whatsapp.com`.
+
+        O WhatsApp Web é acessado pelo domínio `web.whatsapp.com`. [WhatsApp Web](https://web.whatsapp.com/mobile/)
+
+        Cole este prompt no Lovable:
+
+        CORREÇÃO DO CONVITE MANUAL POR WHATSAPP NO COMPUTADOR
+
+        O botão de convite está abrindo:
+
+        `https://api.whatsapp.com/send/...`
+
+        No Microsoft Edge isso retorna:
+
+        `ERR_BLOCKED_BY_RESPONSE`
+
+        Corrija o fluxo para abrir diretamente o WhatsApp Web quando o Admin estiver no computador.
+
+        REGRAS
+
+        - Nunca usar `api.whatsapp.com`.
+        - Em computador, usar:
+
+        `https://web.whatsapp.com/send?phone=[NUMERO]&text=[MENSAGEM_CODIFICADA]`
+
+        - Abrir esse link em nova aba, acionado diretamente pelo clique do Admin.
+        - O número deve continuar normalizado em formato internacional, somente dígitos, por exemplo `5561992910841`.
+        - A mensagem deve continuar personalizada com nome do promotor e link único de acesso.
+        - Não enviar automaticamente: o Admin revisa e toca no botão Enviar dentro do WhatsApp Web.
+        - Em celular, usar:
+
+        `https://wa.me/[NUMERO]?text=[MENSAGEM_CODIFICADA]`
+
+        - Não usar API do WhatsApp, automação de navegador ou envio automático.
+
+        FALLBACK
+
+        Se a abertura do WhatsApp Web for bloqueada ou falhar:
+
+        - exibir botão `Copiar mensagem de convite`;
+        - exibir botão `Copiar link de acesso`;
+        - mostrar orientação:
+          `Abra o WhatsApp Web, localize o promotor e cole a mensagem.`
+
+        TESTES
+
+        1. No Edge com WhatsApp Web já logado, clicar no convite abre a conversa do promotor.
+        2. A mensagem já vem preenchida.
+        3. O link não usa `api.whatsapp.com`.
+        4. Em celular, o link abre o aplicativo WhatsApp.
+        5. O fallback de cópia funciona.
+        6. Nenhum envio ocorre sem o clique final do Admin no WhatsApp.
+
+        Informe os arquivos alterados e o resultado dos seis testes.
+      </div>
+
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto space-y-8">
         <div className="space-y-4">
