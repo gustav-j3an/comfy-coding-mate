@@ -90,7 +90,7 @@ function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   // Form states
