@@ -151,17 +151,23 @@ function VisualizarPromotorPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="font-bold text-slate-600"
-            onClick={() => navigate({ to: '/admin/routes' })}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para Rotas e Roteiros
-          </Button>
-          <Badge className="bg-blue-100 text-blue-700 border-none px-3 py-1 font-bold">
-            MODO VISUALIZADOR ADMIN
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="font-bold text-slate-600 mb-2 pl-0 hover:bg-transparent"
+              onClick={() => navigate({ to: '/admin/routes' })}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" /> Voltar para Rotas e Roteiros
+            </Button>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <Eye className="h-7 w-7 text-blue-600" />
+              Visualizador de Roteiro
+            </h1>
+          </div>
+          <Badge className="bg-blue-600 text-white border-none px-3 py-1 font-bold shadow-sm shadow-blue-100">
+            MODO ADMIN
           </Badge>
         </div>
 
