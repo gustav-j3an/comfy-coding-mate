@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { useAuth } from '@/lib/auth/auth-context';
 
