@@ -47,7 +47,7 @@ function ImportModule() {
         errors: []
       };
 
-      sheets.forEach(sheetName => {
+      for (const sheetName of sheets) {
         const worksheet = workbook.Sheets[sheetName];
         if (!worksheet) continue;
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
@@ -63,7 +63,7 @@ function ImportModule() {
         } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA'].includes(sheetName)) {
           parsedData.ignoredSheets.push(sheetName);
         }
-      });
+      }
 
       setPreviewData(parsedData);
       toast.success('Arquivo processado com sucesso!');
