@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
 import { MapPin, LogIn, Download, Info } from 'lucide-react';
@@ -25,7 +25,14 @@ function Index() {
   }, [user, role, loading, navigate]);
 
   const handleLoginClick = () => {
-    navigate({ to: '/login' });
+    if (user) {
+      if (role === 'admin') navigate({ to: '/admin' });
+      else if (role === 'promoter') navigate({ to: '/promoter' });
+      else if (role === 'industry') navigate({ to: '/industry' });
+      else navigate({ to: '/login' });
+    } else {
+      navigate({ to: '/login' });
+    }
   };
 
   return (
@@ -48,11 +55,13 @@ function Index() {
 
         <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
           <Button 
-            onClick={handleLoginClick}
-            className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+            asChild
+            className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <LogIn className="h-5 w-5" />
-            Entrar no sistema
+            <Link to={user ? (role === 'admin' ? '/admin' : role === 'promoter' ? '/promoter' : '/industry') : '/login'}>
+              <LogIn className="h-5 w-5" />
+              Entrar no sistema
+            </Link>
           </Button>
           
           <Button 
