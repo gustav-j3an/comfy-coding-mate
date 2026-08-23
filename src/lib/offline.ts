@@ -1,10 +1,12 @@
-import { get, set, del } from 'idb-keyval';
-import { toast } from 'sonner';
+import { get, set, del, keys } from 'idb-keyval';
 
-// Keys for IndexedDB
-const VISITS_CACHE_KEY = 'cached_promoter_visits';
-const DRAFTS_PREFIX = 'visit_draft_';
-const SYNC_QUEUE_KEY = 'sync_queue';
+// Prefix system for user isolation
+const getUserPrefix = (userId: string) => `user_${userId}_`;
+
+// Key templates
+const getVisitsCacheKey = (userId: string) => `${getUserPrefix(userId)}cached_promoter_visits`;
+const getDraftKey = (userId: string, visitId: string) => `${getUserPrefix(userId)}visit_draft_${visitId}`;
+const getSyncQueueKey = (userId: string) => `${getUserPrefix(userId)}sync_queue`;
 
 export interface VisitDraft {
   visitId: string;
@@ -16,17 +18,17 @@ export interface VisitDraft {
   latitude?: number | null | undefined;
   longitude?: number | null | undefined;
   lastSaved: string;
-  status: 'pending' | 'syncing' | 'failed';
+  status: 'pending' | 'syncing' | 'failed' | 'awaiting_media';
   error?: string;
+  requiredEvidenceTypes?: string[]; // Types that must be present
 }
 
 /**
  * Caches the promoter's visits for offline viewing.
- * Rule: Only stores visits for the authenticated promoter.
  */
-export async function cachePromoterVisits(visits: any[]) {
+export async function cachePromoterVisits(userId: string, visits: any[]) {
   try {
-    await set(VISITS_CACHE_KEY, {
+    await set(getVisitsCacheKey(userId), {
       timestamp: new Date().toISOString(),
       data: visits
     });
@@ -35,50 +37,98 @@ export async function cachePromoterVisits(visits: any[]) {
   }
 }
 
-export async function getCachedVisits() {
-  const cached = await get(VISITS_CACHE_KEY);
+export async function getCachedVisits(userId: string) {
+  const cached = await get(getVisitsCacheKey(userId));
   return cached?.data || [];
 }
 
 /**
  * Saves a visit draft locally.
  */
-export async function saveVisitDraft(draft: Omit<VisitDraft, 'lastSaved' | 'status'>) {
+export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'lastSaved' | 'status'>) {
+  const currentDraft = await getVisitDraft(userId, draft.visitId);
+  
   const fullDraft: VisitDraft = {
     ...draft,
     lastSaved: new Date().toISOString(),
-    status: 'pending'
+    status: currentDraft?.status === 'awaiting_media' ? 'awaiting_media' : 'pending',
+    requiredEvidenceTypes: currentDraft?.requiredEvidenceTypes || ['reposicao'] // Default requirement
   };
   
-  await set(`${DRAFTS_PREFIX}${draft.visitId}`, fullDraft);
+  await set(getDraftKey(userId, draft.visitId), fullDraft);
   return fullDraft;
 }
 
-export async function getVisitDraft(visitId: string): Promise<VisitDraft | null> {
-  return await get(`${DRAFTS_PREFIX}${visitId}`) || null;
+export async function getVisitDraft(userId: string, visitId: string): Promise<VisitDraft | null> {
+  const draft = await get(getDraftKey(userId, visitId)) as VisitDraft | null;
+  
+  // Validate ownership
+  if (draft && draft.executorId !== userId) {
+    console.warn('Draft ownership mismatch detected and blocked.');
+    return null;
+  }
+  
+  return draft;
 }
 
-export async function deleteVisitDraft(visitId: string) {
-  await del(`${DRAFTS_PREFIX}${visitId}`);
+export async function deleteVisitDraft(userId: string, visitId: string) {
+  await del(getDraftKey(userId, visitId));
 }
 
 /**
  * Sync Queue Management
  */
-export async function addToSyncQueue(visitId: string) {
-  const queue = await get(SYNC_QUEUE_KEY) || [];
+export async function addToSyncQueue(userId: string, visitId: string) {
+  const key = getSyncQueueKey(userId);
+  const queue = await get(key) as string[] || [];
   if (!queue.includes(visitId)) {
-    await set(SYNC_QUEUE_KEY, [...queue, visitId]);
+    await set(key, [...queue, visitId]);
   }
 }
 
-export async function getSyncQueue(): Promise<string[]> {
-  return await get(SYNC_QUEUE_KEY) || [];
+export async function getSyncQueue(userId: string): Promise<string[]> {
+  return await get(getSyncQueueKey(userId)) as string[] || [];
 }
 
-export async function removeFromSyncQueue(visitId: string) {
-  const queue = await get(SYNC_QUEUE_KEY) || [];
-  await set(SYNC_QUEUE_KEY, queue.filter((id: string) => id !== visitId));
+export async function removeFromSyncQueue(userId: string, visitId: string) {
+  const key = getSyncQueueKey(userId);
+  const queue = await get(key) as string[] || [];
+  await set(key, queue.filter((id: string) => id !== visitId));
+}
+
+/**
+ * User data cleanup on logout
+ */
+export async function clearUserOfflineData(userId: string) {
+  const allKeys = await keys();
+  const userPrefix = getUserPrefix(userId);
+  
+  for (const key of allKeys) {
+    if (typeof key === 'string' && key.startsWith(userPrefix)) {
+      await del(key);
+    }
+  }
+}
+
+/**
+ * Security cleanup for orphaned data (older than 7 days)
+ */
+export async function cleanupExpiredOfflineData() {
+  const allKeys = await keys();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  for (const key of allKeys) {
+    if (typeof key === 'string' && (key.includes('visit_draft_') || key.includes('cached_promoter_visits'))) {
+      const data = await get(key);
+      if (data?.lastSaved || data?.timestamp) {
+        const date = new Date(data.lastSaved || data.timestamp);
+        if (date < sevenDaysAgo) {
+          await del(key);
+        }
+      }
+    }
+  }
 }
 
 /**
