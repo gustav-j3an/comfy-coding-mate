@@ -32,7 +32,8 @@ import {
   Loader2,
   CopyIcon,
   ExternalLink,
-  Info
+  Info,
+  Key
 } from 'lucide-react';
 import { 
   DropdownMenu, 
