@@ -153,7 +153,26 @@ export const resendInvite = createServerFn({ method: "POST" })
         redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
       });
 
-      if (recoveryError) throw recoveryError;
+      if (recoveryError) {
+        const rateLimited = /rate limit/i.test(recoveryError.message || '');
+        if (!rateLimited) throw recoveryError;
+
+        // Email quota reached: generate a link the admin can share manually (no e-mail sent).
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: 'recovery',
+          email: data.email,
+          options: { redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso` },
+        });
+
+        if (linkError) throw linkError;
+
+        return {
+          success: true,
+          mode: 'manual_link' as const,
+          actionLink: linkData?.properties?.action_link ?? null,
+          message: 'Limite de e-mails do Supabase atingido. Envie o link abaixo manualmente ao promotor.',
+        };
+      }
       mode = 'recovery';
     }
 
@@ -171,7 +190,8 @@ export const resendInvite = createServerFn({ method: "POST" })
       details: data
     });
     
-    return { success: true, mode };
+    return { success: true, mode, actionLink: null as string | null, message: null as string | null };
+
 
   });
 
