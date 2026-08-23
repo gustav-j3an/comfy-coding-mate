@@ -75,7 +75,7 @@ function VisitExecution() {
   // Restore draft on load
   useEffect(() => {
     async function restoreDraft() {
-      const draft = await getVisitDraft(visitId);
+      const draft = await getVisitDraft(user.id, visitId);
       if (draft && !isRestored) {
         setObservation(draft.observation || '');
         setEvidences(draft.evidences || []);
@@ -93,7 +93,7 @@ function VisitExecution() {
     if (!visitId || !user?.id) return;
     
     const saveTimer = setTimeout(async () => {
-      const draft = await saveVisitDraft({
+      const draft = await saveVisitDraft(user.id, {
         visitId,
         executorId: user.id,
         checkinAt: checkinTime,
@@ -200,7 +200,7 @@ function VisitExecution() {
     }
 
     if (!online) {
-      await addToSyncQueue(visitId);
+      await addToSyncQueue(user!.id, visitId);
       toast.warning("Sem conexão. Visita salva na fila para sincronização automática.");
       navigate({ to: '/promoter' });
       return;
@@ -222,14 +222,14 @@ function VisitExecution() {
         }
       });
 
-      await deleteVisitDraft(visitId);
-      await removeFromSyncQueue(visitId);
+      await deleteVisitDraft(user!.id, visitId);
+      await removeFromSyncQueue(user!.id, visitId);
       
       toast.success("Visita enviada para conferência administrativa.");
       navigate({ to: '/promoter' });
     } catch (error: any) {
       console.error("Submit error:", error);
-      await addToSyncQueue(visitId);
+      await addToSyncQueue(user!.id, visitId);
       toast.error("Erro ao enviar. O rascunho foi mantido na fila de sincronização.");
     } finally {
       setIsSubmitting(false);

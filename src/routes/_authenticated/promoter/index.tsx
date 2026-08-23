@@ -41,7 +41,9 @@ function PromoterDashboard() {
     window.addEventListener('offline', handleStatus);
     
     // Check sync queue
-    getSyncQueue().then(queue => setSyncQueueSize(queue.length));
+    if (user?.id) {
+      getSyncQueue(user.id).then(queue => setSyncQueueSize(queue.length));
+    }
 
     return () => {
       window.removeEventListener('online', handleStatus);
@@ -77,11 +79,11 @@ function PromoterDashboard() {
         if (error) throw error;
         
         // Update cache for offline use
-        await cachePromoterVisits(data || []);
+        await cachePromoterVisits(currentUserId, data || []);
         return data || [];
       } catch (err) {
         console.warn('Network error, loading from cache:', err);
-        return await getCachedVisits();
+        return await getCachedVisits(currentUserId);
       }
     }
   });
