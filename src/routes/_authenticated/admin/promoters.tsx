@@ -387,14 +387,14 @@ function PromotersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-64">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/routes' })}>
+                          <DropdownMenuItem onClick={() => (navigate as any)({ to: '/admin/routes' })}>
                             <MapPin className="mr-2 h-4 w-4" /> Ver Roteiro
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate({ to: '/admin/routes' })}>
+                          <DropdownMenuItem onClick={() => (navigate as any)({ to: '/admin/routes' })}>
                             <Plus className="mr-2 h-4 w-4" /> Criar Rota
                           </DropdownMenuItem>
                           {(!promoter.profiles || promoter.profiles.length === 0) && (
-                            <DropdownMenuItem onClick={() => navigate({ to: '/admin/users', search: { invite: 'promoter', id: promoter.id } })}>
+                            <DropdownMenuItem onClick={() => (navigate as any)({ to: '/admin/users', search: { invite: 'promoter', id: promoter.id } })}>
                               <UserPlus className="mr-2 h-4 w-4 text-blue-600" /> 
                               <span className="text-blue-600 font-bold">Convidar para acesso</span>
                             </DropdownMenuItem>
