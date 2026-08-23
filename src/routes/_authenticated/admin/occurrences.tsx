@@ -112,15 +112,16 @@ function OccurrencesPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-bold text-slate-700">Tipo / Severidade</TableHead>
-                <TableHead className="font-bold text-slate-700">Loja / Indústria</TableHead>
-                <TableHead className="font-bold text-slate-700">Data</TableHead>
-                <TableHead className="font-bold text-slate-700">Status</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Tipo / Severidade</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Loja / Indústria</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Data</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Status</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -133,13 +134,13 @@ function OccurrencesPage() {
               ) : (
                 filtered.map((occ) => (
                   <TableRow key={occ.id} className="hover:bg-slate-50 transition-colors">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex flex-col gap-1">
                         <span className="font-bold text-slate-900">{occ.type}</span>
                         {getSeverityBadge(occ.severity)}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="flex items-center gap-1 text-sm font-bold text-slate-700">
                           <MapPin className="w-3 h-3 text-slate-400" />
@@ -151,17 +152,18 @@ function OccurrencesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-slate-500 font-bold uppercase">
+                    <TableCell className="text-xs text-slate-500 font-bold uppercase whitespace-nowrap">
                       {occ.created_at ? format(new Date(occ.created_at), "dd MMM, HH:mm", { locale: ptBR }) : '—'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {getStatusBadge(occ.status)}
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
     </div>
