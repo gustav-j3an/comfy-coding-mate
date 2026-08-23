@@ -161,7 +161,7 @@ function ReportsPage() {
               </Button>
             </DialogTrigger>
 
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Gerar Novo Relatório</DialogTitle>
             </DialogHeader>
