@@ -79,20 +79,17 @@ export const executeImport = createServerFn({ method: "POST" })
 
       // --- IMPORT PROMOTERS ---
       for (const p of data.promoters) {
-        let existing = null;
-        if (p.matricula) {
-          const { data: byMat } = await supabaseAdmin.from('promoters').select('id').eq('registration_number', p.matricula).maybeSingle();
-          existing = byMat;
-        }
+        // Since 'registration_number' doesn't exist in type Row, we use the correct fields
+        // We'll check by name for now as the schema seems to have region/phone/email
+        const { data: existing } = await supabaseAdmin.from('promoters').select('id').eq('name', p.nome).maybeSingle();
         
         if (!existing) {
           const { data: created, error } = await supabaseAdmin.from('promoters').insert({
             name: p.nome,
-            registration_number: p.matricula || null,
-            uf: p.uf || null,
-            city: p.cidade || null,
-            contact: p.contato || null,
-            observation: p.observacao || null
+            region: p.uf || null,
+            phone: p.contato || null,
+            observation: p.observacao || null,
+            active: true
           }).select('id').single();
           
           if (error) results.errors.push(`Erro ao criar promotor ${p.nome}: ${error.message}`);
@@ -124,18 +121,18 @@ export const executeImport = createServerFn({ method: "POST" })
 
       // --- IMPORT STORES ---
       for (const s of data.stores) {
-        // Combination: REDE + LOJA + UF
+        // Combination: LOJA + REDE + UF (using address to store some info if needed, but schema has city/state)
         const { data: existing } = await supabaseAdmin.from('stores')
           .select('id')
           .eq('name', s.loja)
-          .eq('uf', s.uf || '')
           .maybeSingle();
 
         if (!existing) {
           const { data: created, error } = await supabaseAdmin.from('stores').insert({
             name: s.loja,
-            network: s.rede || null,
-            uf: s.uf || null
+            address: s.rede || 'Não informado',
+            state: s.uf || null,
+            active: true
           }).select('id').single();
           
           if (error) results.errors.push(`Erro ao criar loja ${s.loja}: ${error.message}`);
@@ -169,7 +166,7 @@ export const executeImport = createServerFn({ method: "POST" })
           name: `Importação Excel — ${stops[0].promotor}`,
           promoter_id: promoterId,
           valid_from: data.validFrom,
-          status: 'draft' as any,
+          status: 'draft',
           active: false,
           created_by: userId,
           version: 1
@@ -198,10 +195,11 @@ export const executeImport = createServerFn({ method: "POST" })
           
           for (const [day, active] of Object.entries(stop.dias)) {
             if (active) {
+              const dayOfWeek = daysMap[day as keyof typeof daysMap];
               const { data: routeStop, error: rsError } = await supabaseAdmin.from('route_stops').insert({
                 route_id: route.id,
                 store_id: storeId,
-                day_of_week: daysMap[day],
+                day_of_week: dayOfWeek,
                 visit_order: i + 1,
                 frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
                 biweekly_start_date: data.validFrom
