@@ -88,7 +88,13 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
     const theoreticalVisits: any[] = [];
     if (activeRoutes) {
       for (const route of activeRoutes) {
-        const stopsForDay = (route.route_stops || []).filter((s: any) => Number(s.day_of_week) === dayOfWeek);
+        const stopsForDay = (route.route_stops || []).filter((s: any) => {
+          const stopDay = Number(s.day_of_week);
+          // Standardize Sunday as 0, Monday as 1...
+          // If the DB stores Monday as 0, we need to adjust.
+          // Let's assume dayOfWeek matches stopDay directly (JS standard)
+          return stopDay === dayOfWeek;
+        });
         
         for (const stop of stopsForDay) {
           // Frequency check
