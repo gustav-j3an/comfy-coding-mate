@@ -62,7 +62,7 @@ Na função server-side de convite/reenvio:
 
 Verifique o template de convite/confirmação:
 
-- ele deve usar a URL de confirmação fornecida pelo Supabase, como `{{ .ConfirmationURL }}`;
+- ele deve usar a URL de confirmação fornecida pelo Supabase, como {"{{ .ConfirmationURL }}"};
 - não pode conter texto ou link fixo para `localhost`;
 - não pode sobrescrever o destino correto com URL estática.
 
