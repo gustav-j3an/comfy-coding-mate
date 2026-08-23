@@ -121,6 +121,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearUserOfflineData(user.id);
     }
     
+    // Mission 15: Clear preview context on logout
+    setPreviewPromoter(null);
+    
     localStorage.removeItem('sb-' + (import.meta.env['VITE_SUPABASE_URL']?.split('.')[0].split('//')[1] || '') + '-auth-token');
     sessionStorage.clear();
     
