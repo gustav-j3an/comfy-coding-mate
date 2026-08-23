@@ -196,21 +196,110 @@ function ImportModule() {
                 </Card>
                 <Card>
                   <CardHeader><CardTitle className="text-sm text-slate-500">Linhas de Roteiro</CardTitle></CardHeader>
-                  <CardContent><p className="text-2xl font-black">{previewData.routes.reduce((acc: number, r: any) => acc + r.data.length, 0)}</p></CardContent>
+                  <CardContent><p className="text-2xl font-black">{previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0)}</p></CardContent>
                 </Card>
               </div>
+              
+              <div className="mt-6 space-y-4">
+                <Card>
+                  <CardHeader><CardTitle className="text-sm">Abas Identificadas</CardTitle></CardHeader>
+                  <CardContent className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700">PROMOTORES</Badge>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">LOJAS</Badge>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">INDUSTRIA</Badge>
+                    {previewData.routes.map((r: any) => (
+                      <Badge key={r.sheetName} variant="outline" className="bg-blue-50 text-blue-700">{r.sheetName}</Badge>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {previewData.ignoredSheets.length > 0 && (
+                  <Card>
+                    <CardHeader><CardTitle className="text-sm">Abas Ignoradas</CardTitle></CardHeader>
+                    <CardContent className="flex flex-wrap gap-2">
+                      {previewData.ignoredSheets.map((s: string) => (
+                        <Badge key={s} variant="outline" className="bg-slate-100 text-slate-500">{s}</Badge>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
+
             <TabsContent value="previa">
               <Card>
-                <CardContent className="p-4">
-                  <p className="text-slate-500 italic text-sm">Prévia dos dados normalizados será exibida aqui.</p>
+                <CardHeader>
+                  <CardTitle className="text-lg">Dados Normalizados</CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-slate-500">
+                        <th className="text-left py-2 px-4">Indústria</th>
+                        <th className="text-left py-2 px-4">Loja</th>
+                        <th className="text-left py-2 px-4">Promotor</th>
+                        <th className="text-left py-2 px-4">Freq</th>
+                        <th className="text-center py-2 px-4">S</th>
+                        <th className="text-center py-2 px-4">T</th>
+                        <th className="text-center py-2 px-4">Q</th>
+                        <th className="text-center py-2 px-4">Q</th>
+                        <th className="text-center py-2 px-4">S</th>
+                        <th className="text-center py-2 px-4">S</th>
+                        <th className="text-center py-2 px-4">D</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.routes.flatMap((rs: any) => rs.stops.slice(0, 20)).map((stop: any, i: number) => (
+                        <tr key={i} className="border-b hover:bg-slate-50">
+                          <td className="py-2 px-4">{stop.industria}</td>
+                          <td className="py-2 px-4">{stop.loja}</td>
+                          <td className="py-2 px-4">{stop.promotor}</td>
+                          <td className="py-2 px-4 font-bold text-[10px]">{stop.frequencia}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.seg ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.ter ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.qua ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.qui ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.sex ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.sab ? '✓' : ''}</td>
+                          <td className="text-center py-2 px-4">{stop.dias.dom ? '✓' : ''}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {previewData.routes.reduce((acc: number, r: any) => acc + r.stops.length, 0) > 20 && (
+                    <p className="mt-4 text-slate-500 italic text-xs text-center">Exibindo apenas as primeiras 20 linhas de roteiro.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
+
             <TabsContent value="inconsistencias">
               <Card>
-                <CardContent className="p-4">
-                  <p className="text-slate-500 italic text-sm">Lista de inconsistências será exibida aqui.</p>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-500" />
+                    Inconsistências Detectadas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {previewData.inconsistencies.length > 0 ? (
+                    <div className="space-y-3">
+                      {previewData.inconsistencies.map((err: any, i: number) => (
+                        <div key={i} className="p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
+                          <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                          <div>
+                            <p className="text-xs font-black text-amber-900 uppercase tracking-tighter">{err.type}</p>
+                            <p className="text-sm text-amber-800">{err.detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-10 text-center text-slate-400">
+                      <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                      <p>Nenhuma inconsistência detectada!</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
