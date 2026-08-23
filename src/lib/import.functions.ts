@@ -43,9 +43,274 @@ const RouteSchema = z.object({
   stops: z.array(RouteStopSchema),
 });
 
-// Chunks for batch processing
-const BATCH_SIZE = 50;
+export const getImportBatchStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ batchId: z.string() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: batch, error } = await supabaseAdmin
+      .from('import_batches' as any)
+      .select('*')
+      .eq('id', data.batchId)
+      .maybeSingle();
+    
+    if (error) throw error;
+    return batch;
+  });
 
+export const startImportBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    batchId: z.string(),
+    validFrom: z.string(),
+    summary: z.any()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    const { data: existing } = await supabaseAdmin
+      .from('import_batches' as any)
+      .select('status')
+      .eq('id', data.batchId)
+      .maybeSingle();
+
+    if (existing) return { success: true, status: existing.status };
+
+    const { error } = await supabaseAdmin
+      .from('import_batches' as any)
+      .insert({
+        id: data.batchId,
+        admin_id: userId,
+        valid_from: data.validFrom,
+        status: 'processing',
+        summary: data.summary,
+        step: 'industries',
+        processed_count: 0
+      });
+
+    if (error) throw error;
+    return { success: true, status: 'processing' };
+  });
+
+export const processImportStep = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    batchId: z.string(),
+    step: z.enum(['industries', 'stores', 'promoters', 'routes', 'stops']),
+    items: z.array(z.any()),
+    validFrom: z.string().optional()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Verify batch status
+    const { data: batch } = await supabaseAdmin
+      .from('import_batches' as any)
+      .select('*')
+      .eq('id', data.batchId)
+      .single();
+
+    if (!batch || batch.status !== 'processing') {
+      throw new Error("Lote não está em processamento.");
+    }
+
+    const results: any = { created: 0, updated: 0, ignored: 0, errors: [] };
+
+    try {
+      if (data.step === 'industries') {
+        for (const ind of data.items) {
+          const { data: existing } = await supabaseAdmin.from('industries').select('id').eq('name', ind.nome).maybeSingle();
+          if (!existing) {
+            const { error } = await supabaseAdmin.from('industries').insert({ name: ind.nome });
+            if (error) results.errors.push(`Indústria ${ind.nome}: ${error.message}`);
+            else results.created++;
+          } else {
+            results.ignored++;
+          }
+        }
+      } else if (data.step === 'stores') {
+        for (const s of data.items) {
+          const { data: existing } = await supabaseAdmin.from('stores').select('id').eq('name', s.loja).maybeSingle();
+          if (!existing) {
+            const { error } = await supabaseAdmin.from('stores').insert({
+              name: s.loja,
+              address: s.rede || 'Não informado',
+              state: s.uf || null,
+              active: true
+            });
+            if (error) results.errors.push(`Loja ${s.loja}: ${error.message}`);
+            else results.created++;
+          } else {
+            results.ignored++;
+          }
+        }
+      } else if (data.step === 'promoters') {
+        for (const p of data.items) {
+          const { data: existing } = await supabaseAdmin.from('promoters').select('id').eq('name', p.nome).maybeSingle();
+          if (!existing) {
+            const { error } = await supabaseAdmin.from('promoters').insert({
+              name: p.nome,
+              region: p.uf || null,
+              phone: p.contato || null,
+              observation: p.observacao || null,
+              active: true
+            });
+            if (error) results.errors.push(`Promotor ${p.nome}: ${error.message}`);
+            else results.created++;
+          } else {
+            results.ignored++;
+          }
+        }
+      } else if (data.step === 'routes') {
+        // Items here are sheet objects with stops
+        for (const sheet of data.items) {
+          const pName = sheet.stops[0]?.promotor;
+          if (!pName) continue;
+
+          const { data: promoter } = await supabaseAdmin.from('promoters').select('id').eq('name', pName).single();
+          if (!promoter) {
+            results.errors.push(`Promotor ${pName} não encontrado para roteiro.`);
+            continue;
+          }
+
+          const routeName = `Importação Excel — ${pName}`;
+          const { data: existing } = await supabaseAdmin.from('routes')
+            .select('id')
+            .eq('promoter_id', promoter.id)
+            .eq('status', 'draft')
+            .eq('name', routeName)
+            .maybeSingle();
+
+          if (!existing) {
+            const { error } = await supabaseAdmin.from('routes').insert({
+              name: routeName,
+              promoter_id: promoter.id,
+              valid_from: data.validFrom || batch.valid_from,
+              status: 'draft',
+              active: false,
+              created_by: userId,
+              version: 1
+            });
+            if (error) results.errors.push(`Roteiro ${pName}: ${error.message}`);
+            else results.created++;
+          } else {
+            results.ignored++;
+          }
+        }
+      } else if (data.step === 'stops') {
+        const daysMap: Record<string, number> = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 0 };
+        
+        for (const stop of data.items) {
+          const { data: promoter } = await supabaseAdmin.from('promoters').select('id').eq('name', stop.promotor).single();
+          const { data: store } = await supabaseAdmin.from('stores').select('id').eq('name', stop.loja).single();
+          const { data: industry } = await supabaseAdmin.from('industries').select('id').eq('name', stop.industria).single();
+
+          if (!promoter || !store || !industry) {
+            results.errors.push(`Referências ausentes para parada: ${stop.loja} / ${stop.promotor}`);
+            continue;
+          }
+
+          const routeName = `Importação Excel — ${stop.promotor}`;
+          const { data: route } = await supabaseAdmin.from('routes')
+            .select('id')
+            .eq('promoter_id', promoter.id)
+            .eq('status', 'draft')
+            .eq('name', routeName)
+            .single();
+
+          for (const [day, active] of Object.entries(stop.dias)) {
+            if (active) {
+              const dayOfWeek = daysMap[day as keyof typeof daysMap]!;
+              const { data: existingStop } = await supabaseAdmin.from('route_stops')
+                .select('id')
+                .eq('route_id', route.id)
+                .eq('store_id', store.id)
+                .eq('day_of_week', dayOfWeek)
+                .maybeSingle();
+
+              if (!existingStop) {
+                const { data: newStop, error } = await supabaseAdmin.from('route_stops').insert({
+                  route_id: route.id,
+                  store_id: store.id,
+                  day_of_week: dayOfWeek,
+                  visit_order: 1,
+                  frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
+                  biweekly_start_date: data.validFrom || batch.valid_from
+                }).select('id').single();
+
+                if (error) results.errors.push(`Parada ${stop.loja}: ${error.message}`);
+                else {
+                  results.created++;
+                  await supabaseAdmin.from('stop_tasks').insert({
+                    stop_id: newStop.id,
+                    industry_id: industry.id
+                  });
+                }
+              } else {
+                results.ignored++;
+              }
+            }
+          }
+        }
+      }
+
+      // Update batch progress
+      await supabaseAdmin
+        .from('import_batches' as any)
+        .update({
+          processed_count: batch.processed_count + data.items.length,
+          last_error: results.errors.length > 0 ? results.errors[0] : batch.last_error
+        })
+        .eq('id', data.batchId);
+
+      return { success: true, results };
+    } catch (err: any) {
+      await supabaseAdmin
+        .from('import_batches' as any)
+        .update({ status: 'failed', last_error: err.message })
+        .eq('id', data.batchId);
+      throw err;
+    }
+  });
+
+export const finishImportBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ batchId: z.string(), results: z.any() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    await supabaseAdmin
+      .from('import_batches' as any)
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('id', data.batchId);
+
+    await recordAudit({
+      userId,
+      action: 'import_operational_base',
+      module: 'admin',
+      summary: `Lote ${data.batchId} concluído com sucesso.`,
+      details: data.results
+    });
+
+    return { success: true };
+  });
+
+export const failImportBatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ batchId: z.string(), error: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from('import_batches' as any)
+      .update({ status: 'failed', last_error: data.error })
+      .eq('id', data.batchId);
+    return { success: true };
+  });
+
+// Kept for backward compatibility but calls new logic internally or is replaced
 export const executeImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
@@ -57,196 +322,6 @@ export const executeImport = createServerFn({ method: "POST" })
     routes: z.array(RouteSchema),
   }).parse(data))
   .handler(async ({ data, context }) => {
-    const { userId } = context as any;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin'
-    });
-    if (!hasRole) throw new Error("Não autorizado.");
-
-    const results = {
-      promoters: { created: 0, updated: 0, ignored: 0 },
-      stores: { created: 0, updated: 0, ignored: 0 },
-      industries: { created: 0, updated: 0, ignored: 0 },
-      routes: { created: 0, ignored: 0 },
-      stops: { created: 0 },
-      errors: [] as string[]
-    };
-
-    try {
-      const promoterMap = new Map<string, string>();
-      const storeMap = new Map<string, string>();
-      const industryMap = new Map<string, string>();
-
-      // 1. INDUSTRIES (Batch)
-      for (let i = 0; i < data.industries.length; i += BATCH_SIZE) {
-        const chunk = data.industries.slice(i, i + BATCH_SIZE);
-        for (const ind of chunk) {
-          const { data: existing } = await supabaseAdmin.from('industries').select('id').eq('name', ind.nome).maybeSingle();
-          if (!existing) {
-            const { data: created, error } = await supabaseAdmin.from('industries').insert({ name: ind.nome }).select('id').single();
-            if (error) results.errors.push(`Erro Indústria ${ind.nome}: ${error.message}`);
-            else {
-              results.industries.created++;
-              industryMap.set(ind.nome.toLowerCase(), created.id);
-            }
-          } else {
-            results.industries.ignored++;
-            industryMap.set(ind.nome.toLowerCase(), existing.id);
-          }
-        }
-      }
-
-      // 2. STORES (Batch)
-      for (let i = 0; i < data.stores.length; i += BATCH_SIZE) {
-        const chunk = data.stores.slice(i, i + BATCH_SIZE);
-        for (const s of chunk) {
-          const { data: existing } = await supabaseAdmin.from('stores').select('id').eq('name', s.loja).maybeSingle();
-          if (!existing) {
-            const { data: created, error } = await supabaseAdmin.from('stores').insert({
-              name: s.loja,
-              address: s.rede || 'Não informado',
-              state: s.uf || null,
-              active: true
-            }).select('id').single();
-            if (error) results.errors.push(`Erro Loja ${s.loja}: ${error.message}`);
-            else {
-              results.stores.created++;
-              storeMap.set(s.loja.toLowerCase(), created.id);
-            }
-          } else {
-            results.stores.ignored++;
-            storeMap.set(s.loja.toLowerCase(), existing.id);
-          }
-        }
-      }
-
-      // 3. PROMOTERS (Batch)
-      for (let i = 0; i < data.promoters.length; i += BATCH_SIZE) {
-        const chunk = data.promoters.slice(i, i + BATCH_SIZE);
-        for (const p of chunk) {
-          const { data: existing } = await supabaseAdmin.from('promoters').select('id').eq('name', p.nome).maybeSingle();
-          if (!existing) {
-            const { data: created, error } = await supabaseAdmin.from('promoters').insert({
-              name: p.nome,
-              region: p.uf || null,
-              phone: p.contato || null,
-              observation: p.observacao || null,
-              active: true
-            }).select('id').single();
-            if (error) results.errors.push(`Erro Promotor ${p.nome}: ${error.message}`);
-            else {
-              results.promoters.created++;
-              promoterMap.set(p.nome.toLowerCase(), created.id);
-            }
-          } else {
-            results.promoters.ignored++;
-            promoterMap.set(p.nome.toLowerCase(), existing.id);
-          }
-        }
-      }
-
-      // 4. ROUTES & STOPS (Group by Promoter correctly)
-      const promoterStops = new Map<string, any[]>();
-      data.routes.forEach(sheet => {
-        sheet.stops.forEach(stop => {
-          const pKey = stop.promotor.toLowerCase();
-          if (!promoterStops.has(pKey)) promoterStops.set(pKey, []);
-          promoterStops.get(pKey)!.push(stop);
-        });
-      });
-
-      for (const [pName, stops] of promoterStops.entries()) {
-        const promoterId = promoterMap.get(pName);
-        if (!promoterId) continue;
-
-        // Check for existing DRAFT route for this promoter to ensure idempotency
-        const routeName = `Importação Excel — ${stops[0].promotor}`;
-        let { data: route } = await supabaseAdmin.from('routes')
-          .select('id')
-          .eq('promoter_id', promoterId)
-          .eq('status', 'draft')
-          .eq('name', routeName)
-          .maybeSingle();
-
-        if (!route) {
-          const { data: newRoute, error: rError } = await supabaseAdmin.from('routes').insert({
-            name: routeName,
-            promoter_id: promoterId,
-            valid_from: data.validFrom,
-            status: 'draft',
-            active: false,
-            created_by: userId,
-            version: 1
-          }).select('id').single();
-
-          if (rError) {
-            results.errors.push(`Erro Roteiro ${stops[0].promotor}: ${rError.message}`);
-            continue;
-          }
-          route = newRoute;
-          results.routes.created++;
-        } else {
-          results.routes.ignored++;
-        }
-
-        // Process Stops (Idempotent check within the route)
-        const daysMap: Record<string, number> = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 0 };
-        
-        for (let i = 0; i < stops.length; i++) {
-          const stop = stops[i];
-          const storeId = storeMap.get(stop.loja.toLowerCase());
-          const indId = industryMap.get(stop.industria.toLowerCase());
-
-          if (!storeId || !indId) continue;
-
-          for (const [day, active] of Object.entries(stop.dias)) {
-            if (active) {
-              const dayOfWeek = daysMap[day as keyof typeof daysMap]!;
-              
-              // Check if stop already exists in this route
-              const { data: existingStop } = await supabaseAdmin.from('route_stops')
-                .select('id')
-                .eq('route_id', route.id)
-                .eq('store_id', storeId)
-                .eq('day_of_week', dayOfWeek)
-                .maybeSingle();
-
-              if (!existingStop) {
-                const { data: newStop, error: rsError } = await supabaseAdmin.from('route_stops').insert({
-                  route_id: route.id,
-                  store_id: storeId,
-                  day_of_week: dayOfWeek,
-                  visit_order: i + 1,
-                  frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
-                  biweekly_start_date: data.validFrom
-                }).select('id').single();
-
-                if (!rsError) {
-                  results.stops.created++;
-                  await supabaseAdmin.from('stop_tasks').insert({
-                    stop_id: newStop.id,
-                    industry_id: indId
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      await recordAudit({
-        userId,
-        action: 'import_operational_base',
-        module: 'admin',
-        summary: `Importação ${data.importBatchId} concluída.`,
-        details: results
-      });
-
-      return { success: true, results };
-    } catch (err: any) {
-      return { success: false, error: err.message, results };
-    }
+    // This is now a wrapper or can be removed if frontend is updated
+    throw new Error("Use a nova arquitetura de importação em lotes.");
   });
