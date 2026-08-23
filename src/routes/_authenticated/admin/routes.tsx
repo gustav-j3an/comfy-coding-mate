@@ -141,7 +141,7 @@ function RoutesPage() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao duplicar: " + error.message);
+      toast.error("Erro ao duplicar: " + (error.message || "Erro desconhecido"));
     }
   };
 
@@ -149,23 +149,24 @@ function RoutesPage() {
     try {
       const res = await toggleRouteActive({ data: { routeId, active: !currentActive } });
       if (res.success) {
-        toast.success(currentActive ? "Roteiro pausado" : "Roteiro reativado");
+        toast.success(currentActive ? "Roteiro pausado com sucesso" : "Roteiro reativado com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro: " + error.message);
+      toast.error("Erro ao alterar status: " + (error.message || "Erro desconhecido"));
     }
   };
 
   const handleArchive = async (routeId: string) => {
+    if (!confirm("Tem certeza que deseja arquivar este roteiro? Ele não aparecerá mais na listagem ativa.")) return;
     try {
       const res = await archiveRoute({ data: { routeId } });
       if (res.success) {
-        toast.success("Roteiro arquivado");
+        toast.success("Roteiro arquivado com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao arquivar: " + error.message);
+      toast.error("Erro ao arquivar: " + (error.message || "Erro desconhecido"));
     }
   };
 
@@ -174,16 +175,17 @@ function RoutesPage() {
     try {
       const res = await deleteRouteSafely({ data: { routeId: routeToDelete } });
       if (res.success) {
-        toast.success("Roteiro excluído");
+        toast.success("Roteiro excluído com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao excluir: " + error.message);
+      toast.error("Erro ao excluir: " + (error.message || "Tente arquivar em vez de excluir."));
     } finally {
       setDeleteConfirmOpen(false);
       setRouteToDelete(null);
     }
   };
+
 
 
   return (
