@@ -33,6 +33,7 @@ function VisualizarPromotorPage() {
   const { promoterId } = Route.useSearch() as { promoterId: string };
   const { role } = useAuth();
   const navigate = useNavigate();
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
 
   const fetchItineraryData = useServerFn(getPromoterItineraryData);
 
@@ -62,6 +63,63 @@ function VisualizarPromotorPage() {
 
   const isLoading = promoterLoading || routesLoading;
   const error = promoterError || routesError;
+
+  const agendaStops = useMemo(() => {
+    if (!routes) return [];
+
+    const today = startOfDay(new Date());
+    
+    // 1. Filtrar roteiros válidos (publicados, ativos e dentro da vigência)
+    const activeRoutes = routes.filter((r: any) => {
+      const isPublished = r.status === 'published';
+      const isActive = r.active !== false;
+      const isValidFrom = r.valid_from ? !isBefore(today, startOfDay(parseISO(r.valid_from))) : true;
+      return isPublished && isActive && isValidFrom;
+    });
+
+    const stops: any[] = [];
+
+    activeRoutes.forEach((route: any) => {
+      const routeStops = route.route_stops || [];
+      
+      routeStops.forEach((stop: any) => {
+        // Filtrar pelo dia da semana
+        if (stop.day_of_week !== selectedDay) return;
+
+        // Lógica de frequência
+        let shouldShow = true;
+        if (stop.frequency === 'biweekly') {
+          const refDate = stop.biweekly_start_date 
+            ? parseISO(stop.biweekly_start_date) 
+            : (route.valid_from ? parseISO(route.valid_from) : today);
+          
+          const weeksDiff = Math.abs(differenceInCalendarWeeks(today, startOfWeek(refDate)));
+          shouldShow = weeksDiff % 2 === 0;
+        }
+
+        if (shouldShow) {
+          stops.push({
+            ...stop,
+            routeName: route.name
+          });
+        }
+      });
+    });
+
+    // Ordenar por visit_order
+    return stops.sort((a, b) => (a.visit_order || 0) - (b.visit_order || 0));
+  }, [routes, selectedDay]);
+
+  const daysConfig = [
+    { label: 'DOM', value: 0 },
+    { label: 'SEG', value: 1 },
+    { label: 'TER', value: 2 },
+    { label: 'QUA', value: 3 },
+    { label: 'QUI', value: 4 },
+    { label: 'SEX', value: 5 },
+    { label: 'SÁB', value: 6 },
+  ];
+
 
 
   if (role !== 'admin') {
