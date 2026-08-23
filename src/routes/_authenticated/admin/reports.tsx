@@ -231,7 +231,7 @@ function ReportsPage() {
     </header>
 
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
             <div className="relative w-full sm:w-72">
@@ -244,7 +244,8 @@ function ReportsPage() {
               />
             </div>
           </div>
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="font-bold text-slate-700">Indústria</TableHead>
@@ -326,7 +327,8 @@ function ReportsPage() {
               )}
 
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
     </div>
