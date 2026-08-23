@@ -210,16 +210,15 @@ export const archiveRoute = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (!userId) throw new Error("Não autorizado");
+    if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
-    // AUTH REINFORCEMENT
-    const { data: userRole } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
+    // AUTH REINFORCEMENT: Use security definer function if possible, or direct check
+    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
 
-    if (userRole?.role !== 'admin') {
+    if (!hasRole) {
       throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
     }
 
@@ -249,16 +248,14 @@ export const toggleRouteActive = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (!userId) throw new Error("Não autorizado");
+    if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
-    // AUTH REINFORCEMENT
-    const { data: userRole } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
+    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
 
-    if (userRole?.role !== 'admin') {
+    if (!hasRole) {
       throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
     }
 
@@ -286,29 +283,29 @@ export const deleteRouteSafely = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (!userId) throw new Error("Não autorizado");
+    if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
-    // AUTH REINFORCEMENT
-    const { data: userRole } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
+    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
 
-    if (userRole?.role !== 'admin') {
+    if (!hasRole) {
       throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
     }
 
-    // 1. Check if route has executed visits or billing items
-    const { data: executedVisits } = await supabaseAdmin
+    // 1. Check if route has executed visits
+    const { data: executedVisits, error: visitError } = await supabaseAdmin
       .from('visits')
       .select('id')
       .eq('route_id' as any, routeId)
       .neq('status', 'planned' as any)
       .limit(1);
 
+    if (visitError) throw visitError;
+
     if (executedVisits && executedVisits.length > 0) {
-      throw new Error("Não é possível excluir: Esta rota já possui visitas executadas.");
+      throw new Error("Esta rota possui histórico de visitas executadas e não pode ser excluída. Tente arquivá-la.");
     }
 
     // 2. Delete route (cascading will handle stops and stop_tasks)
@@ -333,16 +330,14 @@ export const duplicateRoute = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (!userId) throw new Error("Não autorizado");
+    if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
-    // AUTH REINFORCEMENT
-    const { data: userRole } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
+    const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
 
-    if (userRole?.role !== 'admin') {
+    if (!hasRole) {
       throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
     }
 
@@ -359,7 +354,7 @@ export const duplicateRoute = createServerFn({ method: "POST" })
       .eq('id', routeId)
       .single();
 
-    if (routeError || !route) throw new Error("Rota não encontrada");
+    if (routeError || !route) throw new Error("Rota original não encontrada.");
 
     // 2. Create new route
     const { data: newRoute, error: newRouteError } = await supabaseAdmin
@@ -395,7 +390,10 @@ export const duplicateRoute = createServerFn({ method: "POST" })
         .select()
         .single();
       
-      if (stopError || !newStop) throw stopError;
+      if (stopError || !newStop) {
+        // Cleanup if possible or just throw
+        throw stopError || new Error("Erro ao duplicar parada.");
+      }
 
       if (stop.stop_tasks && stop.stop_tasks.length > 0) {
         const tasks = stop.stop_tasks.map((task: any) => ({
@@ -408,3 +406,4 @@ export const duplicateRoute = createServerFn({ method: "POST" })
 
     return { success: true, newRouteId: newRoute.id };
   });
+
