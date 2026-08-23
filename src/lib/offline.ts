@@ -13,8 +13,8 @@ export interface VisitDraft {
   observation: string;
   evidences: any[];
   occurrences: any[];
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   lastSaved: string;
   status: 'pending' | 'syncing' | 'failed';
   error?: string;
