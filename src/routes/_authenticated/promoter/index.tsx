@@ -60,6 +60,32 @@ function PromoterDashboard() {
       if (!effectiveUserId) return [];
       
       try {
+        // AUTH REINFORCEMENT: If accessing another promoter's data, verify admin role
+        if (previewPromoter?.id) {
+          const { data: roleCheck } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', currentUserId as any)
+            .single();
+          
+          if (roleCheck?.role !== 'admin') {
+            toast.error("Acesso negado: Apenas administradores podem visualizar dados de outros promotores.");
+            return [];
+          }
+          
+          // MISSION 15: Validate that the preview promoter exists
+          const { data: promoterExists } = await supabase
+            .from('promoters')
+            .select('id')
+            .eq('id', previewPromoter.id)
+            .maybeSingle();
+            
+          if (!promoterExists) {
+            toast.error("Erro: Promotor selecionado não encontrado.");
+            return [];
+          }
+        }
+
         let query = supabase
           .from('visits')
           .select(`

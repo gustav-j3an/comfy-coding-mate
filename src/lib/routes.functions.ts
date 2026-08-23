@@ -10,9 +10,23 @@ export const publishRoute = createServerFn({ method: "POST" })
     routeId: z.string(),
     summary: z.string().optional()
   }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { routeId, summary } = data;
+    const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
+    }
 
     // 1. Fetch route with stops and tasks
     const { data: route, error: routeError } = await supabaseAdmin
