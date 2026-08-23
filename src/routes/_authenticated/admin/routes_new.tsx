@@ -165,7 +165,8 @@ function RouteEditorPage() {
           valid_from: validFrom,
           active: publish,
           status: (publish ? 'published' : 'draft') as any,
-          version: 1
+          version: 1,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
         .single();
