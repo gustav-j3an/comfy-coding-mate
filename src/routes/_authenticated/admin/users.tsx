@@ -143,16 +143,30 @@ function UserManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch profiles
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles (role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (profileError) throw profileError;
-      setUsers(profiles || []);
+
+      // Fetch all roles separately to avoid relationship requirement in schema cache
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Map roles to profiles
+      const enrichedProfiles = (profiles || []).map(profile => ({
+        ...profile,
+        user_roles: (rolesData || [])
+          .filter(r => r.user_id === profile.id)
+          .map(r => ({ role: r.role }))
+      }));
+
+      setUsers(enrichedProfiles);
 
       const { data: promotersData } = await supabase.from('promoters').select('*').eq('active', true);
       setPromoters(promotersData || []);
@@ -324,9 +338,14 @@ function UserManagement() {
                       <SelectValue placeholder="Selecione o promotor" />
                     </SelectTrigger>
                     <SelectContent>
-                      {promoters.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
+                      {promoters
+                        .filter(p => !users.some(u => u.promoter_id === p.id))
+                        .map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name} {p.region ? `(${p.region})` : ''}</SelectItem>
+                        ))}
+                      {promoters.filter(p => !users.some(u => u.promoter_id === p.id)).length === 0 && (
+                        <SelectItem value="none" disabled>Nenhum promotor disponível</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   {selectedPromoterId && (

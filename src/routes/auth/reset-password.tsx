@@ -24,7 +24,7 @@ function ResetPassword() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         toast.error('Sessão expirada ou link inválido.');
-        navigate({ to: '/admin' });
+        navigate({ to: '/' });
       }
     });
   }, [navigate]);
@@ -41,7 +41,7 @@ function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success('Senha redefinida com sucesso!');
-      navigate({ to: '/admin' });
+      navigate({ to: '/primeiro-acesso' });
     } catch (error: any) {
       toast.error(error.message || 'Erro ao redefinir senha.');
     } finally {

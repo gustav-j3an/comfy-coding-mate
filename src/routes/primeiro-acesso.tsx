@@ -1,201 +1,149 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Smartphone, Download, CheckCircle2, ArrowRight, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { MapPin, Loader2, Eye, EyeOff } from 'lucide-react';
-import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/primeiro-acesso')({
-  loader: async () => {
-    try {
-      const { data, error } = await (supabase as any).rpc('get_admin_count');
-      
-      if (data !== null && Number(data) > 0) {
-        throw redirect({ to: '/' });
-      }
-      return { adminCount: Number(data) };
-    } catch (err) {
-      if (err instanceof Error && err.name === 'Invariant Violation') throw err;
-      if (err && typeof err === 'object' && 'status' in err) throw err;
-      return { adminCount: 0 };
-    }
-  },
-  component: FirstAdminPage,
+  component: PrimeiroAcesso,
 });
 
-function FirstAdminPage() {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+function PrimeiroAcesso() {
+  const { user, role, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Check if already in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsStandalone(true);
+      setIsInstalled(true);
+    }
+
+    // iOS detection
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(ios);
+
+    // Capture install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     
-    if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem.');
-      return;
-    }
+    // Check if app is installed (approximate)
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      toast.success('Aplicativo instalado com sucesso!');
+    });
 
-    if (password.length < 8) {
-      toast.error('A senha deve ter pelo menos 8 caracteres.');
-      return;
-    }
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
 
-    setLoading(true);
-    try {
-      // 1. Sign up user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Falha ao criar usuário.');
-
-      // 2. Create user role (handled by SQL policy)
-      const { error: roleError } = await (supabase as any)
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'admin'
-        });
-
-      if (roleError) throw roleError;
-
-      // 3. Update profile status to active (handled by SQL policy)
-      await (supabase as any)
-        .from('profiles')
-        .update({ status: 'active' })
-        .eq('id', authData.user.id);
-
-      toast.success('Administrador inicial criado com sucesso!');
-      
-      // If email confirmation is enabled, they might need to confirm.
-      // But typically we redirect them to login or admin dashboard.
-      if (authData.session) {
-        navigate({ to: '/admin' });
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      if (isIOS) {
+        toast.info("No iPhone, toque em 'Compartilhar' e depois em 'Adicionar à Tela de Início'.");
       } else {
-        toast.info('Verifique seu e-mail para confirmar o cadastro.');
-        navigate({ to: '/' });
+        toast.info("O seu navegador não suporta a instalação direta. Procure por 'Instalar Aplicativo' no menu do navegador.");
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar administrador inicial.');
-    } finally {
-      setLoading(false);
+      return;
     }
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+    }
+    setDeferredPrompt(null);
   };
 
+  const handleContinue = () => {
+    if (role === 'admin') navigate({ to: '/admin' });
+    else if (role === 'promoter') navigate({ to: '/promoter' });
+    else if (role === 'industry') navigate({ to: '/industry' });
+    else navigate({ to: '/' });
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200">
-              <MapPin className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-[#0F172A] text-white flex items-center justify-center p-4">
+      <Card className="max-w-md w-full border-slate-800 bg-slate-900 text-white shadow-2xl">
+        <CardHeader className="text-center space-y-2 pb-2">
+          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/20 mb-2">
+            <Smartphone className="w-8 h-8" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">Bem-vindo ao Rota</CardTitle>
+          <CardDescription className="text-slate-400">
+            Sua senha foi criada! Agora, instale o aplicativo para começar.
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6 pt-4">
+          <div className="space-y-4">
+            <div className="flex gap-3 items-start p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 font-bold text-sm">1</div>
+              <p className="text-sm text-slate-300">Acesse seu roteiro e envie evidências fotográficas em tempo real.</p>
+            </div>
+            <div className="flex gap-3 items-start p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+              <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 font-bold text-sm">2</div>
+              <p className="text-sm text-slate-300">Funciona offline: continue trabalhando mesmo sem sinal de internet.</p>
             </div>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Rota do Promotor</h1>
-        </div>
 
-        <Card className="border-none shadow-xl shadow-slate-200/60 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>Primeiro Acesso</CardTitle>
-            <CardDescription>
-              Crie a primeira conta de administrador para gerenciar o sistema.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleCreateAdmin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <Input
-                  id="fullName"
-                  placeholder="Seu nome"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="h-11 border-slate-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="nome@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11 border-slate-200"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11 border-slate-200 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="h-11 border-slate-200"
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+          <div className="space-y-3">
+            {!isStandalone && (
               <Button 
-                type="submit" 
-                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold"
-                disabled={loading}
+                onClick={handleInstall}
+                className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-blue-900/20"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Criando conta...
-                  </>
-                ) : 'Criar minha conta de administrador'}
+                <Download className="mr-2 w-5 h-5" />
+                Instalar Aplicativo
               </Button>
-              <Link to="/admin" className="text-sm text-slate-500 hover:text-slate-700">
-                Voltar para o login
-              </Link>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+            )}
+
+            {isStandalone && (
+              <div className="flex items-center justify-center gap-2 p-3 bg-green-500/10 text-green-400 rounded-xl border border-green-500/20">
+                <CheckCircle2 className="w-5 h-5" />
+                <span className="font-semibold text-sm">Aplicativo Instalado</span>
+              </div>
+            )}
+
+            <Button 
+              variant="ghost" 
+              onClick={handleContinue}
+              className="w-full h-12 text-slate-400 hover:text-white hover:bg-slate-800 font-medium"
+            >
+              Prosseguir para o Painel
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+
+          {isIOS && !isStandalone && (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <Info className="w-4 h-4" /> Instruções iPhone
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Toque no ícone de <span className="text-white font-bold">Compartilhar</span> (quadrado com seta) e depois em <span className="text-white font-bold">Adicionar à Tela de Início</span>.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

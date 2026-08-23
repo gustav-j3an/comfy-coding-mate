@@ -16,11 +16,34 @@ export const inviteUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
+    // Verify admin role
+    const { userId: adminId } = (context as any) || {};
+    if (!adminId) throw new Error("Não autorizado");
+
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+      _user_id: adminId,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) throw new Error("Apenas administradores podem convidar usuários");
+
+    // Get site URL from env or build preview URL
+    let siteUrl = process.env['SITE_URL'];
+    if (!siteUrl) {
+      // Fallback for preview environments if SITE_URL is missing
+      const projectId = process.env['LOVABLE_PROJECT_ID'];
+      if (projectId) {
+        siteUrl = `https://project--${projectId}.lovable.app`;
+      } else {
+        siteUrl = 'https://rota-do-promotor.lovable.app'; // Final fallback
+      }
+    }
+
     // 1. Invite user to Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
-        redirectTo: data.redirectTo || `${process.env['SITE_URL'] || 'http://localhost:8080'}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
         data: {
           full_name: data.fullName,
         }
