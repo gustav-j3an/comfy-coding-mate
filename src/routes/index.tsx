@@ -38,61 +38,61 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        O bloqueio acontece porque o sistema está tentando abrir `api.whatsapp.com`. Para o seu computador, onde você já está logado no WhatsApp Web, ele deve abrir diretamente `web.whatsapp.com`.
+        O bloqueio provavelmente não é mais do WhatsApp: o navegador bloqueia quando o sistema tenta abrir uma nova aba **depois** de esperar a geração do convite no servidor. Para o navegador, isso parece um pop-up automático.
 
-        O WhatsApp Web é acessado pelo domínio `web.whatsapp.com`. [WhatsApp Web](https://web.whatsapp.com/mobile/)
+        A solução é não abrir o WhatsApp automaticamente após o carregamento. Primeiro o sistema gera o link; depois mostra um botão real para você clicar: **Abrir conversa no WhatsApp Web**.
 
         Cole este prompt no Lovable:
 
-        CORREÇÃO DO CONVITE MANUAL POR WHATSAPP NO COMPUTADOR
+        CORREÇÃO DEFINITIVA — NAVEGADOR BLOQUEIA A ABERTURA DO WHATSAPP WEB
 
-        O botão de convite está abrindo:
+        O convite por WhatsApp continua sendo bloqueado.
 
-        `https://api.whatsapp.com/send/...`
+        Não use `window.open()` automaticamente após `await`, resposta de servidor, timeout ou qualquer operação assíncrona. O navegador trata isso como pop-up e pode bloquear.
 
-        No Microsoft Edge isso retorna:
+        IMPLEMENTE ESTE FLUXO:
 
-        `ERR_BLOCKED_BY_RESPONSE`
+        1. Admin clica em `Gerar convite por WhatsApp`.
+        2. O backend gera o link seguro.
+        3. A interface mostra um diálogo de confirmação com:
+           - nome do promotor;
+           - telefone parcialmente mascarado;
+           - mensagem pronta;
+           - botão real:
+             `Abrir conversa no WhatsApp Web`;
+           - botões:
+             `Copiar mensagem` e `Copiar link de acesso`.
+        4. O botão “Abrir conversa no WhatsApp Web” deve ser um link HTML real, não `window.open`:
+           - `href="https://web.whatsapp.com/send?phone=[NUMERO]&text=[MENSAGEM]"`
+           - `target="_blank"`
+           - `rel="noopener noreferrer"`
+5. O Admin clica diretamente nesse link para abrir a conversa.
+6. Em celular, apresente link real para:
+   - `https://wa.me/[NUMERO]?text=[MENSAGEM]`
 
-        Corrija o fluxo para abrir diretamente o WhatsApp Web quando o Admin estiver no computador.
+REGRAS
 
-        REGRAS
+- Remova qualquer referência a `api.whatsapp.com`.
+- Não abra WhatsApp automaticamente.
+- Não use iframe.
+- Não use popup automático.
+- Não use automação de navegador ou API.
+- Preserve a geração segura do link de acesso no backend.
+- O Admin continua sendo responsável pelo clique final de envio no WhatsApp.
 
-        - Nunca usar `api.whatsapp.com`.
-        - Em computador, usar:
+TESTE NO SITE PUBLICADO
 
-        `https://web.whatsapp.com/send?phone=[NUMERO]&text=[MENSAGEM_CODIFICADA]`
+1. Gere convite para promotor.
+2. Confirme que o diálogo aparece.
+3. Clique em “Abrir conversa no WhatsApp Web”.
+4. Confirme que abre nova aba em `web.whatsapp.com`, não `api.whatsapp.com`.
+5. Confirme que a conversa e a mensagem aparecem.
+6. Teste os botões de cópia.
+7. Confirme que o mesmo fluxo funciona sem pop-up bloqueado.
 
-        - Abrir esse link em nova aba, acionado diretamente pelo clique do Admin.
-        - O número deve continuar normalizado em formato internacional, somente dígitos, por exemplo `5561992910841`.
-        - A mensagem deve continuar personalizada com nome do promotor e link único de acesso.
-        - Não enviar automaticamente: o Admin revisa e toca no botão Enviar dentro do WhatsApp Web.
-        - Em celular, usar:
-
-        `https://wa.me/[NUMERO]?text=[MENSAGEM_CODIFICADA]`
-
-        - Não usar API do WhatsApp, automação de navegador ou envio automático.
-
-        FALLBACK
-
-        Se a abertura do WhatsApp Web for bloqueada ou falhar:
-
-        - exibir botão `Copiar mensagem de convite`;
-        - exibir botão `Copiar link de acesso`;
-        - mostrar orientação:
-          `Abra o WhatsApp Web, localize o promotor e cole a mensagem.`
-
-        TESTES
-
-        1. No Edge com WhatsApp Web já logado, clicar no convite abre a conversa do promotor.
-        2. A mensagem já vem preenchida.
-        3. O link não usa `api.whatsapp.com`.
-        4. Em celular, o link abre o aplicativo WhatsApp.
-        5. O fallback de cópia funciona.
-        6. Nenhum envio ocorre sem o clique final do Admin no WhatsApp.
-
-        Informe os arquivos alterados e o resultado dos seis testes.
+Não declare concluído sem testar no domínio publicado e informar a URL aberta, sem incluir token.
       </div>
+
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto space-y-8">
