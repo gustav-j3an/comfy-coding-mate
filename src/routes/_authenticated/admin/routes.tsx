@@ -109,7 +109,14 @@ function RoutesPage() {
           <p className="text-sm text-slate-500">Planejamento logístico e paradas</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={selectedPromoterId} onValueChange={setSelectedPromoterId}>
+          <Select 
+            value={selectedPromoterId} 
+            onValueChange={(value) => {
+              setSelectedPromoterId(value);
+              const p = promoters.find(promoter => promoter.id === value);
+              if (p) setSelectedPromoterName(p.name);
+            }}
+          >
             <SelectTrigger className="w-56 bg-slate-50">
               <SelectValue placeholder="Selecione um promotor" />
             </SelectTrigger>
