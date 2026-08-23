@@ -145,7 +145,9 @@ function UserManagement() {
   // Action states
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [whatsAppTarget, setWhatsAppTarget] = useState<any>(null);
+  const [waInviteData, setWaInviteData] = useState<{ url: string; message: string; link: string } | null>(null);
   const [generatingWA, setGeneratingWA] = useState(false);
+
 
   const fetchData = async () => {
     setLoading(true);
