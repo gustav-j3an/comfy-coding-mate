@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
-import { submitVisit } from '@/lib/execution.functions';
+import { submitVisit, getSignedUrl } from '@/lib/execution.functions';
 import { toast } from 'sonner';
 import { 
   saveVisitDraft, 
@@ -54,6 +54,7 @@ function VisitExecution() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [checkinTime] = useState(new Date().toISOString());
   const [missingEvidences, setMissingEvidences] = useState<string[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   
   const [online, setOnline] = useState(isOnline());
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -203,6 +204,14 @@ function VisitExecution() {
       }]);
 
       toast.success("Evidência anexada com sucesso.");
+      
+      // Get signed URL for preview
+      try {
+        const url = await getSignedUrl({ data: { filePath } });
+        setSignedUrls(prev => ({ ...prev, [filePath]: url }));
+      } catch (err) {
+        console.error("Error getting preview URL:", err);
+      }
     } catch (error: any) {
       toast.error("Erro no upload: " + error.message);
     } finally {
@@ -422,7 +431,7 @@ function VisitExecution() {
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                   {ev.fileType.startsWith('image/') ? (
                     <img 
-                      src={supabase.storage.from('visit-evidences').getPublicUrl(ev.filePath).data.publicUrl} 
+                      src={signedUrls[ev.filePath] || ''} 
                       className="w-full h-full object-cover" 
                       alt="evidencia"
                     />

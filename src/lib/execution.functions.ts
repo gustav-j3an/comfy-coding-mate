@@ -266,7 +266,6 @@ export const getSignedUrl = createServerFn({ method: "GET" })
     }
 
     // AUTH REINFORCEMENT: Only admin or owner can see evidence
-    // We check if it's the user's own evidence or if they are admin
     const { data: userRole } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -274,11 +273,54 @@ export const getSignedUrl = createServerFn({ method: "GET" })
       .single();
     
     const isAdmin = userRole?.role === 'admin';
+    const isIndustry = userRole?.role === 'industry';
 
-    // To verify ownership we would need to join with visit_evidence, but for now we trust the policy
-    // and reinforce that ONLY admins or the actual promoter can call this.
-    // The specific verification of "this file belongs to this visit" is done by RLS if we used supabase client,
-    // but since this is supabaseAdmin, we add a manual check.
+    if (!isAdmin) {
+      // If not admin, verify ownership or industry relationship
+      // The filePath pattern is evidences/{visit_id}/...
+      const pathParts = data.filePath.split('/');
+      const visitIdFromPath = pathParts.length > 1 ? pathParts[1] : null;
+
+      if (!visitIdFromPath) {
+        throw new Error("Caminho de arquivo inválido.");
+      }
+
+      if (isIndustry) {
+        // Industry check: does this visit belong to their industry?
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('industry_id')
+          .eq('id', userId)
+          .single();
+
+        const { data: visit } = await supabaseAdmin
+          .from('visits')
+          .select('industry_id')
+          .eq('id', visitIdFromPath)
+          .single();
+
+        if (!profile || !visit || profile.industry_id !== visit.industry_id) {
+          throw new Error("Não autorizado: Esta evidência não pertence à sua indústria.");
+        }
+      } else {
+        // Promoter check: are they the assigned promoter?
+        const { data: visit } = await supabaseAdmin
+          .from('visits')
+          .select('promoter_id')
+          .eq('id', visitIdFromPath)
+          .single();
+
+        const { data: promoter } = await supabaseAdmin
+          .from('promoters')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+
+        if (!visit || !promoter || visit.promoter_id !== promoter.id) {
+          throw new Error("Não autorizado: Você não é o responsável por esta visita.");
+        }
+      }
+    }
 
     const { data: signedUrl, error } = await supabaseAdmin
       .storage
