@@ -112,13 +112,11 @@ export const publishRoute = createServerFn({ method: "POST" })
     }
 
     if (visitsToInsert.length > 0) {
-    if (visitsToInsert.length > 0) {
       const { error: insertError } = await supabaseAdmin
         .from('visits')
         .insert(visitsToInsert as any);
       
       if (insertError) throw insertError;
-    }
     }
 
     return { success: true, visitsGenerated: visitsToInsert.length };
@@ -198,4 +196,215 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
     }
 
     return { success: true };
+  });
+
+/**
+ * Archive a route
+ */
+export const archiveRoute = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({
+    routeId: z.string()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { routeId } = data;
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
+    }
+
+    const { error } = await supabaseAdmin
+      .from('routes')
+      .update({ 
+        status: 'archived' as any,
+        active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', routeId);
+
+    if (error) throw error;
+    return { success: true };
+  });
+
+/**
+ * Pause or resume a route
+ */
+export const toggleRouteActive = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({
+    routeId: z.string(),
+    active: z.boolean()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { routeId, active } = data;
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
+    }
+
+    const { error } = await supabaseAdmin
+      .from('routes')
+      .update({ 
+        active,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', routeId);
+
+    if (error) throw error;
+    return { success: true };
+  });
+
+/**
+ * Delete a route (only if safe)
+ */
+export const deleteRouteSafely = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({
+    routeId: z.string()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { routeId } = data;
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
+    }
+
+    // 1. Check if route has executed visits or billing items
+    const { data: executedVisits } = await supabaseAdmin
+      .from('visits')
+      .select('id')
+      .eq('route_id' as any, routeId)
+      .neq('status', 'planned' as any)
+      .limit(1);
+
+    if (executedVisits && executedVisits.length > 0) {
+      throw new Error("Não é possível excluir: Esta rota já possui visitas executadas.");
+    }
+
+    // 2. Delete route (cascading will handle stops and stop_tasks)
+    const { error } = await supabaseAdmin
+      .from('routes')
+      .delete()
+      .eq('id', routeId);
+
+    if (error) throw error;
+    return { success: true };
+  });
+
+/**
+ * Duplicates a route
+ */
+export const duplicateRoute = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({
+    routeId: z.string()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { routeId } = data;
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) throw new Error("Não autorizado");
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem gerenciar rotas.");
+    }
+
+    // 1. Fetch source route
+    const { data: route, error: routeError } = await supabaseAdmin
+      .from('routes')
+      .select(`
+        *,
+        route_stops (
+          *,
+          stop_tasks (*)
+        )
+      `)
+      .eq('id', routeId)
+      .single();
+
+    if (routeError || !route) throw new Error("Rota não encontrada");
+
+    // 2. Create new route
+    const { data: newRoute, error: newRouteError } = await supabaseAdmin
+      .from('routes')
+      .insert({
+        name: `${route.name} (Cópia)`,
+        promoter_id: route.promoter_id,
+        valid_from: route.valid_from,
+        active: false,
+        status: 'draft' as any,
+        version: 1,
+        created_by: userId
+      })
+      .select()
+      .single();
+
+    if (newRouteError || !newRoute) throw newRouteError;
+
+    // 3. Duplicate stops and tasks
+    const stops = (route as any).route_stops || [];
+    for (const stop of stops) {
+      const { data: newStop, error: stopError } = await supabaseAdmin
+        .from('route_stops')
+        .insert({
+          route_id: newRoute.id,
+          store_id: stop.store_id,
+          day_of_week: stop.day_of_week,
+          visit_order: stop.visit_order,
+          frequency: stop.frequency,
+          biweekly_start_date: stop.biweekly_start_date,
+          observation: stop.observation,
+        })
+        .select()
+        .single();
+      
+      if (stopError || !newStop) throw stopError;
+
+      if (stop.stop_tasks && stop.stop_tasks.length > 0) {
+        const tasks = stop.stop_tasks.map((task: any) => ({
+          stop_id: newStop.id,
+          industry_id: task.industry_id
+        }));
+        await supabaseAdmin.from('stop_tasks').insert(tasks);
+      }
+    }
+
+    return { success: true, newRouteId: newRoute.id };
   });
