@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, ArrowLeft, Eye } from 'lucide-react';
 import { ConnectionStatus } from '@/components/common/connection-status';
 import { PWAUpdateNotification } from '@/components/common/pwa-updater';
+import { ChangePasswordModal } from '@/components/auth/change-password-modal';
 import { Button } from '@/components/ui/button';
 import { getSyncQueue, getVisitDraft } from '@/lib/offline';
 
@@ -80,6 +81,7 @@ function AuthenticatedLayout() {
   return (
     <>
       <ConnectionStatus />
+      <ChangePasswordModal />
       <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       
       <div className="pt-0 min-h-screen flex flex-col">

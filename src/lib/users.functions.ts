@@ -3,6 +3,7 @@ import { z } from "zod";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getPublicAppUrl } from "./app-config";
+import { randomBytes } from "crypto";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -342,4 +343,118 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
       phone: normalizedPhone, 
       promoterName: promoter.name 
     };
+  });
+
+export const generateTemporaryAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ 
+    userId: z.string(),
+    email: z.string().email(),
+    promoterId: z.string() 
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    
+    // 1. Verify admin role
+    const { userId: adminId } = (context as any) || {};
+    if (!adminId) throw new Error("Não autorizado");
+
+    const { data: isAdmin } = await supabaseAdmin.rpc('has_role', {
+      _user_id: adminId,
+      _role: 'admin'
+    });
+
+    if (!isAdmin) throw new Error("Apenas administradores podem gerar acesso temporário");
+
+    // 2. Get promoter data
+    const { data: promoter, error: promoterError } = await supabaseAdmin
+      .from('promoters')
+      .select('name, phone')
+      .eq('id', data.promoterId)
+      .single();
+
+    if (promoterError || !promoter) throw new Error("Promotor não encontrado");
+
+    // 3. Generate random password (16 chars for strength)
+    const tempPassword = randomBytes(12).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+    if (tempPassword.length < 12) throw new Error("Falha ao gerar senha segura");
+
+    // 4. Update Supabase Auth password
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      data.userId,
+      { 
+        password: tempPassword,
+        email_confirm: true 
+      }
+    );
+
+    if (authError) throw authError;
+
+    // 5. Update Profile flag
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ must_change_password: true } as any)
+      .eq('id', data.userId);
+
+    if (profileError) throw profileError;
+
+    // 6. Record audit log
+    await recordAudit({
+      userId: adminId,
+      action: 'generate_temp_access',
+      module: 'users',
+      entityType: 'user',
+      entityId: data.userId,
+      summary: `Acesso temporário gerado para o promotor: ${promoter.name}`,
+      details: { email: data.email, adminId }
+    });
+
+    return { 
+      success: true, 
+      tempPassword,
+      email: data.email,
+      promoterName: promoter.name,
+      phone: promoter.phone
+    };
+  });
+
+export const changePassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ 
+    newPassword: z.string().min(8) 
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { userId } = (context as any) || {};
+    
+    if (!userId) throw new Error("Não autorizado");
+
+    // 1. Update Auth password
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      { password: data.newPassword }
+    );
+
+    if (authError) throw authError;
+
+    // 2. Clear flag in profile
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ must_change_password: false } as any)
+      .eq('id', userId);
+
+    if (profileError) throw profileError;
+
+    // 3. Record audit
+    await recordAudit({
+      userId: userId,
+      action: 'change_password_mandatory',
+      module: 'users',
+      entityType: 'user',
+      entityId: userId,
+      summary: `Senha obrigatória alterada pelo usuário`,
+      details: { userId }
+    });
+
+    return { success: true };
   });

@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await (supabase as any)
         .from('profiles')
-        .select('*')
+        .select('*, must_change_password')
         .eq('id', userId)
         .maybeSingle();
 
