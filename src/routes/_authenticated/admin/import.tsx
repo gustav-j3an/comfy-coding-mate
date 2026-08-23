@@ -49,96 +49,159 @@ function ImportModule() {
       for (const sheetName of sheets) {
         const worksheet = workbook.Sheets[sheetName];
         if (!worksheet) continue;
-        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        const headers: string[] = (jsonData[0] as string[]) || [];
+        
+        // Use sheet_to_json with header: 1 to get raw grid
+        const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: null });
+        if (!jsonData.length) continue;
+
+        const headers: string[] = jsonData[0].map(h => String(h || '').trim().toUpperCase());
         const rows = jsonData.slice(1);
 
         if (sheetName === 'PROMOTORES') {
-          rawData.promoters = rows.map((row: any) => ({
-            matricula: row[headers.indexOf('MATRÍCULA')],
-            nome: row[headers.indexOf('NOME')],
-            uf: row[headers.indexOf('UF')],
-            cidade: row[headers.indexOf('CIDADE ATENDIMENTO')],
-            contato: row[headers.indexOf('CONTATO')],
-            observacao: row[headers.indexOf('OBSERVAÇÃO')]
-          }));
+          const nameIdx = headers.indexOf('NOME');
+          const matriculaIdx = headers.indexOf('MATRÍCULA');
+          const ufIdx = headers.indexOf('UF');
+          const cityIdx = headers.indexOf('CIDADE ATENDIMENTO');
+          const contactIdx = headers.indexOf('CONTATO');
+          const obsIdx = headers.indexOf('OBSERVAÇÃO');
+
+          rawData.promoters = rows
+            .filter(row => row[nameIdx] && String(row[nameIdx]).trim().length > 0)
+            .map(row => ({
+              matricula: row[matriculaIdx],
+              nome: String(row[nameIdx]).trim(),
+              uf: row[ufIdx],
+              cidade: row[cityIdx],
+              contato: row[contactIdx],
+              observacao: row[obsIdx]
+            }));
         } else if (sheetName === 'LOJAS') {
-          rawData.stores = rows.map((row: any) => ({
-            rede: row[headers.indexOf('REDE')],
-            loja: row[headers.indexOf('LOJA')],
-            uf: row[headers.indexOf('UF')]
-          }));
+          const storeIdx = headers.indexOf('LOJA');
+          const redeIdx = headers.indexOf('REDE');
+          const ufIdx = headers.indexOf('UF');
+
+          rawData.stores = rows
+            .filter(row => row[storeIdx] && String(row[storeIdx]).trim().length > 0)
+            .map(row => ({
+              rede: row[redeIdx],
+              loja: String(row[storeIdx]).trim(),
+              uf: row[ufIdx]
+            }));
         } else if (sheetName === 'INDUSTRIA') {
-          rawData.industries = rows.map((row: any) => ({
-            nome: row[headers.indexOf('INDUSTRIA')]
-          }));
+          const indIdx = headers.indexOf('INDUSTRIA');
+
+          rawData.industries = rows
+            .filter(row => row[indIdx] && String(row[indIdx]).trim().length > 0)
+            .map(row => ({
+              nome: String(row[indIdx]).trim()
+            }));
         } else if (sheetName.startsWith('ROTEIRO ')) {
-          rawData.routes.push({
-            sheetName,
-            stops: rows.map((row: any) => ({
-              industria: row[headers.indexOf('INDUSTRIA')],
-              loja: row[headers.indexOf('LOJA')],
-              uf: row[headers.indexOf('UF')],
-              promotor: row[headers.indexOf('PROMOTORES')],
-              frequencia: row[headers.indexOf('FREQ')],
-              dias: {
-                seg: row[headers.indexOf('SEG')] === '✓',
-                ter: row[headers.indexOf('TER')] === '✓',
-                qua: row[headers.indexOf('QUA')] === '✓',
-                qui: row[headers.indexOf('QUI')] === '✓',
-                sex: row[headers.indexOf('SEX')] === '✓',
-                sab: row[headers.indexOf('SAB')] === '✓',
-                dom: row[headers.indexOf('DOM')] === '✓',
-              }
-            }))
-          });
-        } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA'].includes(sheetName)) {
+          const indIdx = headers.indexOf('INDUSTRIA');
+          const storeIdx = headers.indexOf('LOJA');
+          const promIdx = headers.indexOf('PROMOTORES');
+          const freqIdx = headers.indexOf('FREQ');
+          
+          const segIdx = headers.indexOf('SEG');
+          const terIdx = headers.indexOf('TER');
+          const quaIdx = headers.indexOf('QUA');
+          const quiIdx = headers.indexOf('QUI');
+          const sexIdx = headers.indexOf('SEX');
+          const sabIdx = headers.indexOf('SAB');
+          const domIdx = headers.indexOf('DOM');
+
+          const validStops = rows.filter(row => {
+            const hasBasic = row[indIdx] && row[storeIdx] && row[promIdx] && row[freqIdx];
+            if (!hasBasic) return false;
+
+            const hasDay = [segIdx, terIdx, quaIdx, quiIdx, sexIdx, sabIdx, domIdx].some(idx => 
+              idx !== -1 && (row[idx] === '✓' || row[idx] === 'v' || row[idx] === 'V' || String(row[idx]).toLowerCase() === 'x')
+            );
+            return hasDay;
+          }).map(row => ({
+            industria: String(row[indIdx]).trim(),
+            loja: String(row[storeIdx]).trim(),
+            promotor: String(row[promIdx]).trim(),
+            frequencia: String(row[freqIdx]).trim(),
+            dias: {
+              seg: row[segIdx] === '✓',
+              ter: row[terIdx] === '✓',
+              qua: row[quaIdx] === '✓',
+              qui: row[quiIdx] === '✓',
+              sex: row[sexIdx] === '✓',
+              sab: row[sabIdx] === '✓',
+              dom: row[domIdx] === '✓',
+            }
+          }));
+
+          if (validStops.length > 0) {
+            rawData.routes.push({
+              sheetName,
+              stops: validStops
+            });
+          }
+        } else if (!['CONSULTA LUCAS', 'CONSULTA ALEXANDRE', 'FREQUÊNCIA INDÚSTRIA', 'CONSULTA'].includes(sheetName)) {
           rawData.ignoredSheets.push(sheetName);
         }
       }
 
-      // Validation
+      // Validation & Metrics
       const inconsistencies: any[] = [];
-      const normalizedPromoters = rawData.promoters.map((p: any) => p.nome?.trim().toLowerCase()).filter(Boolean);
-      const normalizedStores = rawData.stores.map((s: any) => s.loja?.trim().toLowerCase()).filter(Boolean);
-      const normalizedIndustries = rawData.industries.map((i: any) => i.nome?.trim().toLowerCase()).filter(Boolean);
+      const normalizedPromoters = new Set(rawData.promoters.map((p: any) => p.nome.toLowerCase()));
+      const normalizedStores = new Set(rawData.stores.map((s: any) => s.loja.toLowerCase()));
+      const normalizedIndustries = new Set(rawData.industries.map((i: any) => i.nome.toLowerCase()));
+
+      const distinctPromotersInRoutes = new Set();
+      const distinctStoresInRoutes = new Set();
+      const distinctIndustriesInRoutes = new Set();
+      let totalStopsCount = 0;
+
+      const seenStops = new Map();
 
       rawData.routes.forEach((routeSheet: any) => {
-        const seenStops = new Set();
         routeSheet.stops.forEach((stop: any, index: number) => {
           const line = index + 2;
           
-          // Required fields
-          if (!stop.industria || !stop.loja || !stop.promotor) {
-            inconsistencies.push({ type: 'Campo Obrigatório', detail: `Linha ${line} em ${routeSheet.sheetName} possui campos vazios.` });
-          }
+          distinctPromotersInRoutes.add(stop.promotor.toLowerCase());
+          distinctStoresInRoutes.add(stop.loja.toLowerCase());
+          distinctIndustriesInRoutes.add(stop.industria.toLowerCase());
+          
+          Object.values(stop.dias).forEach(val => { if (val) totalStopsCount++; });
 
           // Reference checks
-          if (stop.promotor && !normalizedPromoters.includes(stop.promotor.trim().toLowerCase())) {
+          if (!normalizedPromoters.has(stop.promotor.toLowerCase())) {
             inconsistencies.push({ type: 'Promotor Não Encontrado', detail: `Promotor "${stop.promotor}" na linha ${line} de ${routeSheet.sheetName} não está na aba PROMOTORES.` });
           }
-          if (stop.loja && !normalizedStores.includes(stop.loja.trim().toLowerCase())) {
+          if (!normalizedStores.has(stop.loja.toLowerCase())) {
             inconsistencies.push({ type: 'Loja Não Encontrada', detail: `Loja "${stop.loja}" na linha ${line} de ${routeSheet.sheetName} não está na aba LOJAS.` });
           }
-          if (stop.industria && !normalizedIndustries.includes(stop.industria.trim().toLowerCase())) {
+          if (!normalizedIndustries.has(stop.industria.toLowerCase())) {
             inconsistencies.push({ type: 'Indústria Não Encontrada', detail: `Indústria "${stop.industria}" na linha ${line} de ${routeSheet.sheetName} não está na aba INDUSTRIA.` });
           }
 
           // Duplicate detection
-          const stopKey = `${stop.industria}-${stop.loja}-${stop.promotor}-${routeSheet.sheetName}`.toLowerCase();
+          const stopKey = `${stop.industria}|${stop.loja}|${stop.promotor}|${stop.frequencia}`.toLowerCase();
           if (seenStops.has(stopKey)) {
-            inconsistencies.push({ type: 'Duplicidade', detail: `Linha ${line} em ${routeSheet.sheetName} é uma duplicata de parada.` });
-          }
-          seenStops.add(stopKey);
-
-          // Frequency validation
-          if (stop.frequencia && !['SEMANAL', 'QUINZENAL'].includes(stop.frequencia.toUpperCase())) {
-            inconsistencies.push({ type: 'Frequência Inválida', detail: `Frequência "${stop.frequencia}" inválida na linha ${line} de ${routeSheet.sheetName}.` });
+            const original = seenStops.get(stopKey);
+            inconsistencies.push({ 
+              type: 'Duplicidade', 
+              detail: `Parada duplicada na linha ${line} de ${routeSheet.sheetName}. (Mesma combinação de Indústria, Loja, Promotor e Frequência já vista em ${original.sheetName} na linha ${original.line})` 
+            });
+          } else {
+            seenStops.set(stopKey, { sheetName: routeSheet.sheetName, line });
           }
         });
       });
 
-      setPreviewData({ ...rawData, inconsistencies });
+      setPreviewData({ 
+        ...rawData, 
+        inconsistencies,
+        metrics: {
+          distinctPromoters: distinctPromotersInRoutes.size,
+          distinctStores: distinctStoresInRoutes.size,
+          distinctIndustries: distinctIndustriesInRoutes.size,
+          totalStopMarkings: totalStopsCount
+        }
+      });
       toast.success('Arquivo processado com sucesso!');
     } catch (err) {
       toast.error('Erro ao processar arquivo.');
