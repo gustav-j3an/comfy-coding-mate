@@ -233,7 +233,7 @@ function PromoterDashboard() {
 
   const getStatusBadge = (visit: any) => {
     if (visit.is_theoretical) {
-      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Visita Planejada</Badge>;
+      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Prévia do roteiro</Badge>;
     }
 
     const draft = offlineDrafts[visit.id];
