@@ -25,24 +25,13 @@ function VisualizarPromotorPage() {
   const { role } = useAuth();
   const navigate = useNavigate();
 
-  const { data: promoter, isLoading, error } = useSuspenseQuery({
-    queryKey: ['admin-preview-promoter', promoterId],
+  const fetchItineraryData = useServerFn(getPromoterItineraryData);
+
+  const { data: promoter, isLoading: promoterLoading, error: promoterError } = useSuspenseQuery({
+    queryKey: ['admin-preview-promoter-info', promoterId],
     queryFn: async () => {
-      // 1. Validar Admin no servidor (via RPC ou checagem direta se necessário, mas aqui faremos no handler)
-      const { data: isAdmin } = await supabase.rpc('has_role', {
-        _user_id: (await supabase.auth.getUser()).data.user?.id as any,
-        _role: 'admin'
-      });
+      if (!promoterId) throw new Error('ID do promotor não fornecido.');
 
-      if (!isAdmin) {
-        throw new Error('Não autorizado: Acesso restrito a administradores.');
-      }
-
-      if (!promoterId) {
-        throw new Error('ID do promotor não fornecido.');
-      }
-
-      // 2. Validar existência e status do promotor
       const { data, error } = await supabase
         .from('promoters')
         .select('*')
@@ -56,6 +45,15 @@ function VisualizarPromotorPage() {
       return data;
     }
   });
+
+  const { data: routes, isLoading: routesLoading, error: routesError } = useSuspenseQuery({
+    queryKey: ['admin-preview-promoter-routes', promoterId],
+    queryFn: () => fetchItineraryData({ data: { promoterId } })
+  });
+
+  const isLoading = promoterLoading || routesLoading;
+  const error = promoterError || routesError;
+
 
   if (role !== 'admin') {
     return (
