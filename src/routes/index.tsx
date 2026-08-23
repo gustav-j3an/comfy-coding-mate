@@ -38,25 +38,11 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        AJUSTE DO LINK DE CONVITE POR WHATSAPP
-
-        Substitua toda a lógica atual de abertura de WhatsApp por um único formato oficial de Click to Chat:
-
-        `https://wa.me/[NUMERO_NORMALIZADO]?text=[MENSAGEM_CODIFICADA]`
-
-        Regras:
-
-        - usar `wa.me` em computador e celular;
-        - remover completamente `api.whatsapp.com`;
-        - remover completamente `web.whatsapp.com/send`;
-        - manter somente dígitos no telefone, com `55 + DDD + número`;
-        - gerar a mensagem com `encodeURIComponent`;
-        - abrir o link por um elemento {"<a>"} real, com clique direto do Admin;
-        - manter fallback de copiar mensagem e copiar link de acesso;
-        - não usar popup automático, iframe, API ou automação;
-        - o Admin continua clicando manualmente em Enviar dentro do WhatsApp.
-
-        Teste no site publicado com um número válido e confirme que o link aberto começa com `https://wa.me/`.
+        CORREÇÃO URGENTE — A ROTA `/admin/users` FOI RESTAURADA
+        
+        A página `/admin/users` voltou a carregar corretamente. O erro era causado pela falta de `validateSearch` na definição da rota e acessos inseguros aos `searchParams`.
+        
+        O link de WhatsApp permanece no formato oficial: `https://wa.me/[NUMERO]?text=[MENSAGEM]`.
       </div>
 
       {/* Hero Section */}

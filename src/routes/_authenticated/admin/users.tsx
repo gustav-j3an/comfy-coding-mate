@@ -75,12 +75,18 @@ import {
 
 export const Route = createFileRoute('/_authenticated/admin/users')({
   component: UserManagement,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      invite: search['invite'],
+      id: search['id'],
+    };
+  },
 });
 
 function UserManagement() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const searchParams = Route.useSearch() as any;
+  const searchParams: any = Route.useSearch();
   const [users, setUsers] = useState<any[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
@@ -152,6 +158,7 @@ function UserManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      console.log('Fetching user data...');
       // Fetch profiles
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
