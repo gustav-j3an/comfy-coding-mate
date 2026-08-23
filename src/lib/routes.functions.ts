@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { format, addDays, startOfWeek } from "date-fns";
 
@@ -6,6 +7,7 @@ import { format, addDays, startOfWeek } from "date-fns";
  * Publishes a route and generates visits for the next 90 days.
  */
 export const publishRoute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     routeId: z.string(),
     summary: z.string().optional()
@@ -126,6 +128,7 @@ export const publishRoute = createServerFn({ method: "POST" })
  * Creates an extraordinary route override.
  */
 export const createExtraordinaryRoute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     promoterId: z.string(),
     date: z.string(),
@@ -202,6 +205,7 @@ export const createExtraordinaryRoute = createServerFn({ method: "POST" })
  * Archive a route
  */
 export const archiveRoute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     routeId: z.string()
   }).parse(data))
@@ -239,6 +243,7 @@ export const archiveRoute = createServerFn({ method: "POST" })
  * Pause or resume a route
  */
 export const toggleRouteActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     routeId: z.string(),
     active: z.boolean()
@@ -275,6 +280,7 @@ export const toggleRouteActive = createServerFn({ method: "POST" })
  * Delete a route (only if safe)
  */
 export const deleteRouteSafely = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     routeId: z.string()
   }).parse(data))
@@ -322,6 +328,7 @@ export const deleteRouteSafely = createServerFn({ method: "POST" })
  * Duplicates a route
  */
 export const duplicateRoute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
     routeId: z.string()
   }).parse(data))
