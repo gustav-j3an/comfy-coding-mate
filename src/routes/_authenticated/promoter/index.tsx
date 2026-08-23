@@ -52,11 +52,11 @@ function PromoterDashboard() {
   }, []);
 
   const { data: visits } = useSuspenseQuery({
-    queryKey: ['promoter-visits', user?.id, today],
+    queryKey: ['promoter-visits', user?.id, today, previewPromoter?.id],
     queryFn: async () => {
       const currentUserId = user?.id;
-      const currentPromoterId = profile?.promoter_id || null;
-      if (!currentUserId) return [];
+      const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
+      if (!currentUserId && !previewPromoter) return [];
       
       try {
         let query = supabase
