@@ -350,7 +350,7 @@ function VisitExecution() {
           <div className="space-y-2">
             <h3 className="text-sm font-bold text-slate-700">Evidências Anexadas ({evidences.length})</h3>
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {evidences.map((ev, i) => (
+              {(evidences as any[]).map((ev, i) => (
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                   {ev.fileType.startsWith('image/') ? (
                     <img 
@@ -390,7 +390,7 @@ function VisitExecution() {
           
           {occurrences.length > 0 && (
             <div className="space-y-2 mt-2">
-              {occurrences.map((oc, i) => (
+              {(occurrences as any[]).map((oc, i) => (
                 <div key={i} className="flex justify-between items-center bg-white p-3 rounded-lg border text-sm">
                   <span className="capitalize font-medium">{oc.type}</span>
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOccurrences(occurrences.filter((_, idx) => idx !== i))}>
