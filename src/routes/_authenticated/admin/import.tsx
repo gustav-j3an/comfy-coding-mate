@@ -273,8 +273,10 @@ function ImportModule() {
             </Button>
             <h1 className="text-2xl font-black text-slate-900">Importar Base Operacional</h1>
           </div>
-          {requiresRevision && (
-            <Badge variant="destructive" className="animate-pulse">REQUER REVISÃO</Badge>
+          {isBlockerActive ? (
+            <Badge variant="destructive" className="animate-pulse">BLOQUEADO: REQUER CORREÇÃO</Badge>
+          ) : requiresRevision && (
+            <Badge variant="warning" className="bg-amber-500 text-white animate-pulse">REQUER REVISÃO</Badge>
           )}
         </div>
 
