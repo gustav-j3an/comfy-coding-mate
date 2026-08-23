@@ -43,9 +43,13 @@ const RouteSchema = z.object({
   stops: z.array(RouteStopSchema),
 });
 
+// Chunks for batch processing
+const BATCH_SIZE = 50;
+
 export const executeImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({
+    importBatchId: z.string(),
     validFrom: z.string(),
     promoters: z.array(PromoterSchema),
     stores: z.array(StoreSchema),
@@ -56,7 +60,6 @@ export const executeImport = createServerFn({ method: "POST" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Verify admin role
     const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
       _user_id: userId,
       _role: 'admin'
@@ -67,149 +70,167 @@ export const executeImport = createServerFn({ method: "POST" })
       promoters: { created: 0, updated: 0, ignored: 0 },
       stores: { created: 0, updated: 0, ignored: 0 },
       industries: { created: 0, updated: 0, ignored: 0 },
-      routes: { created: 0, pending: 0 },
+      routes: { created: 0, ignored: 0 },
+      stops: { created: 0 },
       errors: [] as string[]
     };
 
     try {
-      // Mapping name/key to database UUID
       const promoterMap = new Map<string, string>();
       const storeMap = new Map<string, string>();
       const industryMap = new Map<string, string>();
 
-      // --- IMPORT PROMOTERS ---
-      for (const p of data.promoters) {
-        // Since 'registration_number' doesn't exist in type Row, we use the correct fields
-        // We'll check by name for now as the schema seems to have region/phone/email
-        const { data: existing } = await supabaseAdmin.from('promoters').select('id').eq('name', p.nome).maybeSingle();
-        
-        if (!existing) {
-          const { data: created, error } = await supabaseAdmin.from('promoters').insert({
-            name: p.nome,
-            region: p.uf || null,
-            phone: p.contato || null,
-            observation: p.observacao || null,
-            active: true
-          }).select('id').single();
-          
-          if (error) results.errors.push(`Erro ao criar promotor ${p.nome}: ${error.message}`);
-          else {
-            results.promoters.created++;
-            promoterMap.set(p.nome.toLowerCase(), created.id);
+      // 1. INDUSTRIES (Batch)
+      for (let i = 0; i < data.industries.length; i += BATCH_SIZE) {
+        const chunk = data.industries.slice(i, i + BATCH_SIZE);
+        for (const ind of chunk) {
+          const { data: existing } = await supabaseAdmin.from('industries').select('id').eq('name', ind.nome).maybeSingle();
+          if (!existing) {
+            const { data: created, error } = await supabaseAdmin.from('industries').insert({ name: ind.nome }).select('id').single();
+            if (error) results.errors.push(`Erro Indústria ${ind.nome}: ${error.message}`);
+            else {
+              results.industries.created++;
+              industryMap.set(ind.nome.toLowerCase(), created.id);
+            }
+          } else {
+            results.industries.ignored++;
+            industryMap.set(ind.nome.toLowerCase(), existing.id);
           }
-        } else {
-          results.promoters.ignored++;
-          promoterMap.set(p.nome.toLowerCase(), existing.id);
         }
       }
 
-      // --- IMPORT INDUSTRIES ---
-      for (const ind of data.industries) {
-        const { data: existing } = await supabaseAdmin.from('industries').select('id').eq('name', ind.nome).maybeSingle();
-        if (!existing) {
-          const { data: created, error } = await supabaseAdmin.from('industries').insert({ name: ind.nome }).select('id').single();
-          if (error) results.errors.push(`Erro ao criar indústria ${ind.nome}: ${error.message}`);
-          else {
-            results.industries.created++;
-            industryMap.set(ind.nome.toLowerCase(), created.id);
+      // 2. STORES (Batch)
+      for (let i = 0; i < data.stores.length; i += BATCH_SIZE) {
+        const chunk = data.stores.slice(i, i + BATCH_SIZE);
+        for (const s of chunk) {
+          const { data: existing } = await supabaseAdmin.from('stores').select('id').eq('name', s.loja).maybeSingle();
+          if (!existing) {
+            const { data: created, error } = await supabaseAdmin.from('stores').insert({
+              name: s.loja,
+              address: s.rede || 'Não informado',
+              state: s.uf || null,
+              active: true
+            }).select('id').single();
+            if (error) results.errors.push(`Erro Loja ${s.loja}: ${error.message}`);
+            else {
+              results.stores.created++;
+              storeMap.set(s.loja.toLowerCase(), created.id);
+            }
+          } else {
+            results.stores.ignored++;
+            storeMap.set(s.loja.toLowerCase(), existing.id);
           }
-        } else {
-          results.industries.ignored++;
-          industryMap.set(ind.nome.toLowerCase(), existing.id);
         }
       }
 
-      // --- IMPORT STORES ---
-      for (const s of data.stores) {
-        // Combination: LOJA + REDE + UF (using address to store some info if needed, but schema has city/state)
-        const { data: existing } = await supabaseAdmin.from('stores')
-          .select('id')
-          .eq('name', s.loja)
-          .maybeSingle();
-
-        if (!existing) {
-          const { data: created, error } = await supabaseAdmin.from('stores').insert({
-            name: s.loja,
-            address: s.rede || 'Não informado',
-            state: s.uf || null,
-            active: true
-          }).select('id').single();
-          
-          if (error) results.errors.push(`Erro ao criar loja ${s.loja}: ${error.message}`);
-          else {
-            results.stores.created++;
-            storeMap.set(s.loja.toLowerCase(), created.id);
+      // 3. PROMOTERS (Batch)
+      for (let i = 0; i < data.promoters.length; i += BATCH_SIZE) {
+        const chunk = data.promoters.slice(i, i + BATCH_SIZE);
+        for (const p of chunk) {
+          const { data: existing } = await supabaseAdmin.from('promoters').select('id').eq('name', p.nome).maybeSingle();
+          if (!existing) {
+            const { data: created, error } = await supabaseAdmin.from('promoters').insert({
+              name: p.nome,
+              region: p.uf || null,
+              phone: p.contato || null,
+              observation: p.observacao || null,
+              active: true
+            }).select('id').single();
+            if (error) results.errors.push(`Erro Promotor ${p.nome}: ${error.message}`);
+            else {
+              results.promoters.created++;
+              promoterMap.set(p.nome.toLowerCase(), created.id);
+            }
+          } else {
+            results.promoters.ignored++;
+            promoterMap.set(p.nome.toLowerCase(), existing.id);
           }
-        } else {
-          results.stores.ignored++;
-          storeMap.set(s.loja.toLowerCase(), existing.id);
         }
       }
 
-      // --- IMPORT ROUTES (as DRAFT) ---
-      // We group stops by promoter
-      const promoterRoutes = new Map<string, any[]>();
+      // 4. ROUTES & STOPS (Group by Promoter correctly)
+      const promoterStops = new Map<string, any[]>();
       data.routes.forEach(sheet => {
         sheet.stops.forEach(stop => {
           const pKey = stop.promotor.toLowerCase();
-          if (!promoterRoutes.has(pKey)) promoterRoutes.set(pKey, []);
-          promoterRoutes.get(pKey)!.push(stop);
+          if (!promoterStops.has(pKey)) promoterStops.set(pKey, []);
+          promoterStops.get(pKey)!.push(stop);
         });
       });
 
-      for (const [pName, stops] of promoterRoutes.entries()) {
+      for (const [pName, stops] of promoterStops.entries()) {
         const promoterId = promoterMap.get(pName);
         if (!promoterId) continue;
 
-        // Create the Route header
-        const { data: route, error: rError } = await supabaseAdmin.from('routes').insert({
-          name: `Importação Excel — ${stops[0].promotor}`,
-          promoter_id: promoterId,
-          valid_from: data.validFrom,
-          status: 'draft',
-          active: false,
-          created_by: userId,
-          version: 1
-        }).select('id').single();
+        // Check for existing DRAFT route for this promoter to ensure idempotency
+        const routeName = `Importação Excel — ${stops[0].promotor}`;
+        let { data: route } = await supabaseAdmin.from('routes')
+          .select('id')
+          .eq('promoter_id', promoterId)
+          .eq('status', 'draft')
+          .eq('name', routeName)
+          .maybeSingle();
 
-        if (rError) {
-          results.errors.push(`Erro ao criar roteiro para ${stops[0].promotor}: ${rError.message}`);
-          continue;
+        if (!route) {
+          const { data: newRoute, error: rError } = await supabaseAdmin.from('routes').insert({
+            name: routeName,
+            promoter_id: promoterId,
+            valid_from: data.validFrom,
+            status: 'draft',
+            active: false,
+            created_by: userId,
+            version: 1
+          }).select('id').single();
+
+          if (rError) {
+            results.errors.push(`Erro Roteiro ${stops[0].promotor}: ${rError.message}`);
+            continue;
+          }
+          route = newRoute;
+          results.routes.created++;
+        } else {
+          results.routes.ignored++;
         }
 
-        results.routes.created++;
-
-        // Add stops
+        // Process Stops (Idempotent check within the route)
+        const daysMap: Record<string, number> = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 0 };
+        
         for (let i = 0; i < stops.length; i++) {
           const stop = stops[i];
           const storeId = storeMap.get(stop.loja.toLowerCase());
           const indId = industryMap.get(stop.industria.toLowerCase());
 
-          if (!storeId || !indId) {
-            results.errors.push(`Parada ignorada: Loja ou Indústria não encontrada para ${stop.loja}/${stop.industria}`);
-            continue;
-          }
+          if (!storeId || !indId) continue;
 
-          // Each mark in Excel corresponds to a day_of_week in our schema (0=Sun, 1=Mon...)
-          const daysMap: Record<string, number> = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 0 };
-          
           for (const [day, active] of Object.entries(stop.dias)) {
             if (active) {
               const dayOfWeek = daysMap[day as keyof typeof daysMap]!;
-              const { data: routeStop, error: rsError } = await supabaseAdmin.from('route_stops').insert({
-                route_id: route.id,
-                store_id: storeId,
-                day_of_week: dayOfWeek,
-                visit_order: i + 1,
-                frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
-                biweekly_start_date: data.validFrom
-              }).select('id').single();
+              
+              // Check if stop already exists in this route
+              const { data: existingStop } = await supabaseAdmin.from('route_stops')
+                .select('id')
+                .eq('route_id', route.id)
+                .eq('store_id', storeId)
+                .eq('day_of_week', dayOfWeek)
+                .maybeSingle();
 
-              if (!rsError) {
-                await supabaseAdmin.from('stop_tasks').insert({
-                  stop_id: routeStop.id,
-                  industry_id: indId
-                });
+              if (!existingStop) {
+                const { data: newStop, error: rsError } = await supabaseAdmin.from('route_stops').insert({
+                  route_id: route.id,
+                  store_id: storeId,
+                  day_of_week: dayOfWeek,
+                  visit_order: i + 1,
+                  frequency: stop.frequencia === 'Quinzenal' ? 'biweekly' : 'weekly',
+                  biweekly_start_date: data.validFrom
+                }).select('id').single();
+
+                if (!rsError) {
+                  results.stops.created++;
+                  await supabaseAdmin.from('stop_tasks').insert({
+                    stop_id: newStop.id,
+                    industry_id: indId
+                  });
+                }
               }
             }
           }
@@ -220,7 +241,7 @@ export const executeImport = createServerFn({ method: "POST" })
         userId,
         action: 'import_operational_base',
         module: 'admin',
-        summary: 'Importação de base operacional via Excel concluída.',
+        summary: `Importação ${data.importBatchId} concluída.`,
         details: results
       });
 

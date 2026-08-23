@@ -13,106 +13,92 @@ function Index() {
         </h1>
         
         <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 text-slate-300 leading-relaxed whitespace-pre-wrap">
-O botão está desabilitado porque a tela está em **“Requer revisão”**. Mas há um problema mais importante: o resumo informa que vai gerar apenas **2 roteiros em rascunho**. Isso está errado.
+Não clique novamente nem atualize a página agora. O sistema pode estar preso no processamento ou ter gravado apenas uma parte; uma nova tentativa sem verificação poderia duplicar cadastros.
 
-Os dois são apenas as abas do Excel (`ROTEIRO LUCAS` e `ROTEIRO ALEXANDRE`). O sistema precisa criar roteiros por **promotor**: são 28 promotores com paradas válidas, portanto devem ser **28 roteiros em rascunho**, com as 409 paradas distribuídas entre eles.
+Também há um alerta: a prévia tinha **409 linhas válidas**, mas a tela está processando apenas **336 paradas únicas**. Isso pode ser correto se ela estiver agrupando paradas repetidas, mas precisa provar que nenhum dia, indústria ou frequência foi perdido.
 
-Não confirme ainda. Cole este prompt no Lovable:
+Cole este prompt no Lovable:
 
-CORREÇÃO BLOQUEADORA DA IMPORTAÇÃO — BOTÃO DESABILITADO E QUANTIDADE DE ROTEIROS INCORRETA
+BUG CRÍTICO — IMPORTAÇÃO FICA PRESA EM “GRAVANDO...”
 
-A tela de importação está em “Requer revisão” e o botão “Confirmar Importação Segura” permanece desabilitado mesmo com:
+A importação foi iniciada e a interface ficou indefinidamente em:
 
-- data de vigência preenchida;
-- checkbox de ciência marcado.
+`Gravando...`
 
-Além disso, o resumo informa:
+Não permita nova tentativa, não limpe dados e não declare a importação concluída sem investigar o estado real do banco.
 
-`Gerar 2 Roteiros em RASCUNHO`
+ETAPA 1 — VERIFICAR O ESTADO DA TENTATIVA ATUAL
 
-Isso está incorreto. As duas abas de roteiro do Excel não representam dois roteiros. Elas contêm linhas de 28 promotores diferentes.
+Antes de alterar código, consulte o banco e informe:
 
-Não permita importação até corrigir esse mapeamento.
+- quantos promotores foram criados/atualizados;
+- quantas lojas foram criadas/atualizadas;
+- quantas indústrias foram criadas/atualizadas;
+- quantos roteiros em rascunho foram criados;
+- quantas paradas foram criadas;
+- se houve erro, timeout ou operação pendente;
+- se existem registros parciais da tentativa atual.
 
-CORREÇÃO DO MODELO DE ROTEIROS
+Se houver gravação parcial, não reinicie cegamente. Faça a próxima execução ser idempotente e capaz de continuar sem duplicar dados.
 
-Para a planilha atual:
+ETAPA 2 — DESCOBRIR A CAUSA DO TRAVAMENTO
 
-- criar 1 roteiro em rascunho por promotor com paradas válidas;
-- expectativa: 28 roteiros em rascunho;
-- distribuir as 409 linhas válidas como paradas desses 28 roteiros;
-- manter loja, indústria, frequência e dias marcados;
-- não criar visitas;
-- não publicar roteiros automaticamente;
-- o nome do roteiro deve identificar o promotor, por exemplo:
-  `Importação Excel — [Nome do Promotor]`.
+Inspecione a função `executeImport` e identifique a causa real. Verifique especialmente:
 
-Nunca crie roteiro por nome de aba.
+- `await` ou Promise que nunca termina;
+- inserções em sequência muito lentas;
+- `Promise.all` grande demais;
+- consulta dentro de loop;
+- timeout de função server-side;
+- erro do servidor que não está chegando ao frontend;
+- erro de RLS, foreign key ou validação oculto;
+- estado de loading que não é resetado em `finally`.
 
-CORREÇÃO DO BLOQUEIO “REQUER REVISÃO”
+ETAPA 3 — CORRIGIR A IMPORTAÇÃO
 
-Separe inconsistências bloqueadoras de pendências revisáveis.
+Implemente um processo seguro, com progresso e idempotência:
 
-Pendências revisáveis:
+- crie um identificador único de lote de importação;
+- registre status: preparado, processando, concluído ou falhou;
+- processe cadastros em ordem: indústrias → lojas → promotores → roteiros → paradas;
+- use operações em lote ou chunks pequenos, evitando centenas de requisições individuais;
+- cada etapa deve registrar progresso real;
+- mostre na interface: etapa atual, quantidade processada e erros;
+- se falhar, encerre o loading e mostre uma mensagem clara;
+- permita retomar o mesmo lote sem duplicar dados;
+- bloqueie clique duplo;
+- ao concluir, atualize a tela com relatório final.
 
-- linhas sem nenhum dia da semana marcado;
-- duplicidade idêntica de parada;
-- campos opcionais ausentes.
+INTEGRIDADE DAS PARADAS
 
-Para essas pendências:
+A tela mostra 409 linhas válidas, mas o resumo diz “Processar 336 paradas únicas”.
 
-- mostre a lista clara em “Inconsistências”;
-- não importe as linhas sem dia;
-- ignore duplicidades idênticas, registrando-as no relatório;
-- permita que o Admin confirme a importação dos registros válidos após marcar um novo checkbox:
+Antes de importar, explique a regra de agrupamento:
 
-`Li e aceito importar os registros válidos; as pendências ficarão registradas para revisão posterior.`
+- mostre quantas das 409 linhas foram agrupadas;
+- confirme que cada agrupamento preserva todos os dias marcados;
+- confirme que não mistura indústrias, frequência ou promotores diferentes;
+- se houver risco de perda de dados, importe as 409 linhas como paradas distintas ou corrija a chave de agrupamento;
+- não reduza 409 para 336 sem relatório detalhado e validação.
 
-Inconsistências bloqueadoras:
+TESTE OBRIGATÓRIO
 
-- arquivo inválido;
-- ausência de aba obrigatória;
-- promotor, loja ou indústria obrigatórios ausentes em uma linha que seria importada;
-- falha de vínculo que impeça criar uma parada válida.
+Use uma execução controlada da planilha de referência e confirme:
 
-Somente inconsistências bloqueadoras devem manter o botão desabilitado.
-
-INTERFACE
-
-Após o arquivo válido, a tela deve mostrar:
-
-- `28 roteiros em rascunho`;
-- `409 paradas válidas`;
-- quantidade de promotores, lojas e indústrias a criar/atualizar/ignorar;
-- quantidade de pendências excluídas da importação;
-- motivo claro caso o botão esteja bloqueado;
-- botão habilitado quando:
-  - data válida;
-  - primeiro checkbox marcado;
-  - checkbox de aceite das pendências marcado;
-  - não existir inconsistência bloqueadora.
-
-TESTES OBRIGATÓRIOS
-
-1. Carregar a planilha de referência.
-2. Confirmar que o resumo mostra 28 roteiros em rascunho, não 2.
-3. Confirmar 409 paradas válidas.
-4. Confirmar que as linhas sem dia aparecem como pendência revisável.
-5. Confirmar que duplicidade idêntica aparece como pendência revisável.
-6. Marcar os dois checkboxes e confirmar que o botão é habilitado.
-7. Remover um checkbox e confirmar que o botão volta a ficar desabilitado.
-8. Simular uma inconsistência bloqueadora e confirmar que o botão permanece bloqueado com motivo claro.
-9. Confirmar que nenhuma importação é realizada nesta missão; apenas corrija a prévia e a habilitação.
+1. A importação não fica mais indefinidamente em “Gravando...”.
+2. O progresso mostra cada etapa.
+3. Em caso de falha, o botão volta ao estado normal e mostra o motivo.
+4. Repetir a mesma importação não duplica cadastros, roteiros ou paradas.
+5. São criados/vinculados 28 roteiros em rascunho.
+6. O relatório explica claramente a diferença entre 409 linhas válidas e 336 paradas únicas, se ela continuar existindo.
+7. Nenhuma visita é criada automaticamente.
+8. O resultado final informa exatamente o que foi criado, atualizado, ignorado, pendente e falhou.
 
 ENTREGA
 
-Informe:
+Informe a causa raiz real do travamento, o estado encontrado da tentativa atual, os arquivos alterados e o resultado dos oito testes.
 
-- causa raiz de mostrar 2 roteiros;
-- regra de agrupamento por promotor;
-- quais pendências são bloqueadoras ou revisáveis;
-- resultado individual dos nove testes;
-- captura com “28 roteiros em rascunho” e botão habilitado após os dois checkboxes.
+Não marque como concluído sem realizar uma importação completa no Preview que termine com relatório final, sem ficar em “Gravando...”.
         </div>
       </div>
     </div>
