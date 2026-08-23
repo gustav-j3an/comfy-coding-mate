@@ -118,7 +118,7 @@ export const resendInvite = createServerFn({ method: "POST" })
       else siteUrl = 'https://rota-do-promotor.lovable.app';
     }
 
-    // Resend invite (this invalidates the previous one)
+    // Try to resend the invite (this invalidates the previous one)
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
@@ -126,7 +126,37 @@ export const resendInvite = createServerFn({ method: "POST" })
       }
     );
 
-    if (inviteError) throw inviteError;
+    let mode: 'invite' | 'recovery' = 'invite';
+
+    if (inviteError) {
+      const alreadyRegistered = /already been registered|already registered|email_exists/i.test(
+        inviteError.message || ''
+      );
+      if (!alreadyRegistered) throw inviteError;
+
+      // User already exists: send a password-set (recovery) email instead.
+      const { createClient } = await import('@supabase/supabase-js');
+      const key = process.env['SUPABASE_PUBLISHABLE_KEY']!;
+      const publicClient = createClient(process.env['SUPABASE_URL']!, key, {
+        auth: { persistSession: false },
+        global: {
+          fetch: (input: any, init: any) => {
+            const h = new Headers(init?.headers);
+            if (key.startsWith('sb_') && h.get('Authorization') === `Bearer ${key}`) h.delete('Authorization');
+            h.set('apikey', key);
+            return fetch(input, { ...init, headers: h });
+          },
+        },
+      });
+
+      const { error: recoveryError } = await publicClient.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+      });
+
+      if (recoveryError) throw recoveryError;
+      mode = 'recovery';
+    }
+
 
     // Record audit log
     await recordAudit({
