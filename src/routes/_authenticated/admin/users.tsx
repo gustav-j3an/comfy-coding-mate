@@ -319,7 +319,8 @@ function UserManagement() {
         if (isMobile) {
           waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
         } else {
-          waUrl = `https://web.whatsapp.com/send?phone=${res.phone}&text=${encodedMessage}`;
+          // Protocolo Desktop
+          waUrl = `whatsapp://send?phone=${res.phone}&text=${encodedMessage}`;
         }
         
         setWaInviteData({
@@ -328,6 +329,7 @@ function UserManagement() {
           link: res.actionLink
         });
       }
+
     } catch (error: any) {
       toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
       setWhatsAppTarget(null);
