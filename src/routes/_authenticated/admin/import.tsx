@@ -49,6 +49,7 @@ function ImportModule() {
 
       sheets.forEach(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) continue;
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
         if (sheetName === 'PROMOTORES') {
