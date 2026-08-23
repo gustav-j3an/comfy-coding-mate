@@ -100,16 +100,16 @@ function Index() {
         
         <section className="space-y-4 pt-4 text-blue-300">
           <h2 className="text-xl font-semibold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-            <Calendar className="h-5 w-5" /> MISSÃO 16 — Editor de Roteiro e Simulação Semanal (CONCLUÍDA)
+            <CheckCircle2 className="h-5 w-5" /> CORREÇÃO: Visibilidade de Roteiros na Simulação (CONCLUÍDA)
           </h2>
           <p className="text-slate-300">
-            Ajustes finais de autoridade e visibilidade concluídos. O sistema agora garante transparência e segurança total na gestão de campo.
+            A visão "Visualizar como Promotor" foi corrigida para exibir paradas planejadas mesmo quando não houver visitas materializadas.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li><span className="font-bold text-white">Correção de Simulação:</span> O painel do promotor agora exibe visitas teóricas quando simulado um dia sem visitas materializadas.</li>
-            <li><span className="font-bold text-white">Gestão Operacional:</span> Funções de duplicar, arquivar, pausar e excluir (com trava de segurança) 100% operacionais.</li>
-            <li><span className="font-bold text-white">Segurança no Backend:</span> Validação autoritativa de papel administrativo em todas as operações de escrita críticas.</li>
-            <li><span className="font-bold text-white">UX Refinada:</span> Banner de simulação aprimorado e feedbacks visuais claros para todas as ações administrativas.</li>
+            <li><span className="font-bold text-white">Lógica de Simulação:</span> O sistema agora busca roteiros publicados e extrai paradas teóricas dinamicamente para o dia selecionado.</li>
+            <li><span className="font-bold text-white">Visualização Completa:</span> Exibição de Ordem, Loja (ex: Super Adega QNL), Endereço, Indústria e Observações operacionais.</li>
+            <li><span className="font-bold text-white">Selo de Origem:</span> Implementado o badge "Visita Planejada" para diferenciar dados teóricos de execuções reais.</li>
+            <li><span className="font-bold text-white">Segurança:</span> Trava de links e botões em dados teóricos para garantir que o modo simulação permaneça somente leitura.</li>
           </ul>
         </section>
 

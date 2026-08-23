@@ -94,9 +94,6 @@ function PromoterDashboard() {
           }
         }
 
-        // If it's a simulation of a future/different day, we should also show THEORETICAL visits
-        // from the published route, not just materialized visits in the 'visits' table.
-        
         // 1. Get materialized visits for the date
         let query = supabase
           .from('visits')
@@ -113,38 +110,59 @@ function PromoterDashboard() {
           query = query.eq('executor_id', effectiveUserId);
         }
 
-        const { data: materializedVisits, error } = await query.order('visit_order', { ascending: true });
-        if (error) throw error;
+        const { data: materializedVisits, error: matError } = await query.order('visit_order', { ascending: true });
+        if (matError) throw matError;
 
-        // 2. If it's a simulation (or if there are no visits generated yet), 
-        // fetch theoretical stops from the active route to show what's planned.
-        if (!isRealToday || materializedVisits.length === 0) {
-          const { data: activeRoutes } = await supabase
-            .from('routes')
-            .select(`
+        // 2. Fetch theoretical stops from the active route to show what's planned.
+        // We ALWAYS check for theoretical visits if in preview mode OR if no materialized visits exist yet.
+        const { data: activeRoutes, error: routesError } = await supabase
+          .from('routes')
+          .select(`
+            id,
+            name,
+            valid_from,
+            route_stops (
               id,
-              route_stops (
-                *,
-                store:stores(name, address),
-                stop_tasks (
-                  industry:industries(name)
-                )
+              store_id,
+              day_of_week,
+              visit_order,
+              frequency,
+              biweekly_start_date,
+              observation,
+              store:stores(name, address),
+              stop_tasks (
+                industry_id,
+                industry:industries(name)
               )
-            `)
-            .eq('promoter_id', currentPromoterId as any)
-            .eq('active', true)
-            .eq('status', 'published' as any);
+            )
+          `)
+          .eq('promoter_id', currentPromoterId as any)
+          .eq('active', true)
+          .eq('status', 'published' as any);
 
-          if (activeRoutes && activeRoutes.length > 0) {
-            const theoreticalVisits: any[] = [];
-            activeRoutes.forEach(route => {
-              const stopsForDay = route.route_stops.filter((s: any) => s.day_of_week === simulatedDay);
-              
-              stopsForDay.forEach((stop: any) => {
+        if (routesError) console.error("Error fetching active routes:", routesError);
+
+        const theoreticalVisits: any[] = [];
+        if (activeRoutes && activeRoutes.length > 0) {
+          activeRoutes.forEach(route => {
+            // Filter stops by day of week
+            const stopsForDay = (route.route_stops || []).filter((s: any) => Number(s.day_of_week) === simulatedDay);
+            
+            stopsForDay.forEach((stop: any) => {
+              // Check frequency (biweekly logic)
+              let shouldShow = true;
+              if (stop.frequency === 'biweekly') {
+                const start = stop.biweekly_start_date ? new Date(stop.biweekly_start_date) : (route.valid_from ? new Date(route.valid_from) : new Date());
+                const diffTime = Math.abs(simulatedDate.getTime() - start.getTime());
+                const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+                shouldShow = diffWeeks % 2 === 0;
+              }
+
+              if (shouldShow) {
                 // For each task, create a theoretical visit
-                stop.stop_tasks.forEach((task: any) => {
-                  // Avoid duplicates if visit is already materialized
-                  const isAlreadyMaterialized = materializedVisits.some(mv => 
+                (stop.stop_tasks || []).forEach((task: any) => {
+                  // Avoid duplicates if visit is already materialized (by store and industry)
+                  const isAlreadyMaterialized = (materializedVisits || []).some(mv => 
                     mv.store_id === stop.store_id && mv.industry_id === task.industry_id
                   );
                   
@@ -158,25 +176,26 @@ function PromoterDashboard() {
                       visit_order: stop.visit_order,
                       store: stop.store,
                       industry: task.industry,
+                      observation: stop.observation,
                       is_theoretical: true
                     });
                   }
                 });
-              });
+              }
             });
-
-            // Merge and sort
-            const allVisits = [...materializedVisits, ...theoreticalVisits].sort((a, b) => 
-              (a.visit_order || 0) - (b.visit_order || 0)
-            );
-
-            if (isRealToday) await cachePromoterVisits(effectiveUserId, allVisits);
-            return allVisits;
-          }
+          });
         }
 
-        if (isRealToday) await cachePromoterVisits(effectiveUserId, materializedVisits || []);
-        return materializedVisits || [];
+        // Merge and sort
+        const allVisits = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+          (a.visit_order || 0) - (b.visit_order || 0)
+        );
+
+        if (isRealToday && !previewPromoter?.id) {
+          await cachePromoterVisits(effectiveUserId, allVisits);
+        }
+        
+        return allVisits;
       } catch (err) {
         console.warn('Network error or query error:', err);
         return await getCachedVisits(effectiveUserId);
@@ -212,6 +231,10 @@ function PromoterDashboard() {
   }, [visits, user?.id]);
 
   const getStatusBadge = (visit: any) => {
+    if (visit.is_theoretical) {
+      return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Visita Planejada</Badge>;
+    }
+
     const draft = offlineDrafts[visit.id];
     const status = draft ? draft.status : visit.status;
 
@@ -225,7 +248,6 @@ function PromoterDashboard() {
       case 'approved': return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Aprovada</Badge>;
       case 'rejected': return <Badge variant="destructive">Reprovada</Badge>;
       default: return <Badge variant="outline" className="border-slate-200">{status}</Badge>;
-
     }
   };
 
@@ -330,10 +352,16 @@ function PromoterDashboard() {
                 </div>
                 <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-blue-200 shadow-lg active:scale-[0.98] transition-transform">
                   <Link 
-                    to={"/promoter/visit/$visitId" as any} 
-                    params={{ visitId: String(nextStop.id) } as any}
+                    to={(nextStop as any).is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)} 
+                    params={(nextStop as any).is_theoretical ? {} : ({ visitId: String(nextStop.id) } as any)}
+                    onClick={(e) => {
+                      if ((nextStop as any).is_theoretical) {
+                        e.preventDefault();
+                        toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
+                      }
+                    }}
                   >
-                    Iniciar Visita
+                    {(nextStop as any).is_theoretical ? "Visualizar Planejamento" : "Iniciar Visita"}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -362,8 +390,14 @@ function PromoterDashboard() {
               (visits as any[]).map((visit, index) => (
                 <Link 
                   key={visit.id} 
-                  to={"/promoter/visit/$visitId" as any}
-                  params={{ visitId: String(visit.id) } as any}
+                  to={visit.is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)}
+                  params={visit.is_theoretical ? {} : ({ visitId: String(visit.id) } as any)}
+                  onClick={(e) => {
+                    if (visit.is_theoretical) {
+                      e.preventDefault();
+                      toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
+                    }
+                  }}
                   className="block"
                 >
                   <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
@@ -384,10 +418,15 @@ function PromoterDashboard() {
                             </div>
                             {getStatusBadge(visit)}
                           </div>
-                          <div className="flex items-center text-slate-400 text-xs mt-2">
+                          <div className="flex items-center text-slate-400 text-[10px] mt-1">
                             <MapPin className="h-3 w-3 mr-1" />
                             <span className="truncate">{(visit as any).store?.address}</span>
                           </div>
+                          {visit.observation && (
+                            <p className="text-[9px] text-slate-400 mt-1 italic line-clamp-1">
+                              Obs: {visit.observation}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
