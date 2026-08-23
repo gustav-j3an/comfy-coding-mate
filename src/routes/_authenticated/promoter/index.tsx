@@ -195,7 +195,7 @@ function PromoterDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              visits.map((visit, index) => (
+              (visits as any[]).map((visit, index) => (
                 <Link 
                   key={visit.id} 
                   to={"/promoter/visit/$visitId" as any}
