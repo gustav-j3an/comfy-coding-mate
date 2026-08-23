@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   ChevronLeft, Plus, Trash2, GripVertical, 
-  Save, Calendar, Info, Building2, Clock, MapPin
+  Save, Calendar, Info, Building2, Clock, MapPin,
+  Loader2
 } from 'lucide-react';
 import {
   Select,
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { publishRoute } from '@/lib/routes.functions';
+
 
 export const Route = createFileRoute('/_authenticated/admin/routes_new')({
   component: RouteEditorPage,
@@ -123,7 +125,10 @@ function RouteEditorPage() {
     };
 
     (route.route_stops || []).forEach((s: any) => {
-      stops[s.day_of_week].push({
+      const day = Number(s.day_of_week);
+      if (!stops[day]) stops[day] = [];
+      
+      stops[day].push({
         id: s.id,
         store_id: s.store_id,
         visit_order: s.visit_order,
@@ -135,9 +140,13 @@ function RouteEditorPage() {
     });
 
     // Sort by visit_order
-    Object.keys(stops).forEach(day => {
-      stops[Number(day)].sort((a, b) => a.visit_order - b.visit_order);
+    Object.keys(stops).forEach(dayKey => {
+      const day = Number(dayKey);
+      if (stops[day]) {
+        stops[day].sort((a, b) => a.visit_order - b.visit_order);
+      }
     });
+
 
     setStopsByDay(stops);
   };
@@ -208,20 +217,26 @@ function RouteEditorPage() {
 
     setSaving(true);
     try {
-      const user = (await supabase.auth.getUser()).data.user;
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
       
       let route;
       if (routeId) {
+        const updateData: any = {
+          name: routeName,
+          promoter_id: selectedPromoterId,
+          valid_from: validFrom,
+          updated_at: new Date().toISOString()
+        };
+        
+        if (publish) {
+          updateData.active = true;
+          updateData.status = 'published';
+        }
+
         const { data, error } = await supabase
           .from('routes')
-          .update({
-            name: routeName,
-            promoter_id: selectedPromoterId,
-            valid_from: validFrom,
-            active: publish ? true : undefined,
-            status: publish ? 'published' : undefined,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', routeId)
           .select()
           .single();
@@ -247,8 +262,6 @@ function RouteEditorPage() {
 
       // Handle stops
       if (routeId) {
-        // Simple approach: delete all current stops and tasks and re-insert
-        // A more sophisticated approach would diff, but this is safer for consistency
         await supabase.from('route_stops').delete().eq('route_id', routeId);
       }
 
@@ -302,9 +315,16 @@ function RouteEditorPage() {
   };
 
 
+
   if (loading) {
-    return <div className="p-8 text-center text-slate-500 font-sans">Carregando editor...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 font-sans gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+        <p className="text-slate-500 font-bold">Carregando editor...</p>
+      </div>
+    );
   }
+
 
   const currentDay = DAYS_OF_WEEK.find(d => d.id === selectedDay);
   const currentDayName = currentDay ? currentDay.name : '';
