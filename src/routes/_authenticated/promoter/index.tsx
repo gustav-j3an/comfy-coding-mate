@@ -16,14 +16,16 @@ import {
   CheckCircle,
   Wifi,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
 
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
