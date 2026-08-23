@@ -101,10 +101,7 @@ export const resendInvite = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Apenas administradores podem reenviar convites");
 
     // Get site URL
-    const siteUrl = process.env['PUBLIC_APP_URL'];
-    if (!siteUrl) {
-      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
-    }
+    const siteUrl = getPublicAppUrl();
 
     // Try to resend the invite (this invalidates the previous one)
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
