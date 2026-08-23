@@ -34,7 +34,6 @@ export const submitVisit = createServerFn({ method: "POST" })
     })).optional()
   }).parse(data))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
