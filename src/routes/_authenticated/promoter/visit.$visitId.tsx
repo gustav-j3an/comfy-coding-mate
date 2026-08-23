@@ -53,6 +53,7 @@ function VisitExecution() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [checkinTime] = useState(new Date().toISOString());
+  const [missingEvidences, setMissingEvidences] = useState<string[]>([]);
   
   const [online, setOnline] = useState(isOnline());
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -128,6 +129,14 @@ function VisitExecution() {
     }
   });
 
+  // Check for mandatory evidence requirements
+  useEffect(() => {
+    const required = ['reposicao']; // Example: replenishment photo is always mandatory
+    const uploadedTypes = evidences.map(e => e.evidenceType);
+    const missing = required.filter(type => !uploadedTypes.includes(type));
+    setMissingEvidences(missing);
+  }, [evidences]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeEvidenceType) return;
@@ -195,14 +204,14 @@ function VisitExecution() {
   };
 
   const handleSubmit = async () => {
-    if (evidences.length === 0) {
-      toast.error("Envie pelo menos uma foto ou prova da execução.");
+    if (missingEvidences.length > 0) {
+      toast.error(`Evidências obrigatórias pendentes: ${missingEvidences.join(', ')}`);
       return;
     }
 
     if (!online) {
       await addToSyncQueue(user!.id, visitId);
-      toast.warning("Sem conexão. Visita salva na fila para sincronização automática.");
+      toast.warning("Visita salva offline. Mas ainda faltam evidências para concluir no servidor.");
       navigate({ to: '/promoter' });
       return;
     }
@@ -264,6 +273,17 @@ function VisitExecution() {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Validation Alerts */}
+        {missingEvidences.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-bold text-amber-800">Evidências Obrigatórias Faltando</p>
+              <p className="text-amber-700">Para concluir esta visita, você precisa anexar: <span className="font-bold">{missingEvidences.map(t => t === 'reposicao' ? 'Foto da Reposição' : t).join(', ')}</span>.</p>
+            </div>
+          </div>
+        )}
+
         {/* Status indicator */}
         <div className="flex justify-between items-center px-1">
           {lastSaved && (
@@ -275,7 +295,7 @@ function VisitExecution() {
           {!online && (
             <div className="flex items-center text-[10px] text-orange-500 font-bold uppercase tracking-wider animate-pulse">
               <RefreshCw className="h-3 w-3 mr-1" />
-              Pendente de Sincronização
+              Aguardando Conexão
             </div>
           )}
         </div>
