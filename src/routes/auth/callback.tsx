@@ -2,21 +2,13 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/auth/callback')({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      next: (search.next as string) || '/',
+    };
+  },
   loader: async ({ search }) => {
-    const { next } = search as { next?: string };
-    
-    // O Supabase Auth Helper já deve ter processado o token na URL 
-    // antes deste loader rodar se estivermos no client, mas no loader
-    // podemos forçar uma verificação de sessão.
-    
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (session) {
-      // Se tiver sessão, redireciona para o destino solicitado ou dashboard
-      throw redirect({
-        to: next || '/',
-      });
-    }
+    const { next } = search;
 
     // Se não tiver sessão (token expirado ou inválido), vai para o login com erro
     return { error: 'Sessão expirada ou convite inválido.' };
