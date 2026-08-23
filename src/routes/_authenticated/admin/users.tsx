@@ -255,13 +255,22 @@ function UserManagement() {
 
   const handleResendInvite = async (userId: string, email: string) => {
     try {
-      await resendInvite({ data: { userId, email } });
-      toast.success('Novo convite enviado com sucesso!');
+      const res: any = await resendInvite({ data: { userId, email } });
+      if (res?.mode === 'manual_link' && res.actionLink) {
+        await navigator.clipboard.writeText(res.actionLink).catch(() => {});
+        toast.warning(res.message || 'Limite de e-mails atingido.', {
+          description: 'Link de acesso copiado para a área de transferência. Envie manualmente ao promotor.',
+          duration: 12000,
+        });
+      } else {
+        toast.success('Novo convite enviado com sucesso!');
+      }
       fetchData();
     } catch (error: any) {
       toast.error('Erro ao reenviar convite: ' + error.message);
     }
   };
+
 
   const handleResetAccess = async (email: string) => {
     try {
