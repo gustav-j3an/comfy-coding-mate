@@ -55,8 +55,9 @@ function PromoterDashboard() {
     queryKey: ['promoter-visits', user?.id, today, previewPromoter?.id],
     queryFn: async () => {
       const currentUserId = user?.id;
+      const effectiveUserId = previewPromoter?.id || currentUserId;
       const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
-      if (!currentUserId && !previewPromoter) return [];
+      if (!effectiveUserId) return [];
       
       try {
         let query = supabase
