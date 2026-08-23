@@ -255,12 +255,13 @@ function RoutesPage() {
                     toast.error("Selecione um promotor para visualizar");
                     return;
                   }
-                  setPreviewPromoter({ id: selectedPromoterId, name: selectedPromoterName });
-                  navigate({ to: '/promoter' });
-                  toast.success(`Modo visualização: ${selectedPromoterName}`);
+                  navigate({ 
+                    to: '/admin/visualizar-promotor', 
+                    search: { promoterId: selectedPromoterId } as any 
+                  });
                 }}
               >
-                <Eye className="h-4 w-4" /> Visualizar como Promotor
+                <Eye className="h-4 w-4" /> Visualizar roteiro do promotor
               </Button>
 
           </div>

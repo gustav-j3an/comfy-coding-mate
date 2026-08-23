@@ -82,34 +82,7 @@ function AuthenticatedLayout() {
       <ConnectionStatus />
       <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       
-      {previewPromoter && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-600 text-white px-4 py-2 flex justify-between items-center shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2 font-bold text-[10px] sm:text-xs">
-            <div className="flex items-center gap-2">
-              <Eye className="h-3 w-3 sm:h-4 sm:w-4 animate-pulse" />
-              <span>VISUALIZANDO COMO: <span className="underline">{previewPromoter.name.toUpperCase()}</span></span>
-            </div>
-            <div className="hidden sm:block opacity-50">|</div>
-            <div className="text-[9px] sm:text-[10px] text-amber-100 uppercase tracking-tighter">
-              MODO SIMULAÇÃO ATIVO
-            </div>
-          </div>
-
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="bg-white text-amber-700 hover:bg-slate-100 border-none h-8 font-bold text-xs"
-            onClick={() => {
-              setPreviewPromoter(null);
-              navigate({ to: '/admin/routes' });
-            }}
-          >
-            <ArrowLeft className="h-3 w-3 mr-1" /> VOLTAR AO PAINEL ADMIN
-          </Button>
-        </div>
-      )}
-
-      <div className={cn(previewPromoter ? "pt-12" : "")}>
+      <div className="pt-0">
         <Outlet />
       </div>
     </>
