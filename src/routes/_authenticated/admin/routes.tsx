@@ -141,7 +141,7 @@ function RoutesPage() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao duplicar: " + error.message);
+      toast.error("Erro ao duplicar: " + (error.message || "Erro desconhecido"));
     }
   };
 
@@ -149,23 +149,24 @@ function RoutesPage() {
     try {
       const res = await toggleRouteActive({ data: { routeId, active: !currentActive } });
       if (res.success) {
-        toast.success(currentActive ? "Roteiro pausado" : "Roteiro reativado");
+        toast.success(currentActive ? "Roteiro pausado com sucesso" : "Roteiro reativado com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro: " + error.message);
+      toast.error("Erro ao alterar status: " + (error.message || "Erro desconhecido"));
     }
   };
 
   const handleArchive = async (routeId: string) => {
+    if (!confirm("Tem certeza que deseja arquivar este roteiro? Ele não aparecerá mais na listagem ativa.")) return;
     try {
       const res = await archiveRoute({ data: { routeId } });
       if (res.success) {
-        toast.success("Roteiro arquivado");
+        toast.success("Roteiro arquivado com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao arquivar: " + error.message);
+      toast.error("Erro ao arquivar: " + (error.message || "Erro desconhecido"));
     }
   };
 
@@ -174,11 +175,11 @@ function RoutesPage() {
     try {
       const res = await deleteRouteSafely({ data: { routeId: routeToDelete } });
       if (res.success) {
-        toast.success("Roteiro excluído");
+        toast.success("Roteiro excluído com sucesso");
         fetchData();
       }
     } catch (error: any) {
-      toast.error("Erro ao excluir: " + error.message);
+      toast.error("Erro ao excluir: " + (error.message || "Tente arquivar em vez de excluir."));
     } finally {
       setDeleteConfirmOpen(false);
       setRouteToDelete(null);
@@ -186,12 +187,13 @@ function RoutesPage() {
   };
 
 
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <header className="bg-white border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Rotas e Roteiros</h2>
-          <p className="text-sm text-slate-500">Planejamento logístico e paradas</p>
+          <p className="text-sm text-slate-500 font-medium italic">Gestão e Simulação de Campo</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <Select 
@@ -200,12 +202,16 @@ function RoutesPage() {
               setSelectedPromoterId(value);
               const p = promoters.find(promoter => promoter.id === value);
               if (p) setSelectedPromoterName(p.name);
+              // Clear preview if promoter changes
+              if (previewPromoter && previewPromoter.id !== value) {
+                setPreviewPromoter(null);
+              }
             }}
           >
-            <SelectTrigger className="w-full sm:w-56 bg-slate-50">
+            <SelectTrigger className="w-full sm:w-64 bg-slate-50 border-slate-200 h-11 font-bold">
               <SelectValue placeholder="Selecione um promotor" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="font-sans font-bold">
               {promoters.map(p => (
                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               ))}
@@ -214,12 +220,13 @@ function RoutesPage() {
           <Button 
             onClick={handleCreateRoute}
             disabled={!selectedPromoterId}
-            className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 w-full sm:w-auto"
+            className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 w-full sm:w-auto h-11 font-bold"
           >
             <Plus className="mr-2 h-4 w-4" /> Criar Rota
           </Button>
         </div>
       </header>
+
 
       <div className="p-6 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
@@ -238,7 +245,10 @@ function RoutesPage() {
               </Button>
               <Button 
                 variant="ghost" 
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-bold"
+                className={cn(
+                  "flex items-center gap-2 font-bold transition-all",
+                  selectedPromoterId ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50" : "text-slate-300"
+                )}
                 disabled={!selectedPromoterId}
                 onClick={() => {
                   if (!selectedPromoterId) {
@@ -247,11 +257,12 @@ function RoutesPage() {
                   }
                   setPreviewPromoter({ id: selectedPromoterId, name: selectedPromoterName });
                   navigate({ to: '/promoter' });
-                  toast.success(`Modo visualização ativado: ${selectedPromoterName}`);
+                  toast.success(`Modo visualização: ${selectedPromoterName}`);
                 }}
               >
                 <Eye className="h-4 w-4" /> Visualizar como Promotor
               </Button>
+
           </div>
         </div>
 

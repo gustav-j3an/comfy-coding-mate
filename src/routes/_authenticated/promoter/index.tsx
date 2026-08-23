@@ -69,42 +69,35 @@ function PromoterDashboard() {
   }, [user?.id]);
 
 
-  const { data: visits } = useSuspenseQuery({
-    queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id],
+  const { data: visits, refetch } = useSuspenseQuery({
+    queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
-
       const currentUserId = user?.id;
       const effectiveUserId = previewPromoter?.id || currentUserId;
       const currentPromoterId = previewPromoter?.id || profile?.promoter_id || null;
       if (!effectiveUserId) return [];
+
+      const isRealToday = new Date().getDay() === simulatedDay && 
+                         new Date().toISOString().split('T')[0] === scheduledDateStr;
       
       try {
         // AUTH REINFORCEMENT: If accessing another promoter's data, verify admin role
         if (previewPromoter?.id) {
-          const { data: roleCheck } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', currentUserId as any)
-            .single();
+          const { data: hasRole } = await supabase.rpc('has_role', {
+            _user_id: currentUserId as any,
+            _role: 'admin'
+          });
           
-          if (roleCheck?.role !== 'admin') {
+          if (!hasRole) {
             toast.error("Acesso negado: Apenas administradores podem visualizar dados de outros promotores.");
-            return [];
-          }
-          
-          // MISSION 15: Validate that the preview promoter exists
-          const { data: promoterExists } = await supabase
-            .from('promoters')
-            .select('id')
-            .eq('id', previewPromoter.id)
-            .maybeSingle();
-            
-          if (!promoterExists) {
-            toast.error("Erro: Promotor selecionado não encontrado.");
             return [];
           }
         }
 
+        // If it's a simulation of a future/different day, we should also show THEORETICAL visits
+        // from the published route, not just materialized visits in the 'visits' table.
+        
+        // 1. Get materialized visits for the date
         let query = supabase
           .from('visits')
           .select(`
@@ -120,19 +113,77 @@ function PromoterDashboard() {
           query = query.eq('executor_id', effectiveUserId);
         }
 
-        const { data, error } = await query.order('visit_order', { ascending: true });
-
+        const { data: materializedVisits, error } = await query.order('visit_order', { ascending: true });
         if (error) throw error;
-        
-        // Update cache for offline use
-        await cachePromoterVisits(effectiveUserId, data || []);
-        return data || [];
+
+        // 2. If it's a simulation (or if there are no visits generated yet), 
+        // fetch theoretical stops from the active route to show what's planned.
+        if (!isRealToday || materializedVisits.length === 0) {
+          const { data: activeRoutes } = await supabase
+            .from('routes')
+            .select(`
+              id,
+              route_stops (
+                *,
+                store:stores(name, address),
+                stop_tasks (
+                  industry:industries(name)
+                )
+              )
+            `)
+            .eq('promoter_id', currentPromoterId as any)
+            .eq('active', true)
+            .eq('status', 'published' as any);
+
+          if (activeRoutes && activeRoutes.length > 0) {
+            const theoreticalVisits: any[] = [];
+            activeRoutes.forEach(route => {
+              const stopsForDay = route.route_stops.filter((s: any) => s.day_of_week === simulatedDay);
+              
+              stopsForDay.forEach((stop: any) => {
+                // For each task, create a theoretical visit
+                stop.stop_tasks.forEach((task: any) => {
+                  // Avoid duplicates if visit is already materialized
+                  const isAlreadyMaterialized = materializedVisits.some(mv => 
+                    mv.store_id === stop.store_id && mv.industry_id === task.industry_id
+                  );
+                  
+                  if (!isAlreadyMaterialized) {
+                    theoreticalVisits.push({
+                      id: `theoretical-${stop.id}-${task.industry_id}`,
+                      store_id: stop.store_id,
+                      industry_id: task.industry_id,
+                      status: 'planned',
+                      scheduled_date: scheduledDateStr,
+                      visit_order: stop.visit_order,
+                      store: stop.store,
+                      industry: task.industry,
+                      is_theoretical: true
+                    });
+                  }
+                });
+              });
+            });
+
+            // Merge and sort
+            const allVisits = [...materializedVisits, ...theoreticalVisits].sort((a, b) => 
+              (a.visit_order || 0) - (b.visit_order || 0)
+            );
+
+            if (isRealToday) await cachePromoterVisits(effectiveUserId, allVisits);
+            return allVisits;
+          }
+        }
+
+        if (isRealToday) await cachePromoterVisits(effectiveUserId, materializedVisits || []);
+        return materializedVisits || [];
       } catch (err) {
-        console.warn('Network error, loading from cache:', err);
+        console.warn('Network error or query error:', err);
         return await getCachedVisits(effectiveUserId);
       }
     }
   });
+
 
   const stats = {
     total: visits.length,
@@ -169,11 +220,12 @@ function PromoterDashboard() {
       case 'pending': return <Badge variant="secondary">Em andamento</Badge>;
       case 'awaiting_media': return <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">Mídia Pendente</Badge>;
       case 'ready_to_send': return <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200">Pronta p/ Enviar</Badge>;
-      case 'offline_draft': return <Badge variant="outline" className="bg-slate-100 text-slate-600">Rascunho</Badge>;
-      case 'submitted': return <Badge variant="secondary" className="bg-blue-100 text-blue-700">Enviada</Badge>;
-      case 'approved': return <Badge variant="default" className="bg-green-100 text-green-700">Aprovada</Badge>;
+      case 'offline_draft': return <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">Rascunho</Badge>;
+      case 'submitted': return <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">Enviada</Badge>;
+      case 'approved': return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Aprovada</Badge>;
       case 'rejected': return <Badge variant="destructive">Reprovada</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+      default: return <Badge variant="outline" className="border-slate-200">{status}</Badge>;
+
     }
   };
 
@@ -301,11 +353,12 @@ function PromoterDashboard() {
           <div className="space-y-3">
             {visits.length === 0 ? (
               <Card className="border-dashed border-2">
-                <CardContent className="p-8 text-center text-slate-500">
-                  <p>Nenhuma visita planejada para hoje.</p>
+                <CardContent className="p-8 text-center text-slate-500 font-medium">
+                  <p>Nenhuma visita planejada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
                 </CardContent>
               </Card>
             ) : (
+
               (visits as any[]).map((visit, index) => (
                 <Link 
                   key={visit.id} 
