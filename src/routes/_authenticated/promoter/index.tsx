@@ -187,8 +187,29 @@ function PromoterDashboard() {
           });
         }
 
+        // Enrich materialized visits with route stop data (frequency, observation) if not present
+        const enrichedMaterialized = (materializedVisits || []).map(mv => {
+          // Find the corresponding stop in active routes
+          let stopInfo = null;
+          for (const route of activeRoutes || []) {
+            const stop = (route.route_stops || []).find((s: any) => 
+              s.store_id === mv.store_id && Number(s.day_of_week) === simulatedDay
+            );
+            if (stop) {
+              stopInfo = stop;
+              break;
+            }
+          }
+          
+          return {
+            ...mv,
+            frequency: mv.frequency || stopInfo?.frequency,
+            observation: mv.observation || stopInfo?.observation
+          };
+        });
+
         // Merge and sort
-        const allVisits = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+        const allVisits = [...enrichedMaterialized, ...theoreticalVisits].sort((a, b) => 
           (a.visit_order || 0) - (b.visit_order || 0)
         );
 
