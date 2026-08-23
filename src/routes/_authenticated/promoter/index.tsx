@@ -94,7 +94,7 @@ function PromoterDashboard() {
       if (!currentUserId || !effectivePromoterId) return [];
 
       try {
-        const allVisits = await getPromoterAgenda({
+        const allItems = await getPromoterAgenda({
           data: {
             date: scheduledDateStr,
             promoterId: previewPromoter?.id
@@ -105,10 +105,38 @@ function PromoterDashboard() {
                            new Date().toISOString().split('T')[0] === scheduledDateStr;
 
         if (isRealToday && !previewPromoter?.id) {
-          await cachePromoterVisits(currentUserId, allVisits);
+          await cachePromoterVisits(currentUserId, allItems);
         }
         
-        return allVisits;
+        // Group items by store for the visual display
+        const groupedVisitsMap = new Map<string, any>();
+        
+        allItems.forEach((item: any) => {
+          const storeId = item.store_id;
+          if (!groupedVisitsMap.has(storeId)) {
+            groupedVisitsMap.set(storeId, {
+              ...item,
+              id: `grouped-${storeId}`, // use store based ID for grouping
+              industries: [item.industry],
+              all_items: [item],
+              // A group is approved only if all its items are approved
+              status: item.status
+            });
+          } else {
+            const group = groupedVisitsMap.get(storeId);
+            group.industries.push(item.industry);
+            group.all_items.push(item);
+            
+            // Logic to determine overall group status
+            if (group.status === 'approved' && item.status !== 'approved') {
+              group.status = item.status;
+            } else if (group.status === 'planned' && item.status !== 'planned') {
+              group.status = item.status;
+            }
+          }
+        });
+
+        return Array.from(groupedVisitsMap.values());
       } catch (err) {
         console.warn('Network error or query error:', err);
         return await getCachedVisits(currentUserId || '');
@@ -291,59 +319,63 @@ function PromoterDashboard() {
               </Card>
             ) : (
 
-              (visits as any[]).map((visit, index) => (
-                <Link 
-                  key={visit.id} 
-                  to={visit.is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)}
-                  params={visit.is_theoretical ? {} : ({ visitId: String(visit.id) } as any)}
-                  onClick={(e) => {
-                    if (visit.is_theoretical) {
-                      e.preventDefault();
-                      toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
-                    }
-                  }}
-                  className="block"
-                >
-                  <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${visit.status === 'approved' ? 'opacity-75' : ''}`}>
-                    <CardContent className="p-0">
-                      <div className="flex">
-                        <div className={`w-12 flex flex-col items-center justify-center text-sm font-bold ${
-                          visit.status === 'approved' ? 'bg-green-500 text-white' : 
-                          visit.status === 'submitted' ? 'bg-blue-500 text-white' : 
-                          'bg-slate-200 text-slate-500'
-                        }`}>
-                          {visit.status === 'approved' ? <CheckCircle className="h-5 w-5" /> : index + 1}
-                        </div>
-                        <div className="flex-1 p-3 px-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                               <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
-                                {visit.frequency && (
-                                  <Badge variant="outline" className="text-[9px] h-4 px-1.5 py-0 border-slate-200 text-slate-400 font-medium uppercase">
-                                    {visit.frequency === 'weekly' ? 'Semanal' : 'Quinzenal'}
-                                  </Badge>
-                                )}
+              (visits as any[]).map((group, index) => {
+                const firstRealVisit = group.all_items.find((i: any) => !i.is_theoretical) || group.all_items[0];
+                const isTheoretical = group.all_items.every((i: any) => i.is_theoretical);
+
+                return (
+                  <Link 
+                    key={group.id} 
+                    to={isTheoretical ? "#" : ("/promoter/visit/$visitId" as any)}
+                    params={isTheoretical ? {} : ({ visitId: String(firstRealVisit.id) } as any)}
+                    onClick={(e) => {
+                      if (isTheoretical) {
+                        e.preventDefault();
+                        toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
+                      }
+                    }}
+                    className="block"
+                  >
+                    <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${group.status === 'approved' ? 'opacity-75' : ''}`}>
+                      <CardContent className="p-0">
+                        <div className="flex">
+                          <div className={`w-12 flex flex-col items-center justify-center text-sm font-bold ${
+                            group.status === 'approved' ? 'bg-green-500 text-white' : 
+                            group.status === 'submitted' ? 'bg-blue-500 text-white' : 
+                            'bg-slate-200 text-slate-500'
+                          }`}>
+                            {group.status === 'approved' ? <CheckCircle className="h-5 w-5" /> : index + 1}
+                          </div>
+                          <div className="flex-1 p-3 px-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-bold text-slate-800">{group.store?.name}</h4>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {group.industries.map((ind: any, i: number) => (
+                                    <Badge key={i} variant="secondary" className="text-[9px] h-4 px-1.5 py-0 bg-slate-100 text-slate-600 border-none font-medium">
+                                      {ind?.name}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
+                              {getStatusBadge(group)}
                             </div>
-                            {getStatusBadge(visit)}
+                            <div className="flex items-center text-slate-400 text-[10px] mt-2">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span className="truncate">{group.store?.address}</span>
+                            </div>
+                            {group.observation && (
+                              <p className="text-[9px] text-slate-400 mt-1 italic line-clamp-1">
+                                Obs: {group.observation}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex items-center text-slate-400 text-[10px] mt-1">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span className="truncate">{(visit as any).store?.address}</span>
-                          </div>
-                          {visit.observation && (
-                            <p className="text-[9px] text-slate-400 mt-1 italic line-clamp-1">
-                              Obs: {visit.observation}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>

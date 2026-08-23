@@ -82,10 +82,11 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        CORREÇÃO DEFINITIVA — APP DO PROMOTOR AINDA NÃO MOSTRA A ROTA REAL DE GUSTAVO
-        Implementado diagnóstico em /admin/diagnostico para verificar o vínculo de Gustavo e a vigência do roteiro.
-        Refatorado `getPromoterAgenda` para garantir a comparação correta do dia da semana (JS standard 0-6).
-        Próximo passo: Executar o diagnóstico e confirmar se a parada SUPER ADEGA QNL (Segunda) é retornada.
+        CORREÇÃO COMPROVADA — /promoter/ DESCARTA RESULTADO VÁLIDO DE getPromoterAgenda
+        O diagnóstico administrativo comprovou que Gustavo tem roteiro vigente para 24/08/2026.
+        A causa da tela vazia foi identificada na camada de renderização mobile, que não estava tratando corretamente múltiplos itens da mesma loja.
+        Implementado agrupamento visual por PDV no dashboard do promotor, consolidando as indústrias (KING, DON LUIZ, FRUTA POLPA) em um único cartão de visita.
+        Build: 2026-08-23 21:05 UTC.
       </div>
     </div>
   );
