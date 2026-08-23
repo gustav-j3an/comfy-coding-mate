@@ -296,16 +296,17 @@ function UserManagement() {
     toast.error("URL pública deve ser gerada via servidor. Use o botão WhatsApp ou E-mail.");
   };
 
-  const handleWhatsAppInvite = async () => {
-    if (!whatsAppTarget) return;
-    
+  const handleGenerateWhatsAppInvite = async (user: any) => {
+    setWhatsAppTarget(user);
+    setWaInviteData(null);
     setGeneratingWA(true);
+    
     try {
       const res: any = await generateWhatsAppInvite({ 
         data: { 
-          userId: whatsAppTarget.id, 
-          email: whatsAppTarget.email,
-          promoterId: whatsAppTarget.promoter_id 
+          userId: user.id, 
+          email: user.email,
+          promoterId: user.promoter_id 
         } 
       });
 
@@ -321,25 +322,20 @@ function UserManagement() {
           waUrl = `https://web.whatsapp.com/send?phone=${res.phone}&text=${encodedMessage}`;
         }
         
-        const win = window.open(waUrl, '_blank');
-        
-        if (!win || win.closed || typeof win.closed === 'undefined') {
-          toast.error("O bloqueio de pop-ups impediu a abertura do WhatsApp.", {
-            description: "Use as opções de cópia abaixo como alternativa.",
-            duration: 8000
-          });
-          // Note: we don't set whatsAppTarget to null here so the dialog stays open or the user sees the buttons if we added them to a dialog
-        } else {
-          toast.success('WhatsApp aberto com a mensagem pronta!');
-          setWhatsAppTarget(null);
-        }
+        setWaInviteData({
+          url: waUrl,
+          message: message,
+          link: res.actionLink
+        });
       }
     } catch (error: any) {
       toast.error('Erro ao gerar convite WhatsApp: ' + error.message);
+      setWhatsAppTarget(null);
     } finally {
       setGeneratingWA(false);
     }
   };
+
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
