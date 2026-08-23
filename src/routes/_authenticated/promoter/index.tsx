@@ -13,10 +13,16 @@ import {
   MapPin, 
   Calendar,
   LayoutDashboard,
-  CheckCircle
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline } from '@/lib/offline';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
   component: PromoterDashboard,
