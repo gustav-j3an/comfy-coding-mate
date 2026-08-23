@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { recordAudit } from "./audit.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
@@ -12,6 +13,7 @@ const inviteUserSchema = z.object({
 });
 
 export const inviteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => inviteUserSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -90,6 +92,7 @@ export const inviteUser = createServerFn({ method: "POST" })
   });
 
 export const resendInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string(), email: z.string().email() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -138,6 +141,7 @@ export const resendInvite = createServerFn({ method: "POST" })
   });
 
 export const requestPasswordReset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ email: z.string().email() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -177,6 +181,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
   });
 
 export const updateUserStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string(), status: z.enum(['active', 'blocked', 'pending']) }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -205,6 +210,7 @@ export const updateUserStatus = createServerFn({ method: "POST" })
   });
 
 export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
