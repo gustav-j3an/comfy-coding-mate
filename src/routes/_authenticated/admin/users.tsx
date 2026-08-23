@@ -473,15 +473,15 @@ function UserManagement() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow>
-                  <TableHead className="font-bold text-slate-700">Usuário</TableHead>
-                  <TableHead className="font-bold text-slate-700">Perfil / Vínculo</TableHead>
-                  <TableHead className="font-bold text-slate-700">Status</TableHead>
-                  <TableHead className="font-bold text-slate-700">Criado em</TableHead>
-                  <TableHead className="font-bold text-slate-700">Último Acesso</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Usuário</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Perfil / Vínculo</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Status</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Criado em</TableHead>
+                  <TableHead className="font-bold text-slate-700 whitespace-nowrap">Último Acesso</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -502,9 +502,9 @@ function UserManagement() {
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 uppercase">
+                          <div className="w-9 h-9 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-500 font-bold border border-slate-200 uppercase">
                             {user.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
                           </div>
                           <div>
@@ -513,7 +513,7 @@ function UserManagement() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex flex-col gap-1">
                           {user.user_roles?.[0]?.role ? getRoleBadge(user.user_roles[0].role) : '—'}
                           {user.promoter_id && (
@@ -528,13 +528,13 @@ function UserManagement() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {getStatusBadge(user.status || 'active')}
                       </TableCell>
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="text-xs text-slate-500 whitespace-nowrap">
                         {user.created_at ? format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR }) : '—'}
                       </TableCell>
-                      <TableCell className="text-sm text-slate-500">
+                      <TableCell className="text-sm text-slate-500 whitespace-nowrap">
                         {user.last_access 
                           ? format(new Date(user.last_access), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })
                           : 'Nunca acessou'}
