@@ -138,7 +138,7 @@ function PromoterDashboard() {
           `)
           .eq('promoter_id', currentPromoterId as any)
           .eq('active', true)
-          .eq('status', 'published' as any);
+          .in('status', ['published', 'archived'] as any);
 
         if (routesError) console.error("Error fetching active routes:", routesError);
 
