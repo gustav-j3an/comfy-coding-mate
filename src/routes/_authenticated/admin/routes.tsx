@@ -47,7 +47,9 @@ function RoutesPage() {
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [promoters, setPromoters] = useState<any[]>([]);
   const [selectedPromoterId, setSelectedPromoterId] = useState<string>('');
+  const [selectedPromoterName, setSelectedPromoterName] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { role, setPreviewPromoter, previewPromoter } = useAuth();
 
   useEffect(() => {
     fetchData();
