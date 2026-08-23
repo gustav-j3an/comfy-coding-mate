@@ -51,7 +51,7 @@ export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'la
   const fullDraft: VisitDraft = {
     ...draft,
     lastSaved: new Date().toISOString(),
-    status: currentDraft?.status === 'awaiting_media' ? 'awaiting_media' : 'offline_draft',
+    status: draft.evidences && draft.evidences.length > 0 ? (currentDraft?.status === 'awaiting_media' ? 'awaiting_media' : 'offline_draft') : 'offline_draft',
     requiredEvidenceTypes: currentDraft?.requiredEvidenceTypes || ['reposicao'] // Default requirement
   };
   

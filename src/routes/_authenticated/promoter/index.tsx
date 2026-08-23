@@ -96,10 +96,34 @@ function PromoterDashboard() {
 
   const nextStop = (visits as any[]).find(v => v.status === 'planned');
 
-  const getStatusBadge = (status: string | null) => {
+  const [offlineDrafts, setOfflineDrafts] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    if (user?.id) {
+      const loadDrafts = async () => {
+        const drafts: Record<string, any> = {};
+        for (const v of visits) {
+          const draft = await getVisitDraft(user.id, v.id);
+          if (draft) {
+            drafts[v.id] = draft;
+          }
+        }
+        setOfflineDrafts(drafts);
+      };
+      loadDrafts();
+    }
+  }, [visits, user?.id]);
+
+  const getStatusBadge = (visit: any) => {
+    const draft = offlineDrafts[visit.id];
+    const status = draft ? draft.status : visit.status;
+
     switch (status) {
       case 'planned': return <Badge variant="outline" className="bg-slate-100">Prevista</Badge>;
       case 'pending': return <Badge variant="secondary">Em andamento</Badge>;
+      case 'awaiting_media': return <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">Mídia Pendente</Badge>;
+      case 'ready_to_send': return <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200">Pronta p/ Enviar</Badge>;
+      case 'offline_draft': return <Badge variant="outline" className="bg-slate-100 text-slate-600">Rascunho</Badge>;
       case 'submitted': return <Badge variant="secondary" className="bg-blue-100 text-blue-700">Enviada</Badge>;
       case 'approved': return <Badge variant="default" className="bg-green-100 text-green-700">Aprovada</Badge>;
       case 'rejected': return <Badge variant="destructive">Reprovada</Badge>;
@@ -220,7 +244,7 @@ function PromoterDashboard() {
                               <h4 className="font-bold text-slate-800">{(visit as any).store?.name}</h4>
                               <p className="text-xs text-slate-500 font-medium">{(visit as any).industry?.name}</p>
                             </div>
-                            {getStatusBadge(visit.status)}
+                            {getStatusBadge(visit)}
                           </div>
                           <div className="flex items-center text-slate-400 text-xs mt-2">
                             <MapPin className="h-3 w-3 mr-1" />
