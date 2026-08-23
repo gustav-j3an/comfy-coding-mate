@@ -632,6 +632,18 @@ function UserManagement() {
                               <Copy className="w-4 h-4 mr-2" /> Copiar Link de Convite
                             </DropdownMenuItem>
                             <DropdownMenuItem 
+                              className="cursor-pointer font-semibold text-blue-600" 
+                              onClick={() => {
+                                if (!user.promoter_id) {
+                                  toast.error('Este acesso temporário é apenas para promotores.');
+                                  return;
+                                }
+                                handleGenerateTempAccess(user);
+                              }}
+                            >
+                              <Key className="w-4 h-4 mr-2" /> Gerar acesso temporário
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
                               className="cursor-pointer font-semibold text-green-600" 
                               onClick={() => {
                                 if (!user.promoter_id) {
