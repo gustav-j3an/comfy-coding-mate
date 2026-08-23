@@ -3,7 +3,7 @@ import { z } from "zod";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getPublicAppUrl } from "./app-config";
-import { crypto } from "crypto";
+import { randomBytes } from "crypto";
 
 const inviteUserSchema = z.object({
   email: z.string().email(),
