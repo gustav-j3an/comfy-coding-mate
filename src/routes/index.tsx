@@ -100,18 +100,19 @@ function Index() {
         
         <section className="space-y-4 pt-4 text-blue-300">
           <h2 className="text-xl font-semibold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-            <Calendar className="h-5 w-5" /> Editor de Roteiro e Simulação Semanal
+            <Calendar className="h-5 w-5" /> MISSÃO 16 — Editor de Roteiro e Simulação Semanal (CONCLUÍDA)
           </h2>
           <p className="text-slate-300">
-            Implementação concluída do editor unificado e simulador de agenda para administradores.
+            Ajustes finais de autoridade e visibilidade concluídos. O sistema agora garante transparência e segurança total na gestão de campo.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li><span className="font-bold text-white">Editor Unificado:</span> Edição completa de nomes, datas, lojas e tarefas em rotas existentes.</li>
-            <li><span className="font-bold text-white">Gestão de Roteiro:</span> Menu de ações rápidas (Duplicar, Pausar, Arquivar, Excluir com segurança).</li>
-            <li><span className="font-bold text-white">Simulação Semanal:</span> Seletor de dias na visão do promotor para conferência de roteiros futuros.</li>
-            <li><span className="font-bold text-white">Integridade:</span> Proteção contra exclusão de rotas com visitas já executadas.</li>
+            <li><span className="font-bold text-white">Correção de Simulação:</span> O painel do promotor agora exibe visitas teóricas quando simulado um dia sem visitas materializadas.</li>
+            <li><span className="font-bold text-white">Gestão Operacional:</span> Funções de duplicar, arquivar, pausar e excluir (com trava de segurança) 100% operacionais.</li>
+            <li><span className="font-bold text-white">Segurança no Backend:</span> Validação autoritativa de papel administrativo em todas as operações de escrita críticas.</li>
+            <li><span className="font-bold text-white">UX Refinada:</span> Banner de simulação aprimorado e feedbacks visuais claros para todas as ações administrativas.</li>
           </ul>
         </section>
+
 
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
