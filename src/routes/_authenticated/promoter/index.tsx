@@ -34,7 +34,7 @@ export const Route = createFileRoute('/_authenticated/promoter/')({
 });
 
 function PromoterDashboard() {
-  const { user, profile, previewPromoter } = useAuth();
+  const { user, profile, role, loading: authLoading, previewPromoter } = useAuth();
   
   // Weekly selection state
   const [simulatedDay, setSimulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
@@ -85,13 +85,18 @@ function PromoterDashboard() {
     };
   }, [user?.id]);
 
+  const isPromoterLinked = !!(previewPromoter?.id || profile?.promoter_id);
+  const isAuthReady = !authLoading && !!user;
 
-  const { data: visits, refetch } = useSuspenseQuery({
+
+  const { data: visits, refetch, isLoading, isError, error: queryError } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
       const currentUserId = user?.id;
       const effectivePromoterId = previewPromoter?.id || profile?.promoter_id || null;
-      if (!currentUserId || !effectivePromoterId) return [];
+      
+      if (!currentUserId) return [];
+      if (!effectivePromoterId) return [];
 
       try {
         const allItems = await getPromoterAgenda({
@@ -116,10 +121,9 @@ function PromoterDashboard() {
           if (!groupedVisitsMap.has(storeId)) {
             groupedVisitsMap.set(storeId, {
               ...item,
-              id: `grouped-${storeId}`, // use store based ID for grouping
+              id: `grouped-${storeId}`,
               industries: [item.industry],
               all_items: [item],
-              // A group is approved only if all its items are approved
               status: item.status
             });
           } else {
@@ -127,7 +131,7 @@ function PromoterDashboard() {
             group.industries.push(item.industry);
             group.all_items.push(item);
             
-            // Logic to determine overall group status
+            // Logic for overall group status
             if (group.status === 'approved' && item.status !== 'approved') {
               group.status = item.status;
             } else if (group.status === 'planned' && item.status !== 'planned') {
@@ -136,10 +140,12 @@ function PromoterDashboard() {
           }
         });
 
-        return Array.from(groupedVisitsMap.values());
+        const result = Array.from(groupedVisitsMap.values());
+        console.log(`[Dashboard] Grouped ${allItems.length} items into ${result.length} visits`);
+        return result;
       } catch (err) {
-        console.warn('Network error or query error:', err);
-        return await getCachedVisits(currentUserId || '');
+        console.error('Agenda fetch error:', err);
+        throw err;
       }
     }
   });
@@ -216,7 +222,9 @@ function PromoterDashboard() {
 
         <div className="flex justify-between items-start mb-6 pt-2">
           <div>
-            <h1 className="text-2xl font-bold">Olá, {profile?.full_name?.split(' ')[0]}</h1>
+            <h1 className="text-2xl font-bold">
+              {authLoading ? "Carregando..." : `Olá, ${profile?.full_name?.toUpperCase() || 'PROMOTOR'}`}
+            </h1>
             <p className="text-blue-100 opacity-90">{format(simulatedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
           </div>
         </div>
@@ -224,15 +232,15 @@ function PromoterDashboard() {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
             <p className="text-xs text-blue-100 uppercase font-semibold">Total</p>
-            <p className="text-xl font-bold">{stats.total}</p>
+            <p className="text-xl font-bold">{isPromoterLinked ? stats.total : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
             <p className="text-xs text-blue-100 uppercase font-semibold">Feitas</p>
-            <p className="text-xl font-bold">{stats.completed}</p>
+            <p className="text-xl font-bold">{isPromoterLinked ? stats.completed : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
             <p className="text-xs text-blue-100 uppercase font-semibold">Faltam</p>
-            <p className="text-xl font-bold">{stats.pending}</p>
+            <p className="text-xl font-bold">{isPromoterLinked ? stats.pending : 0}</p>
           </div>
         </div>
       </div>
@@ -311,10 +319,23 @@ function PromoterDashboard() {
 
           
           <div className="space-y-3">
-            {visits.length === 0 ? (
+            {!isAuthReady ? (
+               <div className="p-8 text-center text-slate-500">Autenticando...</div>
+            ) : !isPromoterLinked ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-8 text-center text-red-700 font-medium">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-2 text-red-500" />
+                  <p className="text-lg font-bold">Vínculo não encontrado</p>
+                  <p className="text-sm opacity-80 mt-1">Esta conta ({user?.email}) não está vinculada a um promotor. Contate o administrador.</p>
+                </CardContent>
+              </Card>
+            ) : visits.length === 0 ? (
               <Card className="border-dashed border-2">
                 <CardContent className="p-8 text-center text-slate-500 font-medium">
                   <p>Nenhuma visita planejada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
+                  <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Agenda
+                  </Button>
                 </CardContent>
               </Card>
             ) : (

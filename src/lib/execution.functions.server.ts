@@ -17,6 +17,10 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
 
     if (!userId) throw new Error("Não autorizado");
 
+    // Get user email for logging
+    const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const maskedEmail = authUser?.email ? authUser.email.replace(/(.{2})(.*)(@.*)/, "$1***$3") : "unknown";
+
     // 1. Resolve effective promoter ID
     const { data: userRole } = await supabaseAdmin
       .from('user_roles')
@@ -24,7 +28,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
       .eq('user_id', userId)
       .single();
 
-    let effectivePromoterId = data.promoterId;
+    let effectivePromoterId: string | undefined = data.promoterId;
     
     if (!effectivePromoterId || userRole?.role !== 'admin') {
       const { data: profile } = await supabaseAdmin
@@ -33,13 +37,15 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
         .eq('id', userId)
         .single();
       
-      if (!profile?.promoter_id) {
-        return []; // Not a promoter
-      }
-      effectivePromoterId = profile.promoter_id;
+      effectivePromoterId = profile?.promoter_id || undefined;
     }
 
     const scheduledDateStr = data.date;
+
+    if (!effectivePromoterId) {
+      console.log(`[Agenda] User: ${maskedEmail}, PromoterID: NONE, Date: ${scheduledDateStr}, Count: 0`);
+      return [];
+    }
     const dateObj = new Date(scheduledDateStr + 'T12:00:00Z'); // Midday UTC
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday...
 
@@ -135,7 +141,10 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
     }
 
     // Merge and sort
-    return [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+    const merged = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
       (a.visit_order || 0) - (b.visit_order || 0)
     );
+
+    console.log(`[Agenda] User: ${maskedEmail}, PromoterID: ${effectivePromoterId}, Date: ${scheduledDateStr}, Count: ${merged.length}`);
+    return merged;
   });
