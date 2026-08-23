@@ -94,9 +94,6 @@ function PromoterDashboard() {
           }
         }
 
-        // If it's a simulation of a future/different day, we should also show THEORETICAL visits
-        // from the published route, not just materialized visits in the 'visits' table.
-        
         // 1. Get materialized visits for the date
         let query = supabase
           .from('visits')
@@ -113,38 +110,59 @@ function PromoterDashboard() {
           query = query.eq('executor_id', effectiveUserId);
         }
 
-        const { data: materializedVisits, error } = await query.order('visit_order', { ascending: true });
-        if (error) throw error;
+        const { data: materializedVisits, error: matError } = await query.order('visit_order', { ascending: true });
+        if (matError) throw matError;
 
-        // 2. If it's a simulation (or if there are no visits generated yet), 
-        // fetch theoretical stops from the active route to show what's planned.
-        if (!isRealToday || materializedVisits.length === 0) {
-          const { data: activeRoutes } = await supabase
-            .from('routes')
-            .select(`
+        // 2. Fetch theoretical stops from the active route to show what's planned.
+        // We ALWAYS check for theoretical visits if in preview mode OR if no materialized visits exist yet.
+        const { data: activeRoutes, error: routesError } = await supabase
+          .from('routes')
+          .select(`
+            id,
+            name,
+            valid_from,
+            route_stops (
               id,
-              route_stops (
-                *,
-                store:stores(name, address),
-                stop_tasks (
-                  industry:industries(name)
-                )
+              store_id,
+              day_of_week,
+              visit_order,
+              frequency,
+              biweekly_start_date,
+              observation,
+              store:stores(name, address),
+              stop_tasks (
+                industry_id,
+                industry:industries(name)
               )
-            `)
-            .eq('promoter_id', currentPromoterId as any)
-            .eq('active', true)
-            .eq('status', 'published' as any);
+            )
+          `)
+          .eq('promoter_id', currentPromoterId as any)
+          .eq('active', true)
+          .eq('status', 'published' as any);
 
-          if (activeRoutes && activeRoutes.length > 0) {
-            const theoreticalVisits: any[] = [];
-            activeRoutes.forEach(route => {
-              const stopsForDay = route.route_stops.filter((s: any) => s.day_of_week === simulatedDay);
-              
-              stopsForDay.forEach((stop: any) => {
+        if (routesError) console.error("Error fetching active routes:", routesError);
+
+        const theoreticalVisits: any[] = [];
+        if (activeRoutes && activeRoutes.length > 0) {
+          activeRoutes.forEach(route => {
+            // Filter stops by day of week
+            const stopsForDay = (route.route_stops || []).filter((s: any) => Number(s.day_of_week) === simulatedDay);
+            
+            stopsForDay.forEach((stop: any) => {
+              // Check frequency (biweekly logic)
+              let shouldShow = true;
+              if (stop.frequency === 'biweekly') {
+                const start = stop.biweekly_start_date ? new Date(stop.biweekly_start_date) : (route.valid_from ? new Date(route.valid_from) : new Date());
+                const diffTime = Math.abs(simulatedDate.getTime() - start.getTime());
+                const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+                shouldShow = diffWeeks % 2 === 0;
+              }
+
+              if (shouldShow) {
                 // For each task, create a theoretical visit
-                stop.stop_tasks.forEach((task: any) => {
-                  // Avoid duplicates if visit is already materialized
-                  const isAlreadyMaterialized = materializedVisits.some(mv => 
+                (stop.stop_tasks || []).forEach((task: any) => {
+                  // Avoid duplicates if visit is already materialized (by store and industry)
+                  const isAlreadyMaterialized = (materializedVisits || []).some(mv => 
                     mv.store_id === stop.store_id && mv.industry_id === task.industry_id
                   );
                   
@@ -158,25 +176,26 @@ function PromoterDashboard() {
                       visit_order: stop.visit_order,
                       store: stop.store,
                       industry: task.industry,
+                      observation: stop.observation,
                       is_theoretical: true
                     });
                   }
                 });
-              });
+              }
             });
-
-            // Merge and sort
-            const allVisits = [...materializedVisits, ...theoreticalVisits].sort((a, b) => 
-              (a.visit_order || 0) - (b.visit_order || 0)
-            );
-
-            if (isRealToday) await cachePromoterVisits(effectiveUserId, allVisits);
-            return allVisits;
-          }
+          });
         }
 
-        if (isRealToday) await cachePromoterVisits(effectiveUserId, materializedVisits || []);
-        return materializedVisits || [];
+        // Merge and sort
+        const allVisits = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
+          (a.visit_order || 0) - (b.visit_order || 0)
+        );
+
+        if (isRealToday && !previewPromoter?.id) {
+          await cachePromoterVisits(effectiveUserId, allVisits);
+        }
+        
+        return allVisits;
       } catch (err) {
         console.warn('Network error or query error:', err);
         return await getCachedVisits(effectiveUserId);
