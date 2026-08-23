@@ -528,6 +528,51 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          admin_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          last_error: string | null
+          processed_count: number | null
+          status: string
+          step: string | null
+          summary: Json | null
+          total_count: number | null
+          updated_at: string | null
+          valid_from: string
+        }
+        Insert: {
+          admin_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id: string
+          last_error?: string | null
+          processed_count?: number | null
+          status?: string
+          step?: string | null
+          summary?: Json | null
+          total_count?: number | null
+          updated_at?: string | null
+          valid_from: string
+        }
+        Update: {
+          admin_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          processed_count?: number | null
+          status?: string
+          step?: string | null
+          summary?: Json | null
+          total_count?: number | null
+          updated_at?: string | null
+          valid_from?: string
+        }
+        Relationships: []
+      }
       industries: {
         Row: {
           active: boolean | null
