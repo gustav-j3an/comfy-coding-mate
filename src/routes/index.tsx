@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
-import { MapPin, LogIn, Download, Info } from 'lucide-react';
+import { MapPin, LogIn, Info } from 'lucide-react';
+import { PWAInstallButton } from '@/components/common/pwa-install-button';
 import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
@@ -63,13 +64,7 @@ function Index() {
             </Link>
           </Button>
           
-          <Button 
-            variant="outline"
-            className="h-14 border-slate-200 bg-white text-slate-700 font-bold text-lg rounded-2xl shadow-sm hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2"
-          >
-            <Download className="h-5 w-5" />
-            Instalar aplicativo
-          </Button>
+          <PWAInstallButton />
         </div>
 
         <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl max-w-md w-full space-y-3">
