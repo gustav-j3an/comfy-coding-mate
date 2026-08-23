@@ -763,6 +763,7 @@ export type Database = {
           observation: string | null
           phone: string | null
           region: string | null
+          user_id: string | null
         }
         Insert: {
           active?: boolean | null
@@ -773,6 +774,7 @@ export type Database = {
           observation?: string | null
           phone?: string | null
           region?: string | null
+          user_id?: string | null
         }
         Update: {
           active?: boolean | null
@@ -783,6 +785,7 @@ export type Database = {
           observation?: string | null
           phone?: string | null
           region?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -950,7 +953,15 @@ export type Database = {
           valid_until?: string | null
           version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "routes_promoter_id_fkey"
+            columns: ["promoter_id"]
+            isOneToOne: false
+            referencedRelation: "promoters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stop_tasks: {
         Row: {
