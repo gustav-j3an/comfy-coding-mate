@@ -82,10 +82,10 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO CRÍTICA — LIGAR ROTEIRO PUBLICADO AO APP REAL DO PROMOTOR E EXECUÇÃO DE VISITA
-        Implementação: Criada função de servidor unificada `getPromoterAgenda` para garantir fonte única de verdade.
-        Execução: Refatorado fluxo de visita para suporte multi-indústria (KING, DON LUIZ, FRUTA POLPA) com evidências obrigatórias (Reposicão + Relatório).
-        Dashboard: Dashboard do promotor agora consome agenda autoritativa, resolvendo a divergência entre admin e mobile.
+        CORREÇÃO DEFINITIVA — APP DO PROMOTOR AINDA NÃO MOSTRA A ROTA REAL DE GUSTAVO
+        Implementado diagnóstico em /admin/diagnostico para verificar o vínculo de Gustavo e a vigência do roteiro.
+        Refatorado `getPromoterAgenda` para garantir a comparação correta do dia da semana (JS standard 0-6).
+        Próximo passo: Executar o diagnóstico e confirmar se a parada SUPER ADEGA QNL (Segunda) é retornada.
       </div>
     </div>
   );
