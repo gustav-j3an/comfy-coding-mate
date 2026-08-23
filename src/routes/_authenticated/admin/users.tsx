@@ -77,8 +77,8 @@ export const Route = createFileRoute('/_authenticated/admin/users')({
   component: UserManagement,
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      invite: (search?.invite as string) || undefined,
-      id: (search?.id as string) || undefined,
+      invite: (search?.['invite'] as string) || undefined,
+      id: (search?.['id'] as string) || undefined,
     };
   },
 });
