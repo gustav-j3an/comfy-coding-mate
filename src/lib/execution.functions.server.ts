@@ -17,6 +17,10 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
 
     if (!userId) throw new Error("Não autorizado");
 
+    // Get user email for logging
+    const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const maskedEmail = authUser?.email ? authUser.email.replace(/(.{2})(.*)(@.*)/, "$1***$3") : "unknown";
+
     // 1. Resolve effective promoter ID
     const { data: userRole } = await supabaseAdmin
       .from('user_roles')
@@ -33,13 +37,15 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
         .eq('id', userId)
         .single();
       
-      if (!profile?.promoter_id) {
-        return []; // Not a promoter
-      }
-      effectivePromoterId = profile.promoter_id;
+      effectivePromoterId = profile?.promoter_id || null;
     }
 
     const scheduledDateStr = data.date;
+    console.log(`[Agenda] User: ${maskedEmail}, PromoterID: ${effectivePromoterId || 'NONE'}, Date: ${scheduledDateStr}`);
+
+    if (!effectivePromoterId) {
+      return []; // Not a promoter
+    }
     const dateObj = new Date(scheduledDateStr + 'T12:00:00Z'); // Midday UTC
     const dayOfWeek = dateObj.getDay(); // 0=Sunday, 1=Monday...
 
