@@ -90,28 +90,28 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   return (
-    <div className="min-h-screen bg-[#0F172A] text-white p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold border-b border-slate-700 pb-4">
+    <div className="min-h-screen bg-[#0F172A] text-white p-4 sm:p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+        <h1 className="text-2xl sm:text-3xl font-bold border-b border-slate-700 pb-4">
           ROTA DO PROMOTOR — STATUS DO PROJETO
         </h1>
         
         <section className="space-y-4 pt-4 text-blue-300">
-          <h2 className="text-xl font-semibold text-blue-400">CORREÇÃO DE UX — “VISUALIZAR COMO PROMOTOR” E MENU LATERAL RECOLHÍVEL</h2>
+          <h2 className="text-xl font-semibold text-blue-400">MISSÃO 13 — RESPONSIVIDADE TOTAL (100%)</h2>
           <p className="text-slate-300">
-            Foram implementadas melhorias significativas na experiência do administrador e na navegabilidade do painel.
+            A aplicação foi submetida a uma revisão completa de layout para garantir compatibilidade em todos os dispositivos.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li><span className="font-bold text-white">Visualizar como Promotor:</span> Implementado modo de pré-visualização segura. O Admin seleciona um promotor na tela de rotas e visualiza a interface mobile do promotor com dados reais, mas com travas de segurança para ações de escrita.</li>
-            <li><span className="font-bold text-white">Menu Lateral Recolhível:</span> A barra lateral administrativa agora pode ser recolhida para otimizar o espaço em tela, preservando a preferência do usuário via localStorage.</li>
-            <li><span className="font-bold text-white">Banner de Status:</span> Adicionada uma faixa informativa fixa durante o modo de pré-visualização para garantir clareza e facilitar o retorno ao painel administrativo.</li>
-            <li><span className="font-bold text-white">Responsividade:</span> Melhorado o comportamento do menu em dispositivos móveis, funcionando como uma gaveta (drawer) que se fecha automaticamente.</li>
+            <li><span className="font-bold text-white">Layout Fluído:</span> Removidos widths fixos e implementados grids/flexbox adaptáveis.</li>
+            <li><span className="font-bold text-white">Mobile-First:</span> Ajustes de padding, toque e visibilidade específicos para telas abaixo de 480px.</li>
+            <li><span className="font-bold text-white">Tabelas e Modais:</span> Implementado scroll horizontal em tabelas e modais full-screen em dispositivos pequenos.</li>
+            <li><span className="font-bold text-white">Navegação:</span> Sidebar e menus otimizados para tablets e desktops ultrawide.</li>
           </ul>
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
           <h2 className="text-xl font-semibold text-green-400">FUNCIONALIDADES CONCLUÍDAS</h2>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-300">
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-slate-300">
             <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">PWA Instalável e Modo Offline</li>
             <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Gestão de Rotas e Roteiros 90 dias</li>
             <li className="bg-slate-800/50 p-3 rounded-lg border border-slate-700">Execução de Visita com Geolocalização</li>

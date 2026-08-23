@@ -103,12 +103,12 @@ function RoutesPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+      <header className="bg-white border-b px-4 sm:px-6 py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Rotas e Roteiros</h2>
           <p className="text-sm text-slate-500">Planejamento logístico e paradas</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           <Select 
             value={selectedPromoterId} 
             onValueChange={(value) => {
@@ -117,7 +117,7 @@ function RoutesPage() {
               if (p) setSelectedPromoterName(p.name);
             }}
           >
-            <SelectTrigger className="w-56 bg-slate-50">
+            <SelectTrigger className="w-full sm:w-56 bg-slate-50">
               <SelectValue placeholder="Selecione um promotor" />
             </SelectTrigger>
             <SelectContent>
@@ -129,7 +129,7 @@ function RoutesPage() {
           <Button 
             onClick={handleCreateRoute}
             disabled={!selectedPromoterId}
-            className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200"
+            className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" /> Criar Rota
           </Button>
