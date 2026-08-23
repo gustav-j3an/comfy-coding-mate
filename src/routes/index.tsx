@@ -78,15 +78,15 @@ function Index() {
         </section>
 
         <section className="space-y-4 pt-4 border-t border-slate-700">
-          <h2 className="text-xl font-semibold text-blue-400">CORREÇÃO DE ROTAS E ROTEIROS CONCLUÍDA:</h2>
+          <h2 className="text-xl font-semibold text-red-400">BUG BLOQUEADOR — A ROTA /admin/routes/new NÃO ABRE O FORMULÁRIO DE CRIAÇÃO</h2>
           <p className="text-slate-300">
-            A causa raiz era a falta de permissões (GRANTs) e políticas de RLS nas tabelas de rotas. O banco de dados foi corrigido e o fluxo de criação estabilizado.
+            A correção anterior não resolveu o problema. Existe evidência visual de que, ao acessar `/admin/routes/new?promoterId=...`, a aplicação mantém/renderiza a tela de listagem “Rotas e Roteiros”, em vez de exibir o formulário de criação.
           </p>
           <ul className="list-disc list-inside space-y-2 text-slate-300">
-            <li>Permissões aplicadas às tabelas <code className="text-blue-300">routes</code>, <code className="text-blue-300">route_stops</code> e <code className="text-blue-300">stop_tasks</code>.</li>
-            <li>Políticas de RLS configuradas para Administradores (acesso total) e Promotores (visualização própria).</li>
-            <li>Fluxo de redirecionamento e atualização automática da listagem corrigido no frontend.</li>
-            <li>Validação autoritativa na geração de visitas via <code className="text-blue-300">supabaseAdmin</code> garantida.</li>
+            <li>Identificada colisão de roteamento entre a rota índice e a subrota.</li>
+            <li>Renomeado arquivo para <code className="text-blue-300">routes_new.tsx</code> para forçar registro único.</li>
+            <li>Atualizado <code className="text-blue-300">handleCreateRoute</code> para apontar para o novo endpoint estável.</li>
+            <li>Verificada integridade do formulário de criação e leitura de parâmetros.</li>
           </ul>
         </section>
       </div>
