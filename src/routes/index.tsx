@@ -17,9 +17,9 @@ function Index() {
       if (role === 'admin') {
         navigate({ to: '/admin' });
       } else if (role === 'promoter') {
-        navigate({ to: '/promoter' });
+        navigate({ to: '/promoter/' as any });
       } else if (role === 'industry') {
-        navigate({ to: '/industry' });
+        navigate({ to: '/industry/' as any });
       }
     }
   }, [user, role, loading, navigate]);
@@ -58,7 +58,7 @@ function Index() {
             asChild
             className="h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-2xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Link to={user ? (role === 'admin' ? '/admin' : role === 'promoter' ? '/promoter' : '/industry') : '/login'}>
+            <Link to={user ? (role === 'admin' ? '/admin' : role === 'promoter' ? ('/promoter/' as any) : ('/industry/' as any)) : '/login'}>
               <LogIn className="h-5 w-5" />
               Entrar no sistema
             </Link>

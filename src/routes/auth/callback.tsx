@@ -20,7 +20,9 @@ export const Route = createFileRoute('/auth/callback')({
 
     return { error: 'Sessão expirada ou convite inválido.' };
   },
-  loaderDeps: ({ search }) => search,
+  loaderDeps: ({ search }) => ({
+    next: search.next,
+  }),
   component: AuthCallback,
 });
 

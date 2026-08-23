@@ -84,8 +84,8 @@ function PrimeiroAcesso() {
 
   const handleContinue = () => {
     if (role === 'admin') navigate({ to: '/admin' });
-    else if (role === 'promoter') navigate({ to: '/promoter' });
-    else if (role === 'industry') navigate({ to: '/industry' });
+    else if (role === 'promoter') navigate({ to: '/promoter/' as any });
+    else if (role === 'industry') navigate({ to: '/industry/' as any });
     else navigate({ to: '/' });
   };
 
