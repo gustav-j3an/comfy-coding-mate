@@ -53,10 +53,11 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
     }
 
     // Validate ownership and status
-    if (stop.route.promoter_id !== promoterId) {
+    const route = stop.route as any;
+    if (route.promoter_id !== promoterId) {
       throw new Error("Esta parada não pertence ao seu roteiro.");
     }
-    if (!stop.route.active || stop.route.status !== 'published') {
+    if (!route.active || route.status !== 'published') {
       throw new Error("O roteiro de origem não está ativo ou publicado.");
     }
 
@@ -81,19 +82,19 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       .select('industry_id')
       .eq('route_stop_id', routeStopId);
     
-    const industryId = tasks && tasks.length > 0 ? tasks[0].industry_id : null;
+    const industryId = (tasks && tasks.length > 0) ? tasks[0].industry_id : "";
 
     const { data: newVisit, error: insertError } = await supabaseAdmin
       .from('visits')
       .insert({
         promoter_id: promoterId,
         store_id: stop.store_id,
-        industry_id: industryId, // Note: The app handles multi-industry within a visit via grouped logic
+        industry_id: industryId, 
         scheduled_date: scheduledDate,
         status: 'pending',
         route_id: stop.route_id,
         observation: stop.observation
-      })
+      } as any)
       .select('id')
       .single();
 
