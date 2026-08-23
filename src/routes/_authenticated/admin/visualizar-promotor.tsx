@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export const Route = createFileRoute('/_authenticated/admin/visualizar-promotor')({
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      promoterId: (search.promoterId as string) || '',
+      promoterId: (search['promoterId'] as string) || '',
     };
   },
   component: VisualizarPromotorPage,
