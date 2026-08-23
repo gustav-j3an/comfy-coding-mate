@@ -16,13 +16,16 @@ export const Route = createFileRoute('/_authenticated/admin')({
 
 function AdminLayout() {
   const { role, loading } = useAuth();
+  const navigate = useNavigate();
 
-  if (loading) return null;
+  useEffect(() => {
+    if (!loading && role !== 'admin') {
+      navigate({ to: '/', replace: true });
+    }
+  }, [loading, role, navigate]);
 
-  // Extra safety check for role
-  if (role !== 'admin') {
-    return redirect({ to: '/' });
-  }
+  if (loading || role !== 'admin') return null;
+
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
