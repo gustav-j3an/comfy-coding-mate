@@ -5,8 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, User, AlertCircle, Info } from 'lucide-react';
+import { Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, Calendar, Clock, CheckCircle2, Archive, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { getPromoterItineraryData } from '@/lib/routes.functions';
+import { useServerFn } from '@tanstack/react-start';
+
 
 export const Route = createFileRoute('/_authenticated/admin/visualizar-promotor')({
   validateSearch: (search: Record<string, unknown>) => {
