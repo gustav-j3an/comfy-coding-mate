@@ -184,7 +184,23 @@ export const auditVisit = createServerFn({ method: "POST" })
     reason: z.string().optional()
   }).parse(data))
   .handler(async ({ data, context }) => {
+    const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (!userId) {
+      throw new Error("Não autorizado: Usuário não autenticado no servidor.");
+    }
+
+    // AUTH REINFORCEMENT
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (userRole?.role !== 'admin') {
+      throw new Error("Não autorizado: Apenas administradores podem auditar visitas.");
+    }
 
     // 1. Update visit status
     const { error: visitError } = await supabaseAdmin
