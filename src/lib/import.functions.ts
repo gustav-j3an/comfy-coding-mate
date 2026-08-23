@@ -195,7 +195,7 @@ export const executeImport = createServerFn({ method: "POST" })
           
           for (const [day, active] of Object.entries(stop.dias)) {
             if (active) {
-              const dayOfWeek = daysMap[day as keyof typeof daysMap];
+              const dayOfWeek = daysMap[day as keyof typeof daysMap]!;
               const { data: routeStop, error: rsError } = await supabaseAdmin.from('route_stops').insert({
                 route_id: route.id,
                 store_id: storeId,
