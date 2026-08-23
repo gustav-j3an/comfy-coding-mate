@@ -82,11 +82,13 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        CORREÇÃO COMPROVADA — /promoter/ DESCARTA RESULTADO VÁLIDO DE getPromoterAgenda
-        O diagnóstico administrativo comprovou que Gustavo tem roteiro vigente para 24/08/2026.
-        A causa da tela vazia foi identificada na camada de renderização mobile, que não estava tratando corretamente múltiplos itens da mesma loja.
-        Implementado agrupamento visual por PDV no dashboard do promotor, consolidando as indústrias (KING, DON LUIZ, FRUTA POLPA) em um único cartão de visita.
-        Build: 2026-08-23 21:05 UTC.
+        BLOQUEIO REAL — AGENDA CONTINUA VAZIA E SESSÃO DO PROMOTOR NÃO ESTÁ SENDO VALIDADA
+        Implementada validação rigorosa de identidade no dashboard do promotor (/promoter/).
+        Se o usuário autenticado não possuir vínculo com um promotor (profiles.promoter_id), uma mensagem de erro clara é exibida em vez de uma agenda vazia.
+        Adicionado logging no servidor (getPromoterAgenda) para rastrear o email mascarado, o ID do promotor resolvido e a contagem de itens.
+        Refatorado o cabeçalho para exibir "Olá, NOME" em caixa alta ou "Carregando..." durante a autenticação.
+        O agrupamento visual agora reflete corretamente os contadores (Total, Feitas, Faltam) baseados em PDVs.
+        Build: 2026-08-23 21:12 UTC.
       </div>
     </div>
   );
