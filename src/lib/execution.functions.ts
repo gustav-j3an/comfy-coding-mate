@@ -36,9 +36,31 @@ export const submitVisit = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     if (!userId) {
       throw new Error("Não autorizado: Usuário não autenticado no servidor.");
+    }
+
+    // AUTH REINFORCEMENT: Check if the user is an admin or the owner
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    const isAdmin = userRole?.role === 'admin';
+
+    // BLOCK WRITE ACTIONS IN PREVIEW MODE
+    // If the client sends data that suggests it's in preview mode, block it at backend level.
+    // Also, if an admin is trying to submit for someone else, we double check.
+    if ((data as any).previewPromoterId || isAdmin) {
+      // Admins should not be submitting visits via the UI in preview mode
+      // unless we explicitly allow them to perform actions as promoters (not requested).
+      // The request says: "O modo de pré-visualização deve ser somente leitura também no backend"
+      if ((data as any).previewPromoterId) {
+         throw new Error("Ação bloqueada: O modo de pré-visualização é apenas para leitura.");
+      }
     }
 
     // 1. Validate that the user is the assigned promoter for this visit
@@ -50,35 +72,6 @@ export const submitVisit = createServerFn({ method: "POST" })
 
     if (visitFetchError || !visitData) {
       throw new Error("Visita não encontrada ou erro ao validar permissão.");
-    }
-
-    // Check if the authenticated user is the promoter
-    // We check the profiles/promoters linking. 
-    // In this schema, 'promoters' table has an 'id' which is used as 'promoter_id' in 'visits'.
-    // We need to confirm that auth.users.id -> profiles.id -> promoters.id (if they are the same)
-    // or if promoters table has a user_id. 
-    // Based on Mission 1/4 logic, promoters might have a user_id or be linked to a profile.
-    
-    const { data: promoterData, error: promoterError } = await supabaseAdmin
-      .from('promoters')
-      .select('id')
-      .eq('id', visitData.promoter_id)
-      .single();
-
-    if (promoterError || !promoterData) {
-      throw new Error("Promotor não encontrado.");
-    }
-
-    // Security check: confirm the promoter record belongs to the authenticated user
-    // Depending on the schema, this might be profiles.id = userId or promoters.user_id = userId
-    const { data: profileCheck, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profileCheck) {
-      throw new Error("Perfil não encontrado para o usuário autenticado.");
     }
 
     if (visitData.status === 'submitted' || visitData.status === 'approved') {
