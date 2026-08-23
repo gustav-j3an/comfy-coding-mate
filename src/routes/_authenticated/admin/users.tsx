@@ -154,6 +154,11 @@ function UserManagement() {
   const [whatsAppTarget, setWhatsAppTarget] = useState<any>(null);
   const [waInviteData, setWaInviteData] = useState<{ url: string; message: string; link: string } | null>(null);
   const [generatingWA, setGeneratingWA] = useState(false);
+  
+  // Temporary access states
+  const [tempAccessTarget, setTempAccessTarget] = useState<any>(null);
+  const [tempAccessData, setTempAccessData] = useState<{ tempPassword: string; email: string; waUrl: string; message: string } | null>(null);
+  const [generatingTempAccess, setGeneratingTempAccess] = useState(false);
 
 
   const fetchData = async () => {
