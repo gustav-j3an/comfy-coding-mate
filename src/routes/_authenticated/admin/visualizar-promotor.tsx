@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Loader2, ArrowLeft, User, AlertCircle, Info, MapPin, 
   Calendar, Clock, CheckCircle2, Archive, FileText, 
-  ChevronRight, CalendarDays
+  ChevronRight, CalendarDays, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useMemo } from 'react';
