@@ -444,13 +444,33 @@ export const getPromoterItineraryData = createServerFn({ method: "GET" })
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Check admin role
+    if (!userId) {
+      throw new Response("Não autorizado: Sessão não encontrada.", { status: 401 });
+    }
+
+    // AUTH REINFORCEMENT: Consulte o papel real no banco
     const { data: hasRole } = await supabaseAdmin.rpc('has_role', {
       _user_id: userId,
       _role: 'admin'
     });
-    if (!hasRole) throw new Error("Não autorizado");
+    
+    if (!hasRole) {
+      throw new Response("Não autorizado: Apenas administradores podem acessar o visualizador.", { status: 403 });
+    }
 
+    // Valide também no servidor que o promoterId recebido existe
+    const { data: promoterExists, error: promoterCheckError } = await supabaseAdmin
+      .from('promoters')
+      .select('id')
+      .eq('id', promoterId)
+      .maybeSingle();
+
+    if (promoterCheckError) throw promoterCheckError;
+    if (!promoterExists) {
+      throw new Response("Promotor não encontrado.", { status: 404 });
+    }
+
+    // Só carregue os dados do roteiro depois dessas validações
     const { data: routes, error } = await supabaseAdmin
       .from('routes')
       .select(`
