@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 import { 
   Plus, Search, Filter, MoreVertical, 
   MapPin, Calendar, Clock, ArrowRight,
-  User, CheckCircle2, AlertCircle, Eye
+  User, CheckCircle2, AlertCircle, Eye,
+  Copy, Edit2, Play, Pause, Trash2, Archive,
+  Info
 } from 'lucide-react';
 import {
   Card,
@@ -26,6 +28,30 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  duplicateRoute, 
+  archiveRoute, 
+  toggleRouteActive, 
+  deleteRouteSafely 
+} from '@/lib/routes.functions';
+
 
 export const Route = createFileRoute('/_authenticated/admin/routes')({
   component: RoutesPage,
@@ -51,6 +77,8 @@ function RoutesPage() {
   const [selectedPromoterName, setSelectedPromoterName] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const { role, setPreviewPromoter, previewPromoter } = useAuth();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -100,6 +128,63 @@ function RoutesPage() {
     }
     navigate({ to: `/admin/routes_new`, search: { promoterId: selectedPromoterId } as any });
   };
+
+  const handleEditRoute = (routeId: string) => {
+    navigate({ to: `/admin/routes_new`, search: { routeId } as any });
+  };
+
+  const handleDuplicate = async (routeId: string) => {
+    try {
+      const res = await duplicateRoute({ data: { routeId } });
+      if (res.success) {
+        toast.success("Roteiro duplicado com sucesso!");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error("Erro ao duplicar: " + error.message);
+    }
+  };
+
+  const handleToggleActive = async (routeId: string, currentActive: boolean) => {
+    try {
+      const res = await toggleRouteActive({ data: { routeId, active: !currentActive } });
+      if (res.success) {
+        toast.success(currentActive ? "Roteiro pausado" : "Roteiro reativado");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
+    }
+  };
+
+  const handleArchive = async (routeId: string) => {
+    try {
+      const res = await archiveRoute({ data: { routeId } });
+      if (res.success) {
+        toast.success("Roteiro arquivado");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error("Erro ao arquivar: " + error.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!routeToDelete) return;
+    try {
+      const res = await deleteRouteSafely({ data: { routeId: routeToDelete } });
+      if (res.success) {
+        toast.success("Roteiro excluído");
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error("Erro ao excluir: " + error.message);
+    } finally {
+      setDeleteConfirmOpen(false);
+      setRouteToDelete(null);
+    }
+  };
+
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -191,27 +276,75 @@ function RoutesPage() {
                 r.promoter_name?.toLowerCase().includes(searchTerm.toLowerCase())
               )
               .map((route) => (
-              <Card key={route.id} className="hover:shadow-md transition-shadow overflow-hidden border-slate-200">
+              <Card key={route.id} className={cn(
+                "hover:shadow-md transition-shadow overflow-hidden border-slate-200",
+                route.active === false ? "opacity-75 grayscale-[0.5]" : ""
+              )}>
                 <CardHeader className="pb-3 bg-slate-50/50">
                   <div className="flex justify-between items-start">
                     <div>
-                      <Badge variant={(route as any).status === 'published' ? 'default' : 'secondary'} className={cn(
-                        "mb-2",
-                        (route as any).status === 'published' ? "bg-green-600 hover:bg-green-700" : ""
-                      )}>
-                        {(route as any).status === 'published' ? 'Publicado' : 'Rascunho'}
-                      </Badge>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={(route as any).status === 'published' ? 'default' : 'secondary'} className={cn(
+                          (route as any).status === 'published' ? "bg-green-600 hover:bg-green-700" : ""
+                        )}>
+                          {(route as any).status === 'published' ? 'Publicado' : 'Rascunho'}
+                        </Badge>
+                        {route.active === false && (
+                          <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pausado</Badge>
+                        )}
+                        {(route as any).status === 'archived' && (
+                          <Badge variant="outline" className="text-slate-500 border-slate-200 bg-slate-50">Arquivado</Badge>
+                        )}
+                      </div>
                       <CardTitle className="text-lg text-slate-900">{route.name}</CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1 font-bold">
                         <User className="h-3 w-3" />
                         {route.promoter_name}
                       </CardDescription>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4 text-slate-400" />
-                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hover:bg-slate-200 rounded-full h-8 w-8">
+                          <MoreVertical className="h-4 w-4 text-slate-400" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 font-bold">
+                        <DropdownMenuItem onClick={() => handleEditRoute(route.id)}>
+                          <Edit2 className="mr-2 h-4 w-4" /> Editar Roteiro
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(route.id)}>
+                          <Copy className="mr-2 h-4 w-4" /> Duplicar Roteiro
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleActive(route.id, !!route.active)}>
+                          {route.active ? (
+                            <>
+                              <Pause className="mr-2 h-4 w-4 text-amber-500" /> Pausar Roteiro
+                            </>
+                          ) : (
+                            <>
+                              <Play className="mr-2 h-4 w-4 text-green-500" /> Reativar Roteiro
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleArchive(route.id)}>
+                          <Archive className="mr-2 h-4 w-4 text-slate-500" /> Arquivar Roteiro
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                          onClick={() => {
+                            setRouteToDelete(route.id);
+                            setDeleteConfirmOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Roteiro
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
+
                 <CardContent className="pt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -240,7 +373,11 @@ function RoutesPage() {
                       <Clock className="h-3 w-3" />
                       Alterado em {new Date().toLocaleDateString()}
                     </div>
-                    <Button variant="link" className="p-0 h-auto text-blue-600 font-black text-xs hover:no-underline">
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-blue-600 font-black text-xs hover:no-underline"
+                      onClick={() => handleEditRoute(route.id)}
+                    >
                       EDITAR ROTEIRO
                     </Button>
                   </div>
@@ -250,6 +387,33 @@ function RoutesPage() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="font-sans">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-bold flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" /> Confirmar Exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-medium">
+              Deseja realmente excluir este roteiro? Esta ação não poderá ser desfeita.
+              <br /><br />
+              <span className="text-amber-600 font-bold flex items-center gap-1">
+                <Info className="h-3 w-3" /> Apenas roteiros sem visitas executadas podem ser excluídos.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 font-bold"
+            >
+              Excluir Definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
