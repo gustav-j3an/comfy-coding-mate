@@ -279,16 +279,17 @@ function StoresPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="font-bold">Loja</TableHead>
-                <TableHead className="font-bold">Endereço</TableHead>
-                <TableHead className="font-bold">Cidade/UF</TableHead>
-                <TableHead className="font-bold">Status</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Loja</TableHead>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Endereço</TableHead>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Cidade/UF</TableHead>
+                  <TableHead className="font-bold whitespace-nowrap text-slate-700">Status</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -306,15 +307,15 @@ function StoresPage() {
               ) : (
                 filteredStores.map((store) => (
                   <TableRow key={store.id} className="hover:bg-slate-50 transition-colors">
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 font-bold">
+                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex-shrink-0 flex items-center justify-center text-orange-700 font-bold">
                           <ShoppingCart className="h-5 w-5" />
                         </div>
                         <div className="font-bold text-slate-900">{store.name}</div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="text-sm text-slate-500 truncate max-w-xs">
                         {store.address}{store.number ? `, ${store.number}` : ''}
                       </div>
@@ -322,12 +323,12 @@ function StoresPage() {
                         {store.neighborhood}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="text-sm font-medium">
                         {store.city} / {store.state}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <Badge variant={store.active ? 'default' : 'secondary'} className="font-bold">
                         {store.active ? 'Ativa' : 'Inativa'}
                       </Badge>
@@ -357,7 +358,8 @@ function StoresPage() {
                 ))
               )}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </div>
       </div>
 
