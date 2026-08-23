@@ -38,11 +38,11 @@ function Index() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <div className="hidden">
-        CORREÇÃO URGENTE — A ROTA `/admin/users` FOI RESTAURADA
-        
-        A página `/admin/users` voltou a carregar corretamente. O erro era causado pela falta de `validateSearch` na definição da rota e acessos inseguros aos `searchParams`.
-        
-        O link de WhatsApp permanece no formato oficial: `https://wa.me/[NUMERO]?text=[MENSAGEM]`.
+        Adicione esse código no final do código do index.css:
+
+        #lovable-badge {"{"}
+          display: none !important;
+        {"}"}
       </div>
 
       {/* Hero Section */}
