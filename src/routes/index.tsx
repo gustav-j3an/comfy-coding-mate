@@ -5,6 +5,16 @@ import { MapPin, LogIn, Download, Info } from 'lucide-react';
 import { useEffect } from 'react';
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: "Rota do Promotor" },
+      { name: "description", content: "Sistema inteligente para gestão, roteirização e execução de operações de trade marketing." },
+      { property: "og:title", content: "Rota do Promotor" },
+      { property: "og:description", content: "Gestão inteligente de operações de trade marketing." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
@@ -23,17 +33,6 @@ function Index() {
       }
     }
   }, [user, role, loading, navigate]);
-
-  const handleLoginClick = () => {
-    if (user) {
-      if (role === 'admin') navigate({ to: '/admin' });
-      else if (role === 'promoter') navigate({ to: '/promoter' });
-      else if (role === 'industry') navigate({ to: '/industry' });
-      else navigate({ to: '/login' });
-    } else {
-      navigate({ to: '/login' });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
