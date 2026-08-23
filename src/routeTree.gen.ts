@@ -31,6 +31,7 @@ import { Route as AuthenticatedAdminRoutes_newRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminStoresRouteImport } from './routes/_authenticated/admin/stores'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminVisitsRouteImport } from './routes/_authenticated/admin/visits'
+import { Route as AuthenticatedAdminVisualizarPromotorRouteImport } from './routes/_authenticated/admin/visualizar-promotor'
 import { Route as AuthenticatedIndustryIndexRouteImport } from './routes/_authenticated/industry/index'
 import { Route as AuthenticatedIndustryBillingRouteImport } from './routes/_authenticated/industry/billing'
 import { Route as AuthenticatedIndustryExportsRouteImport } from './routes/_authenticated/industry/exports'
@@ -161,6 +162,12 @@ const AuthenticatedAdminVisitsRoute =
     path: '/visits',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminVisualizarPromotorRoute =
+  AuthenticatedAdminVisualizarPromotorRouteImport.update({
+    id: '/visualizar-promotor',
+    path: '/visualizar-promotor',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedIndustryIndexRoute =
   AuthenticatedIndustryIndexRouteImport.update({
     id: '/industry/',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/admin/visualizar-promotor': typeof AuthenticatedAdminVisualizarPromotorRoute
   '/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
@@ -252,6 +260,7 @@ export interface FileRoutesByTo {
   '/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/admin/visualizar-promotor': typeof AuthenticatedAdminVisualizarPromotorRoute
   '/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stores': typeof AuthenticatedAdminStoresRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/visits': typeof AuthenticatedAdminVisitsRoute
+  '/_authenticated/admin/visualizar-promotor': typeof AuthenticatedAdminVisualizarPromotorRoute
   '/_authenticated/industry/billing': typeof AuthenticatedIndustryBillingRoute
   '/_authenticated/industry/exports': typeof AuthenticatedIndustryExportsRoute
   '/api/public/webhook': typeof ApiPublicWebhookRoute
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/admin/visualizar-promotor'
     | '/industry/billing'
     | '/industry/exports'
     | '/api/public/webhook'
@@ -345,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/stores'
     | '/admin/users'
     | '/admin/visits'
+    | '/admin/visualizar-promotor'
     | '/industry/billing'
     | '/industry/exports'
     | '/api/public/webhook'
@@ -376,6 +388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stores'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/visits'
+    | '/_authenticated/admin/visualizar-promotor'
     | '/_authenticated/industry/billing'
     | '/_authenticated/industry/exports'
     | '/api/public/webhook'
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVisitsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/visualizar-promotor': {
+      id: '/_authenticated/admin/visualizar-promotor'
+      path: '/visualizar-promotor'
+      fullPath: '/admin/visualizar-promotor'
+      preLoaderRoute: typeof AuthenticatedAdminVisualizarPromotorRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/industry/': {
       id: '/_authenticated/industry/'
       path: '/industry'
@@ -620,6 +640,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminStoresRoute: typeof AuthenticatedAdminStoresRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVisitsRoute: typeof AuthenticatedAdminVisitsRoute
+  AuthenticatedAdminVisualizarPromotorRoute: typeof AuthenticatedAdminVisualizarPromotorRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -640,6 +661,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminStoresRoute: AuthenticatedAdminStoresRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
     AuthenticatedAdminVisitsRoute: AuthenticatedAdminVisitsRoute,
+    AuthenticatedAdminVisualizarPromotorRoute:
+      AuthenticatedAdminVisualizarPromotorRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
 

@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_authenticated/admin/visualizar-promotor'
 });
 
 function VisualizarPromotorPage() {
-  const { promoterId } = Route.useSearch();
+  const { promoterId } = Route.useSearch() as { promoterId: string };
   const { role } = useAuth();
   const navigate = useNavigate();
 
