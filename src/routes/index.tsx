@@ -82,13 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO — INICIAR VISITA A PARTIR DA PARADA PREVISTA + DETALHES DA PARADA + RESUMO SEMANAL
-        Implementada materialização autoritativa de visitas via servidor (startScheduledVisit).
-        Criado StopDetailDrawer para visualização prévia da parada, checklist por indústria (KING, DON LUIZ, FRUTA POLPA) e bloqueio de datas futuras.
-        Refatorado o dashboard do promotor para exibir Resumo Semanal (Total da Semana, Feitas e Faltam) independente do dia selecionado.
-        Corrigida a navegação para garantir que visitas previstas gerem um visitId real antes da execução.
-        Resolvido erro de "column visits.visit_order does not exist" com fallback para sorting no servidor.
-        Build: 2026-08-23 23:59 UTC.
+        MISSÃO E1 — ELIMINAR ERRO DE PÁGINA NO CARTÃO E EM “INICIAR VISITA”
+        Diagnóstico: O erro de página ocorria porque o clique no cartão tentava navegar para /promoter/visit/undefined. O botão "Iniciar Visita" no dashboard também tentava materializar sem o retorno autoritativo do servidor.
+        Correção A: O cartão da agenda agora abre exclusivamente o StopDetailDrawer, eliminando a navegação prematura. O Drawer utiliza os dados da parada prevista (theoretical).
+        Correção B: A função server-side startScheduledVisit foi ajustada para validar a data usando a timezone America/Sao_Paulo. O retorno agora segue o contrato estrito { visitId: string, action: string }.
+        Frontend: O botão "Iniciar Visita" agora desabilita durante o processamento e a navegação só ocorre após a confirmação do visitId.
+        Build: 2026-08-24 00:30 UTC.
       </div>
     </div>
   );

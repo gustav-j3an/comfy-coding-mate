@@ -32,10 +32,12 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
     const promoterId = profile.promoter_id;
     const { routeStopId, date: scheduledDate } = data;
 
-    // Validate that the date is today
-    const todayStr = new Date().toISOString().split('T')[0];
-    if (scheduledDate !== todayStr) {
-      throw new Error("Você só pode iniciar visitas na data programada (hoje).");
+    // Validate that the date is today (Sao Paulo time)
+    const now = new Date();
+    const saoPauloDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+    
+    if (scheduledDate !== saoPauloDate) {
+      throw new Error(`Você só pode iniciar visitas na data programada. Hoje é ${saoPauloDate}, e a parada é para ${scheduledDate}.`);
     }
 
     // 2. Resolve Route Stop details
