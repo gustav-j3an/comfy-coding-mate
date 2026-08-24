@@ -82,12 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E1.1 — CORRIGIR IDENTIFICADOR DA PARADA E DATA DA VISITA MATERIALIZADA
-        Diagnóstico: As visitas materializadas estavam sem o vínculo route_stop_id e a navegação no dashboard tentava materializar novamente o que já era real. O uso de toISOString() causava deriva de data por timezone.
-        Fase 2 (Navegação): O StopDetailDrawer agora detecta visitas reais no grupo e navega diretamente usando visitId, sem chamar o servidor.
-        Fase 3 (Data): Padronizado o uso de format(date, 'yyyy-MM-dd') para evitar UTC shift. Adicionada coluna route_stop_id na tabela visits para persistência do vínculo.
-        Servidor: startScheduledVisit agora retorna o contrato {"{ visitId: string, action: 'created' | 'reused' }"} e persiste o route_stop_id.
-        Build: 2026-08-24 00:45 UTC.
+        MISSÃO E1.2 — CORRIGIR A DATA EXIBIDA NA AGENDA E NA “PRÓXIMA PARADA”
+        Diagnóstico: O filtro de agenda estava comparando apenas o dia da semana, ignorando que o roteiro semanal é uma projeção e deve ser filtrado por data específica no dashboard para evitar que paradas de outros dias apareçam.
+        Fase 1 (Agenda): Corrigido o filtro no dashboard para que "Roteiro do Dia" mostre apenas paradas da data selecionada.
+        Fase 2 (Próxima Parada): O card de "Próxima Parada" agora distingue entre "Agora" (hoje) e "Próxima Visita" (futura), removendo o selo de urgência indevido.
+        Fase 3 (Contadores): Renomeados os contadores para "Resumo da semana" para evitar confusão com a meta diária.
+        Build: 2026-08-24 01:15 UTC.
       </div>
     </div>
   );
