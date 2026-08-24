@@ -85,7 +85,7 @@ function LandingPage() {
         MISSÃO E1 — ELIMINAR ERRO DE PÁGINA NO CARTÃO E EM “INICIAR VISITA”
         Diagnóstico: O erro de página ocorria porque o clique no cartão tentava navegar para /promoter/visit/undefined. O botão "Iniciar Visita" no dashboard também tentava materializar sem o retorno autoritativo do servidor.
         Correção A: O cartão da agenda agora abre exclusivamente o StopDetailDrawer, eliminando a navegação prematura. O Drawer utiliza os dados da parada prevista (theoretical).
-        Correção B: A função server-side startScheduledVisit foi ajustada para validar a data usando a timezone America/Sao_Paulo. O retorno agora segue o contrato estrito { visitId: string, action: string }.
+        Correção B: A função server-side startScheduledVisit foi ajustada para validar a data usando a timezone America/Sao_Paulo. O retorno agora segue o contrato estrito {"{ visitId: string, action: string }"}.
         Frontend: O botão "Iniciar Visita" agora desabilita durante o processamento e a navegação só ocorre após a confirmação do visitId.
         Build: 2026-08-24 00:30 UTC.
       </div>
