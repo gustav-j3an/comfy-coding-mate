@@ -82,11 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E1.3 — INICIAR VISITA DE DOMINGO SEM ERRO
-        Diagnóstico: Identificado erro de validação de data no servidor devido a pequenas diferenças na formatação de `Intl.DateTimeFormat` e comparação com `toISOString()` no frontend.
-        Fase 1 (Servidor): Robustecida a validação de data em `startScheduledVisit` usando `en-CA` para garantir o formato YYYY-MM-DD e adicionado log de erro detalhado.
-        Fase 2 (Frontend): Corrigida a detecção de "isToday" no Drawer para usar `format(date, 'yyyy-MM-dd')` em vez de `toISOString()`, alinhando com o resto do sistema.
-        Build: 2026-08-24 01:25 UTC.
+        CORREÇÃO URGENTE E1.3B — ROTA `/promoter/visit/:visitId` RETORNA “THIS PAGE DIDN'T LOAD”
+        Diagnóstico: A rota de execução estava quebrando devido ao uso inadequado do Supabase client no frontend e mapeamento inconsistente de indústrias para visitas recém-criadas.
+        Fase 1 (Servidor): Implementada função autoritativa `getPromoterVisitExecution` em `src/lib/execution.functions.server.ts` para carregar dados da visita, loja e indústrias de forma segura e normalizada.
+        Fase 2 (Frontend): Refatorada a rota de execução para consumir os dados via server function, garantindo que mesmo visitas sem evidências carreguem corretamente.
+        Fase 3 (Segurança): Adicionada validação de posse no loader para impedir acesso cruzado entre promotores.
+        Build: 2026-08-24 01:55 UTC.
       </div>
     </div>
   );

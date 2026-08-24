@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
-import { submitVisit, getSignedUrl } from '@/lib/execution.functions';
+import { submitVisit, getSignedUrl, getPromoterVisitExecution } from '@/lib/execution.functions';
 import { toast } from 'sonner';
 import { 
   saveVisitDraft, 
@@ -113,23 +113,22 @@ function VisitExecution() {
     return () => clearTimeout(saveTimer);
   }, [observation, evidences, occurrences, coords, visitId, user?.id, checkinTime]);
 
-  const { data: visit } = useSuspenseQuery({
-    queryKey: ['visit-details', visitId],
+  const { data: executionData, error: loadError } = useSuspenseQuery({
+    queryKey: ['visit-execution', visitId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('visits')
-        .select(`
-          *,
-          store:stores(*),
-          industry:industries(*)
-        `)
-        .eq('id', visitId)
-        .single();
-
-      if (error) throw error;
-      return data;
+      try {
+        const result = await getPromoterVisitExecution({ data: { visitId } });
+        return result;
+      } catch (err: any) {
+        console.error("Error loading visit execution:", err);
+        throw err;
+      }
     }
   });
+
+  const visit = executionData?.visit;
+  const store = executionData?.store;
+  const industries = executionData?.industries || [];
 
   // Check for mandatory evidence requirements
   useEffect(() => {
@@ -228,8 +227,8 @@ function VisitExecution() {
     // Basic occurrence structure for now
     setOccurrences([...occurrences, {
       type,
-      industryId: visit.industry_id,
-      storeId: visit.store_id,
+      industryId: visit?.industry_id,
+      storeId: store?.id,
       description: `Ocorrência de ${type} registrada pelo promotor.`
     }]);
   };
@@ -359,12 +358,16 @@ function VisitExecution() {
         <Card className="border-none shadow-sm">
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-2">
-              <h2 className="text-xl font-bold text-slate-800">{(visit as any).store?.name}</h2>
-              <Badge variant="outline">{(visit as any).industry?.name}</Badge>
+              <h2 className="text-xl font-bold text-slate-800">{store?.name}</h2>
+              <div className="flex flex-wrap gap-1">
+                {industries.map((ind: any, i: number) => (
+                  <Badge key={i} variant="secondary" className="text-[10px]">{ind?.name}</Badge>
+                ))}
+              </div>
             </div>
             <p className="text-sm text-slate-500 flex items-center">
               <MapPin className="h-3 w-3 mr-1" />
-              {(visit as any).store?.address}
+              {store?.address}
             </p>
           </CardContent>
         </Card>
