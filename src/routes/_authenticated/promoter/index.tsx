@@ -149,28 +149,20 @@ function PromoterDashboard() {
     }
   });
 
-  const { data: weeklyVisits = [] } = useSuspenseQuery({
+  const { data: weeklyVisits = [], isError: isWeeklyError } = useSuspenseQuery({
     queryKey: ['promoter-visits-weekly', user?.id, previewPromoter?.id],
     queryFn: async () => {
-      try {
-        const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
-        if (!effectivePromoterId) return [];
-        
-        const start = startOfWeek(new Date(), { weekStartsOn: 0 });
-        const weekPromises = Array.from({ length: 7 }).map((_, i) => {
-          const d = format(addDays(start, i), 'yyyy-MM-dd');
-          return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } }).catch(e => {
-            console.error(`Weekly fetch error for day ${i}:`, e);
-            return [];
-          });
-        });
-        
-        const results = await Promise.all(weekPromises);
-        return results.flat();
-      } catch (err) {
-        console.error('Weekly agenda fetch error:', err);
-        return [];
-      }
+      const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
+      if (!effectivePromoterId) return [];
+      
+      const start = startOfWeek(new Date(), { weekStartsOn: 0 });
+      const weekPromises = Array.from({ length: 7 }).map((_, i) => {
+        const d = format(addDays(start, i), 'yyyy-MM-dd');
+        return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } });
+      });
+      
+      const results = await Promise.all(weekPromises);
+      return results.flat();
     }
   });
 
