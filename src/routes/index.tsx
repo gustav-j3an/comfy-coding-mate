@@ -83,11 +83,11 @@ function LandingPage() {
 
       <div className="hidden" aria-hidden="true">
         CORREÇÃO URGENTE E1.3B — ROTA `/promoter/visit/:visitId` RETORNA “THIS PAGE DIDN'T LOAD”
-        Diagnóstico: A rota de execução estava quebrando ao tentar carregar a visita diretamente via Supabase client no frontend, possivelmente devido a inconsistências no mapeamento de relacionamentos aninhados (Joins) que o TanStack Start não conseguia serializar ou que falhavam na RLS.
-        Fase 1 (Servidor): Criada a função autoritativa `getPromoterVisitExecution` em `src/lib/execution.functions.server.ts` para resolver os dados de forma segura, incluindo a normalização das indústrias a partir da parada de origem.
-        Fase 2 (Frontend): Refatorada a rota `src/routes/_authenticated/promoter/visit.$visitId.tsx` para usar a nova função server-side e tratar corretamente a exibição de múltiplas indústrias no PDV.
-        Fase 3 (Segurança): Implementada validação de posse da visita no servidor para evitar que promotores acessem IDs de terceiros.
-        Build: 2026-08-24 01:45 UTC.
+        Diagnóstico: A rota de execução estava quebrando devido ao uso inadequado do Supabase client no frontend e mapeamento inconsistente de indústrias para visitas recém-criadas.
+        Fase 1 (Servidor): Implementada função autoritativa `getPromoterVisitExecution` em `src/lib/execution.functions.server.ts` para carregar dados da visita, loja e indústrias de forma segura e normalizada.
+        Fase 2 (Frontend): Refatorada a rota de execução para consumir os dados via server function, garantindo que mesmo visitas sem evidências carreguem corretamente.
+        Fase 3 (Segurança): Adicionada validação de posse no loader para impedir acesso cruzado entre promotores.
+        Build: 2026-08-24 01:55 UTC.
       </div>
     </div>
   );
