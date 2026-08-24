@@ -65,7 +65,7 @@ function PromoterDashboard() {
   };
 
   const simulatedDate = getSimulatedDate();
-  const scheduledDateStr = simulatedDate.toISOString().split('T')[0];
+  const scheduledDateStr = format(simulatedDate, 'yyyy-MM-dd');
 
   const [online, setOnline] = useState(isOnline());
   const [syncQueueSize, setSyncQueueSize] = useState(0);
