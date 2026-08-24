@@ -29,10 +29,20 @@ import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
 import { getPromoterAgenda } from '@/lib/execution.functions';
 import { StopDetailDrawer } from '@/components/promoter/stop-detail-drawer';
 
+import { PromoterErrorBoundary } from '@/components/promoter/promoter-error-boundary';
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
-  component: PromoterDashboard,
+  component: PromoterDashboardWrapper,
 });
+
+function PromoterDashboardWrapper() {
+  return (
+    <PromoterErrorBoundary>
+      <PromoterDashboard />
+    </PromoterErrorBoundary>
+  );
+}
+
 
 function PromoterDashboard() {
   const { user, profile, role, loading: authLoading, previewPromoter } = useAuth();
