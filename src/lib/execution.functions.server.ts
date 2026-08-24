@@ -119,7 +119,7 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
   if (userRole?.role === 'admin' && effectivePromoterId) {
     // Admin can view any promoter's agenda
   } else if (userRole?.role === 'promoter' || !userRole) {
-    // Promoter or user without explicit role (default to profile check)
+    // Promoter or user without explicit role (check profile)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('promoter_id')
@@ -129,10 +129,13 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
     if (!profile?.promoter_id) {
       throw new Error("Não autorizado: Sua conta não está vinculada a um promotor.");
     }
+    
+    // SECURITY: A promoter can ONLY view their own agenda
     effectivePromoterId = profile.promoter_id;
   } else {
     throw new Error(`Não autorizado: Papel '${userRole?.role}' não tem acesso a esta agenda.`);
   }
+
 
 
   const scheduledDateStr = data.date;
