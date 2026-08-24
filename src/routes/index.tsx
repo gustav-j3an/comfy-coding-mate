@@ -82,12 +82,11 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E1.2 — CORRIGIR A DATA EXIBIDA NA AGENDA E NA “PRÓXIMA PARADA”
-        Diagnóstico: O filtro de agenda estava comparando apenas o dia da semana, ignorando que o roteiro semanal é uma projeção e deve ser filtrado por data específica no dashboard para evitar que paradas de outros dias apareçam.
-        Fase 1 (Agenda): Corrigido o filtro no dashboard para que "Roteiro do Dia" mostre apenas paradas da data selecionada.
-        Fase 2 (Próxima Parada): O card de "Próxima Parada" agora distingue entre "Agora" (hoje) e "Próxima Visita" (futura), removendo o selo de urgência indevido.
-        Fase 3 (Contadores): Renomeados os contadores para "Resumo da semana" para evitar confusão com a meta diária.
-        Build: 2026-08-24 01:15 UTC.
+        MISSÃO E1.3 — INICIAR VISITA DE DOMINGO SEM ERRO
+        Diagnóstico: Identificado erro de validação de data no servidor devido a pequenas diferenças na formatação de `Intl.DateTimeFormat` e comparação com `toISOString()` no frontend.
+        Fase 1 (Servidor): Robustecida a validação de data em `startScheduledVisit` usando `en-CA` para garantir o formato YYYY-MM-DD e adicionado log de erro detalhado.
+        Fase 2 (Frontend): Corrigida a detecção de "isToday" no Drawer para usar `format(date, 'yyyy-MM-dd')` em vez de `toISOString()`, alinhando com o resto do sistema.
+        Build: 2026-08-24 01:25 UTC.
       </div>
     </div>
   );
