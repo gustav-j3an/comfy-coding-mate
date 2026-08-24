@@ -149,7 +149,7 @@ export const submitVisit = createServerFn({ method: "POST" })
         file_path: e.filePath,
         file_type: e.fileType,
         evidence_type: e.evidenceType,
-        industry_id: e.industryId
+        industry_id: e.industryId || null
       }));
 
       const { error: evidenceError } = await supabaseAdmin
