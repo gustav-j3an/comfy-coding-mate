@@ -142,24 +142,8 @@ export const submitVisit = createServerFn({ method: "POST" })
 
     if (visitUpdateError) throw new Error("Erro ao atualizar status da visita.");
 
-    // 5. Insert evidences
-    if (data.evidences.length > 0) {
-      const evidencesToInsert = data.evidences.map(e => ({
-        visit_id: data.visitId,
-        file_path: e.filePath,
-        file_type: e.fileType,
-        evidence_type: e.evidenceType,
-        industry_id: e.industryId || null
-      }));
-
-      const { error: evidenceError } = await supabaseAdmin
-        .from('visit_evidence')
-        .insert(evidencesToInsert);
-      
-      if (evidenceError && !evidenceError.message.includes('unique constraint')) {
-        throw new Error("Erro ao registrar evidências.");
-      }
-    }
+    // 5. Evidences are already inserted via confirmEvidenceUpload during the upload process.
+    // We just need to make sure they exist for mandatory check (already done in step 2).
 
     // 6. Insert occurrences
     if (data.occurrences && data.occurrences.length > 0) {
