@@ -82,25 +82,16 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        REGRESSÃO CRÍTICA — AGENDA RESTAURADA E ESTADOS DE ERRO IMPLEMENTADOS
-        Diagnóstico: O hotfix anterior ocultava falhas de carregamento retornando listas vazias, o que causava a zeragem dos indicadores semanais e o desaparecimento de visitas legítimas.
-        Causa Raiz: Blocos try-catch genéricos no frontend que capturavam erros de rede/servidor e retornavam `[]`, mascarando a falha original e impedindo o usuário de saber que houve um erro.
-        Correção:
-        1. Removidos os try-catch silenciadores do dashboard. Erros agora são propagados e tratados visualmente.
-        2. Implementados estados explícitos: "Carregando agenda...", "Ready" (com ou sem itens) e "Erro" (com botão de retry).
-        3. Corrigido bug de duplicação de indústrias no agrupamento por PDV.
-        Build: 2026-08-24 03:00 UTC.
-        MISSÃO DE RECUPERAÇÃO — ROTA /PROMOTER RESTAURADA COM ERROR BOUNDARY
-        Diagnóstico: A rota /promoter exibia página branca devido a falhas de renderização não tratadas ou exceções silenciosas. O Error Boundary específico agora protege contra falhas totais.
-        Resultado: Agenda de Gustavo (Atacadão e Super Adega) restaurada com indicadores semanais (2 PDVs).
-        Build: 2026-08-24 03:20 UTC.
-        CORREÇÃO CRÍTICA — AUTORIZAÇÃO DO PROMOTOR RESTAURADA
-        Diagnóstico: O erro "Não autorizado" em `/promoter` era causado pela ausência do middleware `requireSupabaseAuth` nas Server Functions, impedindo que o `userId` chegasse ao servidor. Além disso, a lógica de validação de papéis em `getPromoterAgenda` estava excessivamente restritiva.
-        Correção:
-        1. Adicionado `.middleware([requireSupabaseAuth])` a `getPromoterAgenda`, `getPromoterVisitExecution` e `startScheduledVisit` em `src/lib/execution.functions.ts`.
-        2. Refatorada a validação de permissões em `src/lib/execution.functions.server.ts` para garantir que o promotor autenticado acesse apenas sua própria agenda, enquanto admins mantêm visão geral.
-        3. Corrigido o envio do `userId` do middleware para os handlers das Server Functions.
-        Build: 2026-08-24 04:15 UTC.
+        MISSÃO E2.1 — SIMPLIFICAR EVIDÊNCIAS PARA FOTOS (CONCLUÍDA)
+        Objetivo: Simplificar a tela de execução para promotores, focando em fotos e eliminando vídeo/PDF.
+        Alterações Realizadas:
+        1. Interface: Removidos botões de Vídeo e PDF. Implementada seção de fotos por indústria.
+        2. Interface: Adicionado suporte nativo para captura de câmera e galeria.
+        3. Validação: Apenas "Foto da reposição" é obrigatória para indústrias cadastradas (KING, DON LUIZ, FRUTA POLPA).
+        4. Validação: Relatório textual e observações agora são 100% opcionais.
+        5. Backend: Atualizado `submitVisit` para validar fotos obrigatórias por ID de indústria e restringir formatos (JPG, PNG, WEBP).
+        6. UX: Novos estados de badge (Reposição OK / Foto obrigatória) na tela de execução.
+        Build: 2026-08-24 05:00 UTC.
 
 
 
