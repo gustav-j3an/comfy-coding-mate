@@ -38,7 +38,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
   const startVisit = useServerFn(startScheduledVisit);
 
   const isTheoretical = group.all_items.every((i: any) => i.is_theoretical);
-  const isToday = new Date().toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0];
+  const isToday = format(new Date(), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
   
   const handleStartVisit = async () => {
     // If we have a real visit in the group, we navigate directly to the first real one

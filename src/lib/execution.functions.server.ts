@@ -34,9 +34,17 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
 
     // Validate that the date is today (Sao Paulo time)
     const now = new Date();
-    const saoPauloDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now);
+    const saoPauloDate = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(now);
     
+    // Also allow yesterday or tomorrow if within a 24-hour window to handle minor timezone drift or late-night visits
+    // but strictly speaking for this mission we enforce the current Sao Paulo date.
     if (scheduledDate !== saoPauloDate) {
+      console.error(`[StartVisit] Date mismatch: Scheduled=${scheduledDate}, SP_Now=${saoPauloDate}`);
       throw new Error(`Você só pode iniciar visitas na data programada. Hoje é ${saoPauloDate}, e a parada é para ${scheduledDate}.`);
     }
 
