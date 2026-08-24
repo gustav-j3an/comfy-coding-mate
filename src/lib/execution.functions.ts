@@ -53,12 +53,7 @@ export const submitVisit = createServerFn({ method: "POST" })
     const isAdmin = userRole?.role === 'admin';
 
     // BLOCK WRITE ACTIONS IN PREVIEW MODE
-    // If the client sends data that suggests it's in preview mode, block it at backend level.
-    // Also, if an admin is trying to submit for someone else, we double check.
     if ((data as any).previewPromoterId || isAdmin) {
-      // Admins should not be submitting visits via the UI in preview mode
-      // unless we explicitly allow them to perform actions as promoters (not requested).
-      // The request says: "O modo de pré-visualização deve ser somente leitura também no backend"
       if ((data as any).previewPromoterId) {
          throw new Error("Ação bloqueada: O modo de pré-visualização é apenas para leitura.");
       }
@@ -80,7 +75,6 @@ export const submitVisit = createServerFn({ method: "POST" })
     }
 
     // 2. Validate mandatory evidences existence and status per industry
-    // KING, DON LUIZ e FRUTA POLPA - Required: Report and Replenishment photo
     const requiredTypes = ['reposicao', 'relatorio'];
     const uploadedTypes = data.evidences.map(e => e.evidenceType);
     const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
@@ -97,7 +91,7 @@ export const submitVisit = createServerFn({ method: "POST" })
     for (const evidence of data.evidences) {
       const pathParts = evidence.filePath.split('/');
       const fileName = pathParts.pop();
-      const folder = pathParts.join('/'); // should be 'evidences/VISIT_ID'
+      const folder = pathParts.join('/'); 
       
       const { data: fileExists, error: storageError } = await supabaseAdmin
         .storage
@@ -283,8 +277,6 @@ export const getSignedUrl = createServerFn({ method: "GET" })
     const isIndustry = userRole?.role === 'industry';
 
     if (!isAdmin) {
-      // If not admin, verify ownership or industry relationship
-      // The filePath pattern is evidences/{visit_id}/...
       const pathParts = data.filePath.split('/');
       const visitIdFromPath = pathParts.length > 1 ? pathParts[1] : null;
 
@@ -293,7 +285,6 @@ export const getSignedUrl = createServerFn({ method: "GET" })
       }
 
       if (isIndustry) {
-        // Industry check: does this visit belong to their industry?
         const { data: profile } = await supabaseAdmin
           .from('profiles')
           .select('industry_id')
@@ -310,7 +301,6 @@ export const getSignedUrl = createServerFn({ method: "GET" })
           throw new Error("Não autorizado: Esta evidência não pertence à sua indústria.");
         }
       } else {
-        // Promoter check: are they the assigned promoter?
         const { data: visit } = await supabaseAdmin
           .from('visits')
           .select('promoter_id')
@@ -332,10 +322,37 @@ export const getSignedUrl = createServerFn({ method: "GET" })
     const { data: signedUrl, error } = await supabaseAdmin
       .storage
       .from('visit-evidences')
-      .createSignedUrl(data.filePath, 3600); // 1 hour
+      .createSignedUrl(data.filePath, 3600); 
 
     if (error) throw error;
     return signedUrl.signedUrl;
   });
 
-export { getPromoterAgenda, startScheduledVisit } from "./execution.functions.server";
+export const getPromoterAgenda = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({
+    date: z.string(),
+    promoterId: z.string().optional()
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { getPromoterAgenda: fn } = await import("./execution.functions.server");
+    return fn({ data, context });
+  });
+
+export const getPromoterVisitExecution = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({
+    visitId: z.string(),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");
+    return fn({ data, context });
+  });
+
+export const startScheduledVisit = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    routeStopId: z.string(),
+    date: z.string(),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { startScheduledVisit: fn } = await import("./execution.functions.server");
+    return fn({ data, context });
+  });
