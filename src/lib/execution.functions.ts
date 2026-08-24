@@ -8,6 +8,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Submits a visit for audit, uploading metadata and creating occurrences.
  */
 export const submitVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     visitId: z.string(),
     executorId: z.string(),
@@ -177,6 +179,8 @@ export const submitVisit = createServerFn({ method: "POST" })
  * Audits a visit (Approve/Reject).
  */
 export const auditVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     visitId: z.string(),
     auditorId: z.string(),
@@ -254,6 +258,8 @@ export const auditVisit = createServerFn({ method: "POST" })
  * Gets a signed URL for a private evidence file.
  */
 export const getSignedUrl = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     filePath: z.string()
   }).parse(data))
@@ -328,30 +334,34 @@ export const getSignedUrl = createServerFn({ method: "GET" })
   });
 
 export const getPromoterAgenda = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     date: z.string(),
     promoterId: z.string().optional()
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterAgenda: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
 
 export const getPromoterVisitExecution = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     visitId: z.string(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
 
 export const startScheduledVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     routeStopId: z.string(),
     date: z.string(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { startScheduledVisit: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
+

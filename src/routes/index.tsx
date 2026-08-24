@@ -94,6 +94,15 @@ function LandingPage() {
         Diagnóstico: A rota /promoter exibia página branca devido a falhas de renderização não tratadas ou exceções silenciosas. O Error Boundary específico agora protege contra falhas totais.
         Resultado: Agenda de Gustavo (Atacadão e Super Adega) restaurada com indicadores semanais (2 PDVs).
         Build: 2026-08-24 03:20 UTC.
+        CORREÇÃO CRÍTICA — AUTORIZAÇÃO DO PROMOTOR RESTAURADA
+        Diagnóstico: O erro "Não autorizado" em `/promoter` era causado pela ausência do middleware `requireSupabaseAuth` nas Server Functions, impedindo que o `userId` chegasse ao servidor. Além disso, a lógica de validação de papéis em `getPromoterAgenda` estava excessivamente restritiva.
+        Correção:
+        1. Adicionado `.middleware([requireSupabaseAuth])` a `getPromoterAgenda`, `getPromoterVisitExecution` e `startScheduledVisit` em `src/lib/execution.functions.ts`.
+        2. Refatorada a validação de permissões em `src/lib/execution.functions.server.ts` para garantir que o promotor autenticado acesse apenas sua própria agenda, enquanto admins mantêm visão geral.
+        3. Corrigido o envio do `userId` do middleware para os handlers das Server Functions.
+        Build: 2026-08-24 04:15 UTC.
+
+
 
       </div>
     </div>

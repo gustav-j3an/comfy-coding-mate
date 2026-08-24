@@ -6,7 +6,7 @@ export const startScheduledVisit = async ({ data, context }: any) => {
   const { userId } = context;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (!userId) throw new Error("Não autorizado");
+  if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -15,8 +15,9 @@ export const startScheduledVisit = async ({ data, context }: any) => {
     .single();
   
   if (!profile?.promoter_id) {
-    throw new Error("Usuário não vinculado a um promotor.");
+    throw new Error("Não autorizado: Usuário não vinculado a um promotor.");
   }
+
 
   const promoterId = profile.promoter_id;
   const { routeStopId, date: scheduledDate } = data;
@@ -105,7 +106,7 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
   const { userId } = context;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (!userId) throw new Error("Não autorizado");
+  if (!userId) throw new Error("Não autorizado: Sessão não encontrada no servidor.");
 
   const { data: userRole } = await supabaseAdmin
     .from('user_roles')
@@ -115,15 +116,27 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
 
   let effectivePromoterId: string | undefined = data.promoterId;
   
-  if (!effectivePromoterId || userRole?.role !== 'admin') {
+  if (userRole?.role === 'admin' && effectivePromoterId) {
+    // Admin can view any promoter's agenda
+  } else if (userRole?.role === 'promoter' || !userRole) {
+    // Promoter or user without explicit role (check profile)
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('promoter_id')
       .eq('id', userId)
       .single();
     
-    effectivePromoterId = profile?.promoter_id || undefined;
+    if (!profile?.promoter_id) {
+      throw new Error("Não autorizado: Sua conta não está vinculada a um promotor.");
+    }
+    
+    // SECURITY: A promoter can ONLY view their own agenda
+    effectivePromoterId = profile.promoter_id;
+  } else {
+    throw new Error(`Não autorizado: Papel '${userRole?.role}' não tem acesso a esta agenda.`);
   }
+
+
 
   const scheduledDateStr = data.date;
 
@@ -227,7 +240,7 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
   const { userId } = context;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (!userId) throw new Error("Não autorizado");
+  if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -236,8 +249,9 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     .single();
   
   if (!profile?.promoter_id) {
-    throw new Error("Usuário não vinculado a um promotor.");
+    throw new Error("Não autorizado: Usuário não vinculado a um promotor.");
   }
+
 
   const { data: visit, error: visitError } = await supabaseAdmin
     .from('visits')
