@@ -82,13 +82,13 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        BLOQUEIO REAL — AGENDA CONTINUA VAZIA E SESSÃO DO PROMOTOR NÃO ESTÁ SENDO VALIDADA
-        Implementada validação rigorosa de identidade no dashboard do promotor (/promoter/).
-        Se o usuário autenticado não possuir vínculo com um promotor (profiles.promoter_id), uma mensagem de erro clara é exibida em vez de uma agenda vazia.
-        Adicionado logging no servidor (getPromoterAgenda) para rastrear o email mascarado, o ID do promotor resolvido e a contagem de itens.
-        Refatorado o cabeçalho para exibir "Olá, NOME" em caixa alta ou "Carregando..." durante a autenticação.
-        O agrupamento visual agora reflete corretamente os contadores (Total, Feitas, Faltam) baseados em PDVs.
-        Build: 2026-08-23 21:12 UTC.
+        MISSÃO — INICIAR VISITA A PARTIR DA PARADA PREVISTA + DETALHES DA PARADA + RESUMO SEMANAL
+        Implementada materialização autoritativa de visitas via servidor (startScheduledVisit).
+        Criado StopDetailDrawer para visualização prévia da parada, checklist por indústria (KING, DON LUIZ, FRUTA POLPA) e bloqueio de datas futuras.
+        Refatorado o dashboard do promotor para exibir Resumo Semanal (Total da Semana, Feitas e Faltam) independente do dia selecionado.
+        Corrigida a navegação para garantir que visitas previstas gerem um visitId real antes da execução.
+        Resolvido erro de "column visits.visit_order does not exist" com fallback para sorting no servidor.
+        Build: 2026-08-23 23:59 UTC.
       </div>
     </div>
   );
