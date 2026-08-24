@@ -384,3 +384,32 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
     return fn({ data, context: { userId: context.userId } });
   });
 
+
+export const requestEvidenceUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({
+    visitId: z.string(),
+    industryId: z.string().optional(),
+    evidenceType: z.string(),
+    fileName: z.string(),
+    fileType: z.string(),
+    fileSize: z.number(),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { requestEvidenceUpload: fn } = await import("./execution.functions.server");
+    return fn({ data, context: { userId: context.userId } });
+  });
+
+export const confirmEvidenceUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({
+    visitId: z.string(),
+    industryId: z.string().optional(),
+    evidenceType: z.string(),
+    filePath: z.string(),
+    fileType: z.string(),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { confirmEvidenceUpload: fn } = await import("./execution.functions.server");
+    return fn({ data, context: { userId: context.userId } });
+  });
