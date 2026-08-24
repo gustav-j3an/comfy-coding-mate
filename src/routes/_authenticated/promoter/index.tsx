@@ -90,14 +90,13 @@ function PromoterDashboard() {
   const isAuthReady = !authLoading && !!user;
 
 
-  const { data: visits, refetch, isLoading, isError, error: queryError } = useSuspenseQuery({
+  const { data: visits = [], refetch, isLoading } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
       const currentUserId = user?.id;
       const effectivePromoterId = previewPromoter?.id || profile?.promoter_id || null;
       
-      if (!currentUserId) return [];
-      if (!effectivePromoterId) return [];
+      if (!currentUserId || !effectivePromoterId) return [];
 
       try {
         const allItems = await getPromoterAgenda({
@@ -107,32 +106,33 @@ function PromoterDashboard() {
           }
         });
 
+        if (!allItems || !Array.isArray(allItems)) return [];
+
         const isRealToday = new Date().getDay() === simulatedDay && 
                            format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
 
         if (isRealToday && !previewPromoter?.id) {
-          await cachePromoterVisits(currentUserId, allItems);
+          await cachePromoterVisits(currentUserId, allItems).catch(e => console.error('Cache error:', e));
         }
         
-        // Group items by store for the visual display
         const groupedVisitsMap = new Map<string, any>();
         
         allItems.forEach((item: any) => {
+          if (!item || !item.store_id) return;
           const storeId = item.store_id;
           if (!groupedVisitsMap.has(storeId)) {
             groupedVisitsMap.set(storeId, {
               ...item,
               id: `grouped-${storeId}`,
-              industries: [item.industry],
+              industries: item.industry ? [item.industry] : [],
               all_items: [item],
               status: item.status
             });
           } else {
             const group = groupedVisitsMap.get(storeId);
-            group.industries.push(item.industry);
+            if (item.industry) group.industries.push(item.industry);
             group.all_items.push(item);
             
-            // Logic for overall group status
             if (group.status === 'approved' && item.status !== 'approved') {
               group.status = item.status;
             } else if (group.status === 'planned' && item.status !== 'planned') {
@@ -141,30 +141,36 @@ function PromoterDashboard() {
           }
         });
 
-        const result = Array.from(groupedVisitsMap.values());
-        console.log(`[Dashboard] Grouped ${allItems.length} items into ${result.length} visits`);
-        return result;
+        return Array.from(groupedVisitsMap.values());
       } catch (err) {
         console.error('Agenda fetch error:', err);
-        throw err;
+        return []; // Return empty instead of throwing to prevent route crash
       }
     }
   });
 
-  const { data: weeklyVisits } = useSuspenseQuery({
+  const { data: weeklyVisits = [] } = useSuspenseQuery({
     queryKey: ['promoter-visits-weekly', user?.id, previewPromoter?.id],
     queryFn: async () => {
-      const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
-      if (!effectivePromoterId) return [];
-      
-      const start = startOfWeek(new Date(), { weekStartsOn: 0 });
-      const weekPromises = Array.from({ length: 7 }).map((_, i) => {
-        const d = format(addDays(start, i), 'yyyy-MM-dd');
-        return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } });
-      });
-      
-      const results = await Promise.all(weekPromises);
-      return results.flat();
+      try {
+        const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
+        if (!effectivePromoterId) return [];
+        
+        const start = startOfWeek(new Date(), { weekStartsOn: 0 });
+        const weekPromises = Array.from({ length: 7 }).map((_, i) => {
+          const d = format(addDays(start, i), 'yyyy-MM-dd');
+          return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } }).catch(e => {
+            console.error(`Weekly fetch error for day ${i}:`, e);
+            return [];
+          });
+        });
+        
+        const results = await Promise.all(weekPromises);
+        return results.flat();
+      } catch (err) {
+        console.error('Weekly agenda fetch error:', err);
+        return [];
+      }
     }
   });
 
@@ -222,14 +228,19 @@ function PromoterDashboard() {
   useEffect(() => {
     if (user?.id) {
       const loadDrafts = async () => {
-        const drafts: Record<string, any> = {};
-        for (const v of visits) {
-          const draft = await getVisitDraft(user.id, v.id);
-          if (draft) {
-            drafts[v.id] = draft;
+        try {
+          const drafts: Record<string, any> = {};
+          for (const v of (visits || [])) {
+            if (!v.id) continue;
+            const draft = await getVisitDraft(user.id, v.id).catch(() => null);
+            if (draft) {
+              drafts[v.id] = draft;
+            }
           }
+          setOfflineDrafts(drafts);
+        } catch (e) {
+          console.error('Draft load error:', e);
         }
-        setOfflineDrafts(drafts);
       };
       loadDrafts();
     }
