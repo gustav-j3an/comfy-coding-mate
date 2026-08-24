@@ -148,8 +148,8 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
                   </div>
                   <div className="p-3 space-y-2">
                     <div className="flex items-center text-xs text-slate-600 gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                      Registrar relatório
+                      <CheckCircle2 className="h-3.5 w-3.5 text-slate-300" />
+                      Registrar relatório (opcional)
                     </div>
                     {['KING', 'DON LUIZ', 'FRUTA POLPA'].includes(ind?.name || '') && (
                       <div className="flex items-center text-xs text-slate-600 gap-2">
