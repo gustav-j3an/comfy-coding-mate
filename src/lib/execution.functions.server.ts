@@ -53,7 +53,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
     }
 
     // Validate ownership and status
-    const route = stop.route as any;
+    const route = (stop as any).route;
     if (route.promoter_id !== promoterId) {
       throw new Error("Esta parada não pertence ao seu roteiro.");
     }
@@ -66,7 +66,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       .from('visits')
       .select('id')
       .eq('promoter_id', promoterId)
-      .eq('store_id', stop.store_id)
+      .eq('store_id', (stop as any).store_id)
       .eq('scheduled_date', scheduledDate)
       .limit(1)
       .maybeSingle();
@@ -80,7 +80,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
     const { data: tasks } = await supabaseAdmin
       .from('stop_tasks')
       .select('industry_id')
-      .eq('route_stop_id', routeStopId);
+      .eq('stop_id', routeStopId);
     
     const industryId = (tasks && tasks.length > 0) ? tasks[0].industry_id : "";
 
@@ -88,12 +88,12 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       .from('visits')
       .insert({
         promoter_id: promoterId,
-        store_id: stop.store_id,
+        store_id: (stop as any).store_id,
         industry_id: industryId, 
         scheduled_date: scheduledDate,
         status: 'pending',
-        route_id: stop.route_id,
-        observation: stop.observation
+        route_id: (stop as any).route_id,
+        observation: (stop as any).observation
       } as any)
       .select('id')
       .single();
