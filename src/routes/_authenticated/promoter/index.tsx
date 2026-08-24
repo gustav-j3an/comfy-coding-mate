@@ -386,7 +386,23 @@ function PromoterDashboard() {
 
           
           <div className="space-y-3">
-            {!isAuthReady ? (
+            {isLoading ? (
+               <div className="p-8 text-center text-slate-500">
+                 <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-500" />
+                 Carregando agenda...
+               </div>
+            ) : isError || isWeeklyError ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-8 text-center text-red-700 font-medium">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-2 text-red-500" />
+                  <p className="text-lg font-bold">Não foi possível carregar sua agenda</p>
+                  <p className="text-sm opacity-80 mt-1">Verifique sua conexão e tente novamente.</p>
+                  <Button variant="outline" size="sm" className="mt-4 border-red-200 text-red-700 hover:bg-red-100" onClick={() => refetch()}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Tentar Novamente
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : !isAuthReady ? (
                <div className="p-8 text-center text-slate-500">Autenticando...</div>
             ) : !isPromoterLinked ? (
               <Card className="border-red-200 bg-red-50">
@@ -399,7 +415,7 @@ function PromoterDashboard() {
             ) : visits.length === 0 ? (
               <Card className="border-dashed border-2">
                 <CardContent className="p-8 text-center text-slate-500 font-medium">
-                  <p>Nenhuma visita planejada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
+                  <p>Nenhuma visita programada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
                   <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
                     <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Agenda
                   </Button>
