@@ -237,7 +237,7 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
   const { userId } = context;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  if (!userId) throw new Error("Não autorizado");
+  if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -246,8 +246,9 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     .single();
   
   if (!profile?.promoter_id) {
-    throw new Error("Usuário não vinculado a um promotor.");
+    throw new Error("Não autorizado: Usuário não vinculado a um promotor.");
   }
+
 
   const { data: visit, error: visitError } = await supabaseAdmin
     .from('visits')
