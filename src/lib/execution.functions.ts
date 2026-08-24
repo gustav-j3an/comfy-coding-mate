@@ -21,7 +21,8 @@ export const submitVisit = createServerFn({ method: "POST" })
     evidences: z.array(z.object({
       filePath: z.string(),
       fileType: z.string(),
-      evidenceType: z.string()
+      evidenceType: z.string(),
+      industryId: z.string().optional()
     })),
     occurrences: z.array(z.object({
       type: z.string(),
@@ -75,17 +76,34 @@ export const submitVisit = createServerFn({ method: "POST" })
       return { success: true, message: "Visita já foi enviada anteriormente." };
     }
 
-    // 2. Validate mandatory evidences existence and status per industry
-    const requiredTypes = ['reposicao', 'relatorio'];
-    const uploadedTypes = data.evidences.map(e => e.evidenceType);
-    const missingTypes = requiredTypes.filter(t => !uploadedTypes.includes(t));
+    // 2. Validate mandatory evidences (reposicao) per industry
+    const { data: industries } = await supabaseAdmin
+      .from('visits')
+      .select(`
+        route_stop:route_stops(
+          stop_tasks(
+            industry:industries(id, name)
+          )
+        )
+      `)
+      .eq('id', data.visitId)
+      .single();
+
+    const taskIndustries = (industries as any)?.route_stop?.stop_tasks?.map((t: any) => t.industry) || [];
+    const missingPhotos: string[] = [];
+
+    for (const ind of taskIndustries) {
+      const hasPhoto = data.evidences.some(e => 
+        e.evidenceType === 'reposicao' && 
+        e.industryId === ind.id
+      );
+      if (!hasPhoto) {
+        missingPhotos.push(ind.name);
+      }
+    }
     
-    if (missingTypes.length > 0) {
-      const labels: Record<string, string> = {
-        'reposicao': 'Foto da Reposição',
-        'relatorio': 'Relatório da Indústria'
-      };
-      throw new Error(`Evidências obrigatórias ausentes: ${missingTypes.map(t => labels[t] || t).join(', ')}`);
+    if (missingPhotos.length > 0) {
+      throw new Error(`Fotos de reposição obrigatórias ausentes para: ${missingPhotos.join(', ')}`);
     }
 
     // 3. Verify files actually exist in Storage
@@ -130,7 +148,8 @@ export const submitVisit = createServerFn({ method: "POST" })
         visit_id: data.visitId,
         file_path: e.filePath,
         file_type: e.fileType,
-        evidence_type: e.evidenceType
+        evidence_type: e.evidenceType,
+        industry_id: e.industryId || null
       }));
 
       const { error: evidenceError } = await supabaseAdmin

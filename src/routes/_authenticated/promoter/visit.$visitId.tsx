@@ -20,7 +20,9 @@ import {
   WifiOff,
   Save,
   RefreshCw,
-  Clock
+  Clock,
+  Images,
+  GalleryVertical
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -62,6 +64,7 @@ function VisitExecution() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string>('');
 
   // Handle online/offline status
   useEffect(() => {
@@ -132,9 +135,21 @@ function VisitExecution() {
 
   // Check for mandatory evidence requirements
   useEffect(() => {
-    const required = ['reposicao', 'relatorio']; // Mandatory for KING, DON LUIZ, FRUTA POLPA
-    const uploadedTypes = evidences.map(e => e.evidenceType);
-    const missing = required.filter(type => !uploadedTypes.includes(type));
+    // Mission E2.1: Only "reposicao" is mandatory per industry
+    const missing: string[] = [];
+    
+    industries.forEach((ind: any) => {
+      const hasReposicao = evidences.some(e => 
+        e.evidenceType === 'reposicao' && e.industryId === ind.id
+      );
+      if (hasReposicao) return;
+      
+      // Mandatory for specified industries or if it's the main industry of the visit
+      if (['KING', 'DON LUIZ', 'FRUTA POLPA'].includes(ind.name) || visit?.industry_id === ind.id) {
+        missing.push(ind.name);
+      }
+    });
+
     setMissingEvidences(missing);
 
     // Update draft status if offline
@@ -163,21 +178,15 @@ function VisitExecution() {
     const file = e.target.files?.[0];
     if (!file || !activeEvidenceType) return;
 
-    // Validate size (Mission 4 rules)
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-    const isPdf = file.type === 'application/pdf';
+    // Validate image formats (Mission E2.1)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato inválido: Aceitamos apenas JPG, PNG e WEBP.");
+      return;
+    }
 
-    if (isImage && file.size > 2 * 1024 * 1024) {
-      toast.error("Arquivo muito grande: Fotos devem ter no máximo 2MB");
-      return;
-    }
-    if (isVideo && file.size > 30 * 1024 * 1024) {
-      toast.error("Arquivo muito grande: Vídeos devem ter no máximo 30MB");
-      return;
-    }
-    if (isPdf && file.size > 10 * 1024 * 1024) {
-      toast.error("Arquivo muito grande: PDFs devem ter no máximo 10MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande: Fotos devem ter no máximo 5MB");
       return;
     }
 
@@ -199,7 +208,8 @@ function VisitExecution() {
       setEvidences([...evidences, {
         filePath,
         fileType: file.type,
-        evidenceType: activeEvidenceType
+        evidenceType: activeEvidenceType,
+        industryId: selectedIndustryId
       }]);
 
       toast.success("Evidência anexada com sucesso.");
@@ -324,8 +334,8 @@ function VisitExecution() {
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-bold text-amber-800">Evidências Obrigatórias Faltando</p>
-              <p className="text-amber-700">Para concluir esta visita, você precisa anexar: <span className="font-bold">{missingEvidences.map(t => t === 'reposicao' ? 'Foto da Reposição' : (t === 'relatorio' ? 'Relatório da Indústria' : t)).join(', ')}</span>.</p>
+              <p className="font-bold text-amber-800">Fotos de Reposição Obrigatórias Faltando</p>
+              <p className="text-amber-700">Para concluir esta visita, você precisa anexar foto de reposição para: <span className="font-bold">{missingEvidences.join(', ')}</span>.</p>
             </div>
           </div>
         )}
@@ -372,32 +382,64 @@ function VisitExecution() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-3">
-          <Button 
-            variant="outline" 
-            className="flex flex-col h-24 gap-2 border-slate-200"
-            onClick={() => triggerUpload('reposicao')}
-          >
-            <Camera className="h-6 w-6 text-blue-600" />
-            <span className="text-xs">Tirar Foto</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex flex-col h-24 gap-2 border-slate-200"
-            onClick={() => triggerUpload('video')}
-          >
-            <Video className="h-6 w-6 text-purple-600" />
-            <span className="text-xs">Gravar Vídeo</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex flex-col h-24 gap-2 border-slate-200"
-            onClick={() => triggerUpload('relatorio')}
-          >
-            <FileText className="h-6 w-6 text-orange-600" />
-            <span className="text-xs">Anexar PDF</span>
-          </Button>
+        {/* Add Photos Button */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {industries.map((ind: any) => (
+              <div key={ind.id} className="w-full space-y-2 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-slate-700">{ind.name}</span>
+                  {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'reposicao') ? (
+                    <Badge className="bg-green-100 text-green-700 border-none">
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Reposição OK
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-amber-600 border-amber-200">Foto obrigatória</Badge>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex flex-col h-20 gap-1 border-blue-100 bg-blue-50/30 hover:bg-blue-50"
+                    onClick={() => {
+                      setActiveEvidenceType('reposicao');
+                      setSelectedIndustryId(ind.id);
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <Camera className="h-5 w-5 text-blue-600" />
+                    <span className="text-[10px] font-bold">Foto Reposição</span>
+                  </Button>
+                  
+                  <div className="grid grid-rows-2 gap-1">
+                    <Button 
+                      variant="ghost" 
+                      className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
+                      onClick={() => {
+                        setActiveEvidenceType('relatorio_foto');
+                        setSelectedIndustryId(ind.id);
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Images className="h-3.5 w-3.5 mr-1 text-orange-500" /> Foto Relatório
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
+                      onClick={() => {
+                        setActiveEvidenceType('ocorrencia_foto');
+                        setSelectedIndustryId(ind.id);
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <AlertCircle className="h-3.5 w-3.5 mr-1 text-red-500" /> Foto Ocorrência
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <input 
@@ -405,11 +447,8 @@ function VisitExecution() {
           ref={fileInputRef} 
           className="hidden" 
           onChange={handleFileUpload}
-          accept={
-            activeEvidenceType === 'reposicao' ? 'image/*' : 
-            activeEvidenceType === 'video' ? 'video/*' : 
-            'application/pdf,image/*'
-          }
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
         />
 
         {/* Upload Progress */}
