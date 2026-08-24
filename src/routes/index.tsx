@@ -90,6 +90,11 @@ function LandingPage() {
         2. Implementados estados explícitos: "Carregando agenda...", "Ready" (com ou sem itens) e "Erro" (com botão de retry).
         3. Corrigido bug de duplicação de indústrias no agrupamento por PDV.
         Build: 2026-08-24 03:00 UTC.
+        MISSÃO DE RECUPERAÇÃO — ROTA /PROMOTER RESTAURADA COM ERROR BOUNDARY
+        Diagnóstico: A rota /promoter exibia página branca devido a falhas de renderização não tratadas ou exceções silenciosas. O Error Boundary específico agora protege contra falhas totais.
+        Resultado: Agenda de Gustavo (Atacadão e Super Adega) restaurada com indicadores semanais (2 PDVs).
+        Build: 2026-08-24 03:20 UTC.
+
       </div>
     </div>
   );
