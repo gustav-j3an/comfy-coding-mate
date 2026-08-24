@@ -82,12 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E1 — ELIMINAR ERRO DE PÁGINA NO CARTÃO E EM “INICIAR VISITA”
-        Diagnóstico: O erro de página ocorria porque o clique no cartão tentava navegar para /promoter/visit/undefined. O botão "Iniciar Visita" no dashboard também tentava materializar sem o retorno autoritativo do servidor.
-        Correção A: O cartão da agenda agora abre exclusivamente o StopDetailDrawer, eliminando a navegação prematura. O Drawer utiliza os dados da parada prevista (theoretical).
-        Correção B: A função server-side startScheduledVisit foi ajustada para validar a data usando a timezone America/Sao_Paulo. O retorno agora segue o contrato estrito {"{ visitId: string, action: string }"}.
-        Frontend: O botão "Iniciar Visita" agora desabilita durante o processamento e a navegação só ocorre após a confirmação do visitId.
-        Build: 2026-08-24 00:30 UTC.
+        MISSÃO E1.1 — CORRIGIR IDENTIFICADOR DA PARADA E DATA DA VISITA MATERIALIZADA
+        Diagnóstico: As visitas materializadas estavam sem o vínculo route_stop_id e a navegação no dashboard tentava materializar novamente o que já era real. O uso de toISOString() causava deriva de data por timezone.
+        Fase 2 (Navegação): O StopDetailDrawer agora detecta visitas reais no grupo e navega diretamente usando visitId, sem chamar o servidor.
+        Fase 3 (Data): Padronizado o uso de format(date, 'yyyy-MM-dd') para evitar UTC shift. Adicionada coluna route_stop_id na tabela visits para persistência do vínculo.
+        Servidor: startScheduledVisit agora retorna o contrato {"{ visitId: string, action: 'created' | 'reused' }"} e persiste o route_stop_id.
+        Build: 2026-08-24 00:45 UTC.
       </div>
     </div>
   );

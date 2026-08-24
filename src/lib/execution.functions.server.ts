@@ -77,7 +77,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (existingVisit) {
-      return { visitId: existingVisit.id };
+      return { visitId: existingVisit.id, action: 'reused' as const };
     }
 
     // 4. Materialize new visit
@@ -98,6 +98,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
         scheduled_date: scheduledDate,
         status: 'pending',
         route_id: (stop as any).route_id,
+        route_stop_id: routeStopId,
         observation: (stop as any).observation
       } as any)
       .select('id')
@@ -108,7 +109,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       throw new Error("Não foi possível iniciar a visita no servidor.");
     }
 
-    return { visitId: newVisit.id };
+    return { visitId: newVisit.id, action: 'created' as const };
   });
 
 /**
@@ -250,7 +251,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
 
     // Merge and sort
     const merged = [...(materializedVisits || []), ...theoreticalVisits].sort((a, b) => 
-      (a.visit_order || 0) - (b.visit_order || 0)
+      (Number(a.visit_order) || 0) - (Number(b.visit_order) || 0)
     );
 
     console.log(`[Agenda] User: ${maskedEmail}, PromoterID: ${effectivePromoterId}, Date: ${scheduledDateStr}, Count: ${merged.length}`);
