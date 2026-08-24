@@ -82,16 +82,15 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E2.1 — SIMPLIFICAR EVIDÊNCIAS PARA FOTOS (CONCLUÍDA)
-        Objetivo: Simplificar a tela de execução para promotores, focando em fotos e eliminando vídeo/PDF.
+        MISSÃO E2.2 — CORRIGIR UPLOAD DE FOTOS COM RLS SEGURO (CONCLUÍDA)
+        Objetivo: Resolver o erro "new row violates row-level security policy" no upload de fotos, mantendo a segurança.
         Alterações Realizadas:
-        1. Interface: Removidos botões de Vídeo e PDF. Implementada seção de fotos por indústria.
-        2. Interface: Adicionado suporte nativo para captura de câmera e galeria.
-        3. Validação: Apenas "Foto da reposição" é obrigatória para indústrias cadastradas (KING, DON LUIZ, FRUTA POLPA).
-        4. Validação: Relatório textual e observações agora são 100% opcionais.
-        5. Backend: Atualizado `submitVisit` para validar fotos obrigatórias por ID de indústria e restringir formatos (JPG, PNG, WEBP).
-        6. UX: Novos estados de badge (Reposição OK / Foto obrigatória) na tela de execução.
-        Build: 2026-08-24 05:00 UTC.
+        1. Fluxo Autoritativo: Criadas Server Functions `requestEvidenceUpload` e `confirmEvidenceUpload`.
+        2. Segurança: O frontend não faz mais upload direto com permissões genéricas; agora usa Signed URLs de upload geradas no servidor.
+        3. Validação: O servidor valida o dono da visita, o tipo de arquivo (imagem) e o tamanho (5MB) antes de autorizar o upload.
+        4. RLS: Corrigidas as políticas de Row-Level Security nas tabelas `visit_evidence` e `storage.objects` para permitir escrita e leitura apenas pelo promotor responsável pela visita.
+        5. Storage: Bucket `visit-evidences` mantido como privado.
+        Build: 2026-08-24 06:15 UTC.
 
 
 
