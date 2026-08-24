@@ -328,30 +328,34 @@ export const getSignedUrl = createServerFn({ method: "GET" })
   });
 
 export const getPromoterAgenda = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     date: z.string(),
     promoterId: z.string().optional()
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterAgenda: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
 
 export const getPromoterVisitExecution = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     visitId: z.string(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
 
 export const startScheduledVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     routeStopId: z.string(),
     date: z.string(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { startScheduledVisit: fn } = await import("./execution.functions.server");
-    return fn({ data, context: { userId: (context as any).userId } });
+    return fn({ data, context: { userId: context.userId } });
   });
+
