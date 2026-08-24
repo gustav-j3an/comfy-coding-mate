@@ -82,11 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        MISSÃO E1.3 — INICIAR VISITA DE DOMINGO SEM ERRO
-        Diagnóstico: Identificado erro de validação de data no servidor devido a pequenas diferenças na formatação de `Intl.DateTimeFormat` e comparação com `toISOString()` no frontend.
-        Fase 1 (Servidor): Robustecida a validação de data em `startScheduledVisit` usando `en-CA` para garantir o formato YYYY-MM-DD e adicionado log de erro detalhado.
-        Fase 2 (Frontend): Corrigida a detecção de "isToday" no Drawer para usar `format(date, 'yyyy-MM-dd')` em vez de `toISOString()`, alinhando com o resto do sistema.
-        Build: 2026-08-24 01:25 UTC.
+        CORREÇÃO URGENTE E1.3B — ROTA `/promoter/visit/:visitId` RETORNA “THIS PAGE DIDN'T LOAD”
+        Diagnóstico: A rota de execução estava quebrando ao tentar carregar a visita diretamente via Supabase client no frontend, possivelmente devido a inconsistências no mapeamento de relacionamentos aninhados (Joins) que o TanStack Start não conseguia serializar ou que falhavam na RLS.
+        Fase 1 (Servidor): Criada a função autoritativa `getPromoterVisitExecution` em `src/lib/execution.functions.server.ts` para resolver os dados de forma segura, incluindo a normalização das indústrias a partir da parada de origem.
+        Fase 2 (Frontend): Refatorada a rota `src/routes/_authenticated/promoter/visit.$visitId.tsx` para usar a nova função server-side e tratar corretamente a exibição de múltiplas indústrias no PDV.
+        Fase 3 (Segurança): Implementada validação de posse da visita no servidor para evitar que promotores acessem IDs de terceiros.
+        Build: 2026-08-24 01:45 UTC.
       </div>
     </div>
   );
