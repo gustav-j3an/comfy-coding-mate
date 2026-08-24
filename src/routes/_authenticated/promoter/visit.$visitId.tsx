@@ -26,7 +26,13 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
-import { submitVisit, getSignedUrl, getPromoterVisitExecution } from '@/lib/execution.functions';
+import { 
+  submitVisit, 
+  getSignedUrl, 
+  getPromoterVisitExecution,
+  requestEvidenceUpload,
+  confirmEvidenceUpload
+} from '@/lib/execution.functions';
 import { toast } from 'sonner';
 import { 
   saveVisitDraft, 
