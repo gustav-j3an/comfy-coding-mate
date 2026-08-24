@@ -54,6 +54,9 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
 
     // Validate ownership and status
     const route = (stop as any).route;
+    if (!route) {
+      throw new Error("Roteiro não encontrado para esta parada.");
+    }
     if (route.promoter_id !== promoterId) {
       throw new Error("Esta parada não pertence ao seu roteiro.");
     }
