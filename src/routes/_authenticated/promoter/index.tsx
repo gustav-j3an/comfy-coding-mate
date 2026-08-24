@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Plus
 } from 'lucide-react';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState, useEffect, useMemo } from 'react';
 import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
 import { getPromoterAgenda } from '@/lib/execution.functions';
+import { StopDetailDrawer } from '@/components/promoter/stop-detail-drawer';
 
 
 export const Route = createFileRoute('/_authenticated/promoter/')({
@@ -150,15 +151,50 @@ function PromoterDashboard() {
     }
   });
 
+  const { data: weeklyVisits } = useSuspenseQuery({
+    queryKey: ['promoter-visits-weekly', user?.id, previewPromoter?.id],
+    queryFn: async () => {
+      const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
+      if (!effectivePromoterId) return [];
+      
+      const start = startOfWeek(new Date(), { weekStartsOn: 0 });
+      const weekPromises = Array.from({ length: 7 }).map((_, i) => {
+        const d = addDays(start, i).toISOString().split('T')[0];
+        return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } });
+      });
+      
+      const results = await Promise.all(weekPromises);
+      return results.flat();
+    }
+  });
 
-  const stats = {
-    total: visits.length,
-    completed: (visits as any[]).filter(v => ['submitted', 'approved'].includes(v.status || '')).length,
-    pending: (visits as any[]).filter(v => ['planned', 'pending'].includes(v.status || '')).length,
-  };
+  const weeklyStats = useMemo(() => {
+    if (!weeklyVisits) return { total: 0, completed: 0, pending: 0 };
+    
+    // Group weekly results by store_id and date to count unique stops per PDV/Day
+    const uniqueStops = new Set();
+    const completedStops = new Set();
+    
+    weeklyVisits.forEach((item: any) => {
+      const key = `${item.store_id}-${item.scheduled_date}`;
+      uniqueStops.add(key);
+      if (['submitted', 'approved'].includes(item.status)) {
+        completedStops.add(key);
+      }
+    });
+
+    return {
+      total: uniqueStops.size,
+      completed: completedStops.size,
+      pending: Math.max(0, uniqueStops.size - completedStops.size)
+    };
+  }, [weeklyVisits]);
+
+  const stats = weeklyStats;
 
   const nextStop = (visits as any[]).find(v => v.status === 'planned');
 
+  const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [offlineDrafts, setOfflineDrafts] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -231,15 +267,15 @@ function PromoterDashboard() {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-xs text-blue-100 uppercase font-semibold">Total</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Semana</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.total : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-xs text-blue-100 uppercase font-semibold">Feitas</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Feitas</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.completed : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-xs text-blue-100 uppercase font-semibold">Faltam</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Faltam</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.pending : 0}</p>
           </div>
         </div>
@@ -278,7 +314,10 @@ function PromoterDashboard() {
 
         {nextStop && (
           <div className="mt-[-20px]">
-            <Card className="border-none shadow-md bg-white overflow-hidden">
+            <Card 
+              className="border-none shadow-md bg-white overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
+              onClick={() => setSelectedGroup(nextStop)}
+            >
               <div className="bg-orange-500 h-1" />
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
@@ -290,20 +329,15 @@ function PromoterDashboard() {
                   <MapPin className="h-3 w-3 mr-1" />
                   <span className="truncate">{(nextStop as any).store?.address}</span>
                 </div>
-                <Button asChild className="w-full mt-4 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-blue-200 shadow-lg active:scale-[0.98] transition-transform">
-                  <Link 
-                    to={(nextStop as any).is_theoretical ? "#" : ("/promoter/visit/$visitId" as any)} 
-                    params={(nextStop as any).is_theoretical ? {} : ({ visitId: String(nextStop.id) } as any)}
-                    onClick={(e) => {
-                      if ((nextStop as any).is_theoretical) {
-                        e.preventDefault();
-                        toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
-                      }
-                    }}
-                  >
-                    {(nextStop as any).is_theoretical ? "Visualizar Planejamento" : "Iniciar Visita"}
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Link>
+                <Button 
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-blue-200 shadow-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGroup(nextStop);
+                  }}
+                >
+                  Iniciar Visita
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -341,21 +375,13 @@ function PromoterDashboard() {
             ) : (
 
               (visits as any[]).map((group, index) => {
-                const firstRealVisit = group.all_items.find((i: any) => !i.is_theoretical) || group.all_items[0];
                 const isTheoretical = group.all_items.every((i: any) => i.is_theoretical);
 
                 return (
-                  <Link 
+                  <div 
                     key={group.id} 
-                    to={isTheoretical ? "#" : ("/promoter/visit/$visitId" as any)}
-                    params={isTheoretical ? {} : ({ visitId: String(firstRealVisit.id) } as any)}
-                    onClick={(e) => {
-                      if (isTheoretical) {
-                        e.preventDefault();
-                        toast.info("Esta é uma prévia do roteiro. Visitas materializadas estarão disponíveis na data real.");
-                      }
-                    }}
-                    className="block"
+                    onClick={() => setSelectedGroup(group)}
+                    className="block cursor-pointer"
                   >
                     <Card className={`overflow-hidden transition-all hover:shadow-md border-none active:bg-slate-50 ${group.status === 'approved' ? 'opacity-75' : ''}`}>
                       <CardContent className="p-0">
@@ -394,12 +420,21 @@ function PromoterDashboard() {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 );
               })
             )}
           </div>
         </div>
+
+        {selectedGroup && (
+          <StopDetailDrawer
+            group={selectedGroup}
+            isOpen={!!selectedGroup}
+            onClose={() => setSelectedGroup(null)}
+            selectedDate={simulatedDate}
+          />
+        )}
       </div>
     </div>
   );

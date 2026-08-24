@@ -338,4 +338,4 @@ export const getSignedUrl = createServerFn({ method: "GET" })
     return signedUrl.signedUrl;
   });
 
-export { getPromoterAgenda } from "./execution.functions.server";
+export { getPromoterAgenda, startScheduledVisit } from "./execution.functions.server";
