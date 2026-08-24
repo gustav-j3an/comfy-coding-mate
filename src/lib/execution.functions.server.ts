@@ -229,6 +229,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
                 theoreticalVisits.push({
                   id: `theoretical-${stop.id}-${task.industry_id}`,
                   route_stop_id: stop.id, // For materialization
+                  route_id: route.id,
                   store_id: stop.store_id,
                   industry_id: task.industry_id,
                   status: 'planned',
