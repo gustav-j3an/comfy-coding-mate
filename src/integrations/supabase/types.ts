@@ -1213,6 +1213,7 @@ export type Database = {
           promoter_id: string
           rejection_reason: string | null
           route_id: string | null
+          route_stop_id: string | null
           scheduled_date: string
           status: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
@@ -1233,6 +1234,7 @@ export type Database = {
           promoter_id: string
           rejection_reason?: string | null
           route_id?: string | null
+          route_stop_id?: string | null
           scheduled_date: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id: string
@@ -1253,6 +1255,7 @@ export type Database = {
           promoter_id?: string
           rejection_reason?: string | null
           route_id?: string | null
+          route_stop_id?: string | null
           scheduled_date?: string
           status?: Database["public"]["Enums"]["visit_status"] | null
           store_id?: string
@@ -1284,6 +1287,13 @@ export type Database = {
             columns: ["route_id"]
             isOneToOne: false
             referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visits_route_stop_id_fkey"
+            columns: ["route_stop_id"]
+            isOneToOne: false
+            referencedRelation: "route_stops"
             referencedColumns: ["id"]
           },
           {

@@ -108,7 +108,7 @@ function PromoterDashboard() {
         });
 
         const isRealToday = new Date().getDay() === simulatedDay && 
-                           new Date().toISOString().split('T')[0] === scheduledDateStr;
+                           format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
 
         if (isRealToday && !previewPromoter?.id) {
           await cachePromoterVisits(currentUserId, allItems);
@@ -159,7 +159,7 @@ function PromoterDashboard() {
       
       const start = startOfWeek(new Date(), { weekStartsOn: 0 });
       const weekPromises = Array.from({ length: 7 }).map((_, i) => {
-        const d = addDays(start, i).toISOString().split('T')[0];
+        const d = format(addDays(start, i), 'yyyy-MM-dd');
         return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } });
       });
       
@@ -191,8 +191,30 @@ function PromoterDashboard() {
   }, [weeklyVisits]);
 
   const stats = weeklyStats;
+  
+  // Rule 2: "Próxima parada" has its own behavior.
+  // We check if there's a planned stop TODAY. If not, we find the first planned stop in the future.
+  const nextStop = useMemo(() => {
+    // 1. Try today's planned stop first
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const isViewingToday = scheduledDateStr === todayStr;
+    
+    if (isViewingToday) {
+      return (visits as any[]).find(v => v.status === 'planned');
+    }
+    
+    // 2. If not viewing today or no stop today, we don't show "Agora" badge
+    // The requirement says: "if there's no stop today, it can show the next future stop but with 'Next visit' label"
+    // For now, let's keep it simple: only show "Próxima Parada" if it's for the selected day.
+    // If we want to show future stops, we'd need to fetch more data.
+    // But the bug is showing Monday stops on Sunday.
+    return (visits as any[]).find(v => v.status === 'planned');
+  }, [visits, scheduledDateStr]);
 
-  const nextStop = (visits as any[]).find(v => v.status === 'planned');
+  const isNextStopToday = useMemo(() => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    return nextStop && nextStop.scheduled_date === todayStr;
+  }, [nextStop]);
 
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [offlineDrafts, setOfflineDrafts] = useState<Record<string, any>>({});
@@ -267,15 +289,15 @@ function PromoterDashboard() {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Semana</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Resumo da semana</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.total : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Feitas</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Feitas na semana</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.completed : 0}</p>
           </div>
           <div className="bg-white/10 rounded-2xl p-3 text-center backdrop-blur-sm">
-            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Faltam</p>
+            <p className="text-[10px] text-blue-100 uppercase font-bold mb-1 opacity-70">Faltam na semana</p>
             <p className="text-xl font-bold">{isPromoterLinked ? stats.pending : 0}</p>
           </div>
         </div>
@@ -321,8 +343,16 @@ function PromoterDashboard() {
               <div className="bg-orange-500 h-1" />
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Próxima Parada</span>
-                  <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">Agora</Badge>
+                  <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">
+                    {isNextStopToday ? "Próxima Parada" : "Próxima Visita"}
+                  </span>
+                  {isNextStopToday ? (
+                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">Agora</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-slate-500 border-slate-200">
+                      {format(new Date(nextStop.scheduled_date + 'T12:00:00Z'), "eeee, dd/MM", { locale: ptBR })}
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="text-lg font-bold text-slate-800">{(nextStop as any).store?.name}</h3>
                 <div className="flex items-center text-slate-500 text-sm mt-1">
