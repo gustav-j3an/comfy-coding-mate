@@ -8,6 +8,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Submits a visit for audit, uploading metadata and creating occurrences.
  */
 export const submitVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     visitId: z.string(),
     executorId: z.string(),
