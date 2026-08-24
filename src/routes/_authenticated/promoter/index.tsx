@@ -90,7 +90,7 @@ function PromoterDashboard() {
   const isAuthReady = !authLoading && !!user;
 
 
-  const { data: visits = [], refetch, isLoading } = useSuspenseQuery({
+  const { data: visits = [], refetch, isLoading, isError, error } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
       const currentUserId = user?.id;
@@ -98,79 +98,71 @@ function PromoterDashboard() {
       
       if (!currentUserId || !effectivePromoterId) return [];
 
-      try {
-        const allItems = await getPromoterAgenda({
-          data: {
-            date: scheduledDateStr,
-            promoterId: previewPromoter?.id
-          }
-        });
-
-        if (!allItems || !Array.isArray(allItems)) return [];
-
-        const isRealToday = new Date().getDay() === simulatedDay && 
-                           format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
-
-        if (isRealToday && !previewPromoter?.id) {
-          await cachePromoterVisits(currentUserId, allItems).catch(e => console.error('Cache error:', e));
+      const allItems = await getPromoterAgenda({
+        data: {
+          date: scheduledDateStr,
+          promoterId: previewPromoter?.id
         }
-        
-        const groupedVisitsMap = new Map<string, any>();
-        
-        allItems.forEach((item: any) => {
-          if (!item || !item.store_id) return;
-          const storeId = item.store_id;
-          if (!groupedVisitsMap.has(storeId)) {
-            groupedVisitsMap.set(storeId, {
-              ...item,
-              id: `grouped-${storeId}`,
-              industries: item.industry ? [item.industry] : [],
-              all_items: [item],
-              status: item.status
-            });
-          } else {
-            const group = groupedVisitsMap.get(storeId);
-            if (item.industry) group.industries.push(item.industry);
-            group.all_items.push(item);
-            
-            if (group.status === 'approved' && item.status !== 'approved') {
-              group.status = item.status;
-            } else if (group.status === 'planned' && item.status !== 'planned') {
-              group.status = item.status;
+      });
+
+      if (!allItems || !Array.isArray(allItems)) return [];
+
+      const isRealToday = new Date().getDay() === simulatedDay && 
+                         format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
+
+      if (isRealToday && !previewPromoter?.id) {
+        await cachePromoterVisits(currentUserId, allItems).catch(e => console.error('Cache error:', e));
+      }
+      
+      const groupedVisitsMap = new Map<string, any>();
+      
+      allItems.forEach((item: any) => {
+        if (!item || !item.store_id) return;
+        const storeId = item.store_id;
+        if (!groupedVisitsMap.has(storeId)) {
+          groupedVisitsMap.set(storeId, {
+            ...item,
+            id: `grouped-${storeId}`,
+            industries: item.industry ? [item.industry] : [],
+            all_items: [item],
+            status: item.status
+          });
+        } else {
+          const group = groupedVisitsMap.get(storeId);
+          if (item.industry) {
+            const indName = item.industry.name;
+            if (!group.industries.some((i: any) => i.name === indName)) {
+              group.industries.push(item.industry);
             }
           }
-        });
+          group.all_items.push(item);
+          
+          if (group.status === 'approved' && item.status !== 'approved') {
+            group.status = item.status;
+          } else if (group.status === 'planned' && item.status !== 'planned') {
+            group.status = item.status;
+          }
+        }
+      });
 
-        return Array.from(groupedVisitsMap.values());
-      } catch (err) {
-        console.error('Agenda fetch error:', err);
-        return []; // Return empty instead of throwing to prevent route crash
-      }
+      return Array.from(groupedVisitsMap.values());
     }
   });
 
-  const { data: weeklyVisits = [] } = useSuspenseQuery({
+  const { data: weeklyVisits = [], isError: isWeeklyError } = useSuspenseQuery({
     queryKey: ['promoter-visits-weekly', user?.id, previewPromoter?.id],
     queryFn: async () => {
-      try {
-        const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
-        if (!effectivePromoterId) return [];
-        
-        const start = startOfWeek(new Date(), { weekStartsOn: 0 });
-        const weekPromises = Array.from({ length: 7 }).map((_, i) => {
-          const d = format(addDays(start, i), 'yyyy-MM-dd');
-          return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } }).catch(e => {
-            console.error(`Weekly fetch error for day ${i}:`, e);
-            return [];
-          });
-        });
-        
-        const results = await Promise.all(weekPromises);
-        return results.flat();
-      } catch (err) {
-        console.error('Weekly agenda fetch error:', err);
-        return [];
-      }
+      const effectivePromoterId = previewPromoter?.id || profile?.promoter_id;
+      if (!effectivePromoterId) return [];
+      
+      const start = startOfWeek(new Date(), { weekStartsOn: 0 });
+      const weekPromises = Array.from({ length: 7 }).map((_, i) => {
+        const d = format(addDays(start, i), 'yyyy-MM-dd');
+        return getPromoterAgenda({ data: { date: d, promoterId: previewPromoter?.id } });
+      });
+      
+      const results = await Promise.all(weekPromises);
+      return results.flat();
     }
   });
 
@@ -394,7 +386,23 @@ function PromoterDashboard() {
 
           
           <div className="space-y-3">
-            {!isAuthReady ? (
+            {isLoading ? (
+               <div className="p-8 text-center text-slate-500">
+                 <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 text-blue-500" />
+                 Carregando agenda...
+               </div>
+            ) : isError || isWeeklyError ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-8 text-center text-red-700 font-medium">
+                  <AlertCircle className="h-10 w-10 mx-auto mb-2 text-red-500" />
+                  <p className="text-lg font-bold">Não foi possível carregar sua agenda</p>
+                  <p className="text-sm opacity-80 mt-1">Verifique sua conexão e tente novamente.</p>
+                  <Button variant="outline" size="sm" className="mt-4 border-red-200 text-red-700 hover:bg-red-100" onClick={() => refetch()}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Tentar Novamente
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : !isAuthReady ? (
                <div className="p-8 text-center text-slate-500">Autenticando...</div>
             ) : !isPromoterLinked ? (
               <Card className="border-red-200 bg-red-50">
@@ -407,7 +415,7 @@ function PromoterDashboard() {
             ) : visits.length === 0 ? (
               <Card className="border-dashed border-2">
                 <CardContent className="p-8 text-center text-slate-500 font-medium">
-                  <p>Nenhuma visita planejada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
+                  <p>Nenhuma visita programada para {simulatedDay === new Date().getDay() ? "hoje" : ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"][simulatedDay]}.</p>
                   <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
                     <RefreshCw className="h-4 w-4 mr-2" /> Atualizar Agenda
                   </Button>
