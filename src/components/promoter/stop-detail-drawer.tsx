@@ -41,7 +41,19 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
   const isToday = new Date().toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0];
   
   const handleStartVisit = async () => {
-    if (!isToday) return;
+    // If we have a real visit in the group, we navigate directly to the first real one
+    const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
+    
+    if (realVisit && realVisit.id && !realVisit.id.startsWith('theoretical-')) {
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id } });
+      onClose();
+      return;
+    }
+
+    if (!isToday) {
+      toast.warning("Esta visita só estará disponível na data programada.");
+      return;
+    }
 
     setIsStarting(true);
     try {
@@ -56,13 +68,17 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
       const result = await startVisit({
         data: {
           routeStopId: stopId,
-          date: selectedDate.toISOString().split('T')[0]
+          date: format(selectedDate, 'yyyy-MM-dd')
         }
       });
 
-      toast.success("Visita iniciada com sucesso!");
-      navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId } });
-      onClose();
+      if (result && result.visitId) {
+        toast.success(result.action === 'reused' ? "Visita recuperada!" : "Visita iniciada com sucesso!");
+        navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId } });
+        onClose();
+      } else {
+        throw new Error("Falha ao materializar visita: ID não retornado.");
+      }
     } catch (error: any) {
       console.error("Start visit error:", error);
       toast.error(error.message || "Não foi possível iniciar esta visita. Verifique sua conexão e tente novamente.");
