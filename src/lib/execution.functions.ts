@@ -3,7 +3,6 @@ import { z } from "zod";
 import { triggerAutomationEvent } from "./automation.server";
 import { recordAudit } from "./audit.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { format } from "date-fns";
 
 /**
  * Submits a visit for audit, uploading metadata and creating occurrences.
@@ -335,7 +334,7 @@ export const getPromoterAgenda = createServerFn({ method: "GET" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterAgenda: fn } = await import("./execution.functions.server");
-    return fn({ data, context });
+    return fn({ data, context: { userId: (context as any).userId } });
   });
 
 export const getPromoterVisitExecution = createServerFn({ method: "GET" })
@@ -344,7 +343,7 @@ export const getPromoterVisitExecution = createServerFn({ method: "GET" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");
-    return fn({ data, context });
+    return fn({ data, context: { userId: (context as any).userId } });
   });
 
 export const startScheduledVisit = createServerFn({ method: "POST" })
@@ -354,5 +353,5 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { startScheduledVisit: fn } = await import("./execution.functions.server");
-    return fn({ data, context });
+    return fn({ data, context: { userId: (context as any).userId } });
   });
