@@ -179,6 +179,8 @@ export const submitVisit = createServerFn({ method: "POST" })
  * Audits a visit (Approve/Reject).
  */
 export const auditVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     visitId: z.string(),
     auditorId: z.string(),
@@ -256,6 +258,8 @@ export const auditVisit = createServerFn({ method: "POST" })
  * Gets a signed URL for a private evidence file.
  */
 export const getSignedUrl = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+
   .inputValidator((data) => z.object({
     filePath: z.string()
   }).parse(data))
