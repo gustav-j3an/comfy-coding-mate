@@ -90,7 +90,7 @@ function PromoterDashboard() {
   const isAuthReady = !authLoading && !!user;
 
 
-  const { data: visits = [], refetch, isLoading } = useSuspenseQuery({
+  const { data: visits = [], refetch, isLoading, isError, error } = useSuspenseQuery({
     queryKey: ['promoter-visits', user?.id, scheduledDateStr, previewPromoter?.id, simulatedDay],
     queryFn: async () => {
       const currentUserId = user?.id;
@@ -98,54 +98,54 @@ function PromoterDashboard() {
       
       if (!currentUserId || !effectivePromoterId) return [];
 
-      try {
-        const allItems = await getPromoterAgenda({
-          data: {
-            date: scheduledDateStr,
-            promoterId: previewPromoter?.id
-          }
-        });
-
-        if (!allItems || !Array.isArray(allItems)) return [];
-
-        const isRealToday = new Date().getDay() === simulatedDay && 
-                           format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
-
-        if (isRealToday && !previewPromoter?.id) {
-          await cachePromoterVisits(currentUserId, allItems).catch(e => console.error('Cache error:', e));
+      const allItems = await getPromoterAgenda({
+        data: {
+          date: scheduledDateStr,
+          promoterId: previewPromoter?.id
         }
-        
-        const groupedVisitsMap = new Map<string, any>();
-        
-        allItems.forEach((item: any) => {
-          if (!item || !item.store_id) return;
-          const storeId = item.store_id;
-          if (!groupedVisitsMap.has(storeId)) {
-            groupedVisitsMap.set(storeId, {
-              ...item,
-              id: `grouped-${storeId}`,
-              industries: item.industry ? [item.industry] : [],
-              all_items: [item],
-              status: item.status
-            });
-          } else {
-            const group = groupedVisitsMap.get(storeId);
-            if (item.industry) group.industries.push(item.industry);
-            group.all_items.push(item);
-            
-            if (group.status === 'approved' && item.status !== 'approved') {
-              group.status = item.status;
-            } else if (group.status === 'planned' && item.status !== 'planned') {
-              group.status = item.status;
+      });
+
+      if (!allItems || !Array.isArray(allItems)) return [];
+
+      const isRealToday = new Date().getDay() === simulatedDay && 
+                         format(new Date(), 'yyyy-MM-dd') === scheduledDateStr;
+
+      if (isRealToday && !previewPromoter?.id) {
+        await cachePromoterVisits(currentUserId, allItems).catch(e => console.error('Cache error:', e));
+      }
+      
+      const groupedVisitsMap = new Map<string, any>();
+      
+      allItems.forEach((item: any) => {
+        if (!item || !item.store_id) return;
+        const storeId = item.store_id;
+        if (!groupedVisitsMap.has(storeId)) {
+          groupedVisitsMap.set(storeId, {
+            ...item,
+            id: `grouped-${storeId}`,
+            industries: item.industry ? [item.industry] : [],
+            all_items: [item],
+            status: item.status
+          });
+        } else {
+          const group = groupedVisitsMap.get(storeId);
+          if (item.industry) {
+            const indName = item.industry.name;
+            if (!group.industries.some((i: any) => i.name === indName)) {
+              group.industries.push(item.industry);
             }
           }
-        });
+          group.all_items.push(item);
+          
+          if (group.status === 'approved' && item.status !== 'approved') {
+            group.status = item.status;
+          } else if (group.status === 'planned' && item.status !== 'planned') {
+            group.status = item.status;
+          }
+        }
+      });
 
-        return Array.from(groupedVisitsMap.values());
-      } catch (err) {
-        console.error('Agenda fetch error:', err);
-        return []; // Return empty instead of throwing to prevent route crash
-      }
+      return Array.from(groupedVisitsMap.values());
     }
   });
 
