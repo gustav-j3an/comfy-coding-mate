@@ -85,7 +85,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
       .select('industry_id')
       .eq('stop_id', routeStopId);
     
-    const industryId = (tasks && tasks.length > 0) ? tasks[0].industry_id : "";
+    const industryId = (tasks && (tasks.length > 0)) ? (tasks[0] as any).industry_id : "";
 
     const { data: newVisit, error: insertError } = await supabaseAdmin
       .from('visits')
