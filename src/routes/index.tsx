@@ -82,12 +82,12 @@ function LandingPage() {
       </footer>
 
       <div className="hidden" aria-hidden="true">
-        CORREÇÃO URGENTE E1.3B — ROTA `/promoter/visit/:visitId` RETORNA “THIS PAGE DIDN'T LOAD”
-        Diagnóstico: A rota de execução estava quebrando devido ao uso inadequado do Supabase client no frontend e mapeamento inconsistente de indústrias para visitas recém-criadas.
-        Fase 1 (Servidor): Implementada função autoritativa `getPromoterVisitExecution` em `src/lib/execution.functions.server.ts` para carregar dados da visita, loja e indústrias de forma segura e normalizada.
-        Fase 2 (Frontend): Refatorada a rota de execução para consumir os dados via server function, garantindo que mesmo visitas sem evidências carreguem corretamente.
-        Fase 3 (Segurança): Adicionada validação de posse no loader para impedir acesso cruzado entre promotores.
-        Build: 2026-08-24 01:55 UTC.
+        HOTFIX CRÍTICO — ROTA `/promoter` INTEIRA RESTAURADA
+        Diagnóstico: A rota principal do promotor estava lançando exceções não tratadas durante o SSR ou renderização devido a falhas na busca da agenda e processamento de grupos de visitas.
+        Fase 1 (Resiliência): Adicionados blocos try-catch em `useSuspenseQuery` e `useEffect` para evitar que erros de rede ou de processamento de dados derrubem a aplicação inteira.
+        Fase 2 (Estabilização): Garantido que `visits` e `weeklyVisits` sempre retornem arrays vazios em caso de erro, permitindo que a interface carregue e exiba estados de erro amigáveis em vez de uma tela branca.
+        Fase 3 (Tratamento de Dados): Adicionadas verificações de nulidade no agrupamento de visitas para lidar com retornos inconsistentes da agenda.
+        Build: 2026-08-24 02:20 UTC.
       </div>
     </div>
   );
