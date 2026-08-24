@@ -26,7 +26,13 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGeolocation } from '@/hooks/use-geolocation';
-import { submitVisit, getSignedUrl, getPromoterVisitExecution } from '@/lib/execution.functions';
+import { 
+  submitVisit, 
+  getSignedUrl, 
+  getPromoterVisitExecution,
+  requestEvidenceUpload,
+  confirmEvidenceUpload
+} from '@/lib/execution.functions';
 import { toast } from 'sonner';
 import { 
   saveVisitDraft, 
@@ -191,25 +197,51 @@ function VisitExecution() {
     }
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${visitId}/${activeEvidenceType}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `evidences/${fileName}`;
+      // 1. Request upload authorization
+      const { uploadUrl, filePath, token } = await requestEvidenceUpload({
+        data: {
+          visitId,
+          industryId: selectedIndustryId,
+          evidenceType: activeEvidenceType,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        }
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from('visit-evidences')
-        .upload(filePath, file, {
-          onUploadProgress: (progress: any) => {
-            setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
-          }
-        } as any);
+      // 2. Perform the upload to storage
+      // Note: We use the signed URL directly. 
+      // Supabase storage signed URLs for upload usually expect the file in the body.
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+          'x-upsert': 'true'
+        }
+      });
 
-      if (uploadError) throw uploadError;
+      if (!response.ok) {
+        throw new Error("Falha no upload para o Storage.");
+      }
+
+      // 3. Confirm upload and create DB record
+      const evidence = await confirmEvidenceUpload({
+        data: {
+          visitId,
+          industryId: selectedIndustryId,
+          evidenceType: activeEvidenceType,
+          filePath,
+          fileType: file.type
+        }
+      });
 
       setEvidences([...evidences, {
-        filePath,
-        fileType: file.type,
-        evidenceType: activeEvidenceType,
-        industryId: selectedIndustryId
+        id: evidence.id,
+        filePath: evidence.file_path,
+        fileType: evidence.file_type,
+        evidenceType: evidence.evidence_type,
+        industryId: evidence.industry_id
       }]);
 
       toast.success("Evidência anexada com sucesso.");
@@ -222,7 +254,8 @@ function VisitExecution() {
         console.error("Error getting preview URL:", err);
       }
     } catch (error: any) {
-      toast.error("Erro no upload: " + error.message);
+      console.error("Upload error details:", error);
+      toast.error("Erro no upload: " + (error.message || "Erro desconhecido"));
     } finally {
       setUploadProgress(0);
     }

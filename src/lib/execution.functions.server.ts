@@ -301,3 +301,122 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     occurrences: []
   };
 };
+
+export const requestEvidenceUpload = async ({ data, context }: any) => {
+  const { userId } = context;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  if (!userId) throw new Error("Não autorizado: Sessão não encontrada.");
+
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('promoter_id')
+    .eq('id', userId)
+    .single();
+  
+  if (!profile?.promoter_id) {
+    throw new Error("Não autorizado: Usuário não vinculado a um promotor.");
+  }
+
+  const { data: visit, error: visitError } = await supabaseAdmin
+    .from('visits')
+    .select('id, promoter_id')
+    .eq('id', data.visitId)
+    .single();
+
+  if (visitError || !visit) throw new Error("Visita não encontrada.");
+  if (visit.promoter_id !== profile.promoter_id) throw new Error("Não autorizado: Esta visita não pertence a você.");
+
+  // Validation
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(data.fileType)) {
+    throw new Error("Formato de arquivo não permitido. Use JPG, PNG ou WEBP.");
+  }
+
+  const maxBytes = 5 * 1024 * 1024; // 5MB
+  if (data.fileSize > maxBytes) {
+    throw new Error("Arquivo muito grande. Limite de 5MB.");
+  }
+
+  const allowedEvidenceTypes = ['reposicao', 'relatorio_foto', 'ocorrencia_foto'];
+  if (!allowedEvidenceTypes.includes(data.evidenceType)) {
+    throw new Error("Tipo de evidência inválido.");
+  }
+
+  const fileExt = data.fileName.split('.').pop();
+  const fileName = `${data.visitId}/${data.evidenceType}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const filePath = `evidences/${fileName}`;
+
+  const { data: uploadData, error: uploadError } = await supabaseAdmin
+    .storage
+    .from('visit-evidences')
+    .createSignedUploadUrl(filePath);
+
+  if (uploadError) {
+    console.error("Signed URL Error:", uploadError);
+    throw new Error("Erro ao gerar autorização de upload.");
+  }
+
+  return {
+    uploadUrl: uploadData.signedUrl,
+    token: uploadData.token,
+    filePath,
+  };
+};
+
+export const confirmEvidenceUpload = async ({ data, context }: any) => {
+  const { userId } = context;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  if (!userId) throw new Error("Não autorizado.");
+
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('promoter_id')
+    .eq('id', userId)
+    .single();
+  
+  if (!profile?.promoter_id) throw new Error("Não autorizado.");
+
+  const { data: visit } = await supabaseAdmin
+    .from('visits')
+    .select('id, promoter_id')
+    .eq('id', data.visitId)
+    .single();
+
+  if (!visit || visit.promoter_id !== profile.promoter_id) throw new Error("Não autorizado.");
+
+  // Verify file existence in storage
+  const pathParts = data.filePath.split('/');
+  const fileName = pathParts.pop();
+  const folder = pathParts.join('/'); 
+  
+  const { data: fileExists, error: storageError } = await supabaseAdmin
+    .storage
+    .from('visit-evidences')
+    .list(folder, {
+      limit: 1,
+      search: fileName || ''
+    });
+
+  if (storageError || !fileExists || fileExists.length === 0) {
+    throw new Error("Arquivo não encontrado no servidor.");
+  }
+
+  // Insert into visit_evidence
+  const { data: evidence, error: insertError } = await supabaseAdmin
+    .from('visit_evidence')
+    .insert({
+      visit_id: data.visitId,
+      file_path: data.filePath,
+      file_type: data.fileType,
+      evidence_type: data.evidenceType,
+      industry_id: data.industryId || null
+    })
+    .select()
+    .single();
+
+  if (insertError) throw insertError;
+
+  return evidence;
+};
