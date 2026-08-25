@@ -153,7 +153,7 @@ function UserManagement() {
   // Action states
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [whatsAppTarget, setWhatsAppTarget] = useState<any>(null);
-  const [waInviteData, setWaInviteData] = useState<{ url: string; message: string; link: string } | null>(null);
+  const [waInviteData, setWaInviteData] = useState<{ url: string; message: string } | null>(null);
   const [generatingWA, setGeneratingWA] = useState(false);
   
   // Temporary access states
@@ -289,15 +289,9 @@ function UserManagement() {
   const handleResendInvite = async (userId: string, email: string) => {
     try {
       const res: any = await resendInvite({ data: { userId, email } });
-      if (res?.mode === 'manual_link' && res.actionLink) {
-        await navigator.clipboard.writeText(res.actionLink).catch(() => {});
-        toast.warning(res.message || 'Limite de e-mails atingido.', {
-          description: 'Link de acesso copiado para a área de transferência. Envie manualmente ao promotor.',
-          duration: 12000,
-        });
-      } else {
-        toast.success('Novo convite enviado com sucesso!');
-      }
+      toast.success(res?.mode === 'recovery'
+        ? 'Link para definição de senha enviado com sucesso!'
+        : 'Novo convite enviado com sucesso!');
       fetchData();
     } catch (error: any) {
       toast.error('Erro ao reenviar convite: ' + error.message);
@@ -334,18 +328,10 @@ function UserManagement() {
         } 
       });
 
-      if (res.success && res.actionLink) {
-        const message = `Olá, ${res.promoterName}! 👋\n\nVocê foi convidado para usar o Rota do Promotor.\n\nAcesse o link abaixo para criar sua senha, ver seu roteiro e instalar o aplicativo no seu celular:\n\n${res.actionLink}\n\nDepois de entrar, toque em “Instalar aplicativo” para deixar o Rota do Promotor na tela inicial do celular.`;
-        
-        const encodedMessage = encodeURIComponent(message);
-        
-        // Regra: usar wa.me em computador e celular
-        const waUrl = `https://wa.me/${res.phone}?text=${encodedMessage}`;
-        
+      if (res.success && res.whatsappUrl && res.message) {
         setWaInviteData({
-          url: waUrl,
-          message: message,
-          link: res.actionLink
+          url: res.whatsappUrl,
+          message: res.message,
         });
       }
 
@@ -841,17 +827,7 @@ function UserManagement() {
                 <CopyIcon className="w-4 h-4 mr-2" /> Copiar mensagem para WhatsApp Web
               </Button>
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-[10px] h-8 text-slate-500"
-                  disabled={!waInviteData}
-                  onClick={() => waInviteData && copyToClipboard(waInviteData.link, 'Somente link')}
-                >
-                  <LinkIcon className="w-3 h-3 mr-1" /> Copiar somente link
-                </Button>
-
+              <div className="grid grid-cols-1 gap-2">
                 <Button 
                   variant="ghost" 
                   asChild

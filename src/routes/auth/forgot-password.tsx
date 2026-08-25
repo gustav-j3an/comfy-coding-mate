@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { supabase } from '@/integrations/supabase/client';
+import { sendPasswordResetEmail } from '@/lib/users.functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -21,10 +21,7 @@ function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-      if (error) throw error;
+      await sendPasswordResetEmail({ data: { email } });
       setSubmitted(true);
       toast.success('Link de recuperação enviado por e-mail.');
     } catch (error: any) {

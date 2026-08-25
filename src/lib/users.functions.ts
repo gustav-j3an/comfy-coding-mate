@@ -141,23 +141,10 @@ export const resendInvite = createServerFn({ method: "POST" })
 
       if (recoveryError) {
         const rateLimited = /rate limit/i.test(recoveryError.message || '');
-        if (!rateLimited) throw recoveryError;
-
-        // Email quota reached: generate a link the admin can share manually (no e-mail sent).
-        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-          type: 'recovery',
-          email: data.email,
-          options: { redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso` },
-        });
-
-        if (linkError) throw linkError;
-
-        return {
-          success: true,
-          mode: 'manual_link' as const,
-          actionLink: linkData?.properties?.action_link ?? null,
-          message: 'Limite de e-mails do Supabase atingido. Envie o link abaixo manualmente ao promotor.',
-        };
+        if (rateLimited) {
+          throw new Error('Limite de e-mails do Supabase atingido. Aguarde antes de reenviar o convite.');
+        }
+        throw recoveryError;
       }
       mode = 'recovery';
     }
@@ -176,7 +163,7 @@ export const resendInvite = createServerFn({ method: "POST" })
       details: data
     });
     
-    return { success: true, mode, actionLink: null as string | null, message: null as string | null };
+    return { success: true, mode };
 
 
   });
@@ -188,16 +175,13 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     // Get site URL
-    const siteUrl = process.env['PUBLIC_APP_URL'];
-    if (!siteUrl) {
-      throw new Error("URL pública do aplicativo não configurada. Contate o administrador do sistema.");
-    }
+    const siteUrl = getPublicAppUrl();
 
     const { error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: data.email,
       options: {
-        redirectTo: `${siteUrl}/auth/reset-password`,
+        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
       }
     });
 
@@ -216,6 +200,29 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       details: data
     });
     
+    return { success: true };
+  });
+
+export const sendPasswordResetEmail = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ email: z.string().email() }).parse(data))
+  .handler(async ({ data }) => {
+    const siteUrl = getPublicAppUrl();
+    const { createClient } = await import('@supabase/supabase-js');
+    const key = process.env['SUPABASE_PUBLISHABLE_KEY'];
+    const supabaseUrl = process.env['SUPABASE_URL'];
+
+    if (!key || !supabaseUrl) {
+      throw new Error('Configuração do Supabase não disponível no servidor.');
+    }
+
+    const publicClient = createClient(supabaseUrl, key, {
+      auth: { persistSession: false },
+    });
+    const { error } = await publicClient.auth.resetPasswordForEmail(data.email, {
+      redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+    });
+
+    if (error) throw error;
     return { success: true };
   });
 
@@ -326,6 +333,9 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     const actionLink = linkData?.properties?.action_link;
     if (!actionLink) throw new Error("Não foi possível gerar o link de acesso");
 
+    const message = `Olá, ${promoter.name}! 👋\n\nSeu acesso ao **Rota do Promotor** está pronto.\n\nAcesse o link abaixo para criar sua senha e entrar no aplicativo:\n\n${actionLink}\n\nDepois de entrar, você poderá consultar seu roteiro e instalar o aplicativo na tela inicial do celular.`;
+    const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
+
     // 6. Record audit log
     await recordAudit({
       userId: adminId,
@@ -339,7 +349,8 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
 
     return { 
       success: true, 
-      actionLink, 
+      whatsappUrl,
+      message,
       phone: normalizedPhone, 
       promoterName: promoter.name 
     };
