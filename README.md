@@ -34,5 +34,23 @@ Nunca publique `SUPABASE_SERVICE_ROLE_KEY` no frontend ou no repositório.
 
 ```sh
 npm run build
+npm run start
+# ou, para o preview integrado do Vite:
 npm run preview
 ```
+
+## Vercel
+
+Configure o projeto da Vercel com **Root Directory** igual à pasta que contém
+este `package.json` (`comfy-coding-mate` neste repositório), **Build Command**
+`npm run build` e **Install Command** conforme o lockfile usado no projeto.
+Não defina **Output Directory** nem um rewrite para `index.html`: o plugin
+`nitro/vite` gera `.output` com o handler SSR, assets e configuração do Build
+Output API. Na Vercel, o preset `vercel` é detectado automaticamente.
+
+Cadastre no painel da Vercel as variáveis de `.env.example` para Production,
+Preview e Development conforme necessário. `VITE_SUPABASE_URL`,
+`VITE_SUPABASE_PUBLISHABLE_KEY` e `VITE_PUBLIC_APP_URL` são públicas;
+`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e principalmente
+`SUPABASE_SERVICE_ROLE_KEY` são usadas server-side. Nunca publique valores
+reais no repositório.
