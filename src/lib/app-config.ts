@@ -2,9 +2,7 @@
  * Configurações globais não secretas do aplicativo.
  */
 export const APP_CONFIG = {
-  // URL pública oficial do aplicativo. 
-  // Alterar aqui para mudar o domínio em todos os convites e links de acesso.
-  publicAppUrl: 'https://comfy-coding-mate.lovable.app',
+  publicAppUrl: import.meta.env.VITE_PUBLIC_APP_URL || 'http://localhost:3000',
 };
 
 /**
@@ -14,8 +12,8 @@ export const APP_CONFIG = {
 export function getPublicAppUrl() {
   const url = APP_CONFIG.publicAppUrl;
   
-  if (!url || url.includes('localhost') || url.includes('id-preview')) {
-    throw new Error("URL pública do aplicativo não configurada corretamente no código. Contate o administrador do sistema.");
+  if (!url || url.includes('id-preview')) {
+    throw new Error("URL pública do aplicativo não configurada corretamente. Defina VITE_PUBLIC_APP_URL.");
   }
   
   return url;

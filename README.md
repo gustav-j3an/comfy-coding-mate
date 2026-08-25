@@ -1,26 +1,34 @@
-# rota-promotor
+# Rota do Promotor
 
-cri
+Sistema de gestão de promotores, rotas e operações de trade marketing.
 
-This project was built with [Lovable](https://lovable.dev).
+## Desenvolvimento local
 
-**Live app**: https://comfy-coding-mate.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/5928d4ca-7473-4651-beae-377d6a376863).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requisitos: Node.js 20+ e uma instância Supabase.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
+```
+
+Configure as variáveis de ambiente em `.env` ou `.env.local`:
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
+SUPABASE_SERVICE_ROLE_KEY=sua-chave-de-servico
+VITE_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Obtenha `SUPABASE_SERVICE_ROLE_KEY` no Supabase em **Project Settings > API > service_role**. Depois de alterar o arquivo, pare e reinicie `npm run dev` para o servidor carregar a nova variável.
+
+Nunca publique `SUPABASE_SERVICE_ROLE_KEY` no frontend ou no repositório.
+
+## Produção
+
+```sh
+npm run build
+npm run preview
 ```
