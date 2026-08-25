@@ -25,11 +25,11 @@ function LoginPage() {
   }, [user, role, loading, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col p-4 sm:p-8 font-sans">
+    <div className="min-h-screen bg-black flex flex-col p-4 sm:p-8 font-sans">
       <div className="mb-8">
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-slate-300 hover:text-white font-medium transition-colors"
         >
           <ChevronLeft className="h-5 w-5" />
           Voltar para o início
