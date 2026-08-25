@@ -11,6 +11,10 @@ npm install
 npm run dev
 ```
 
+Antes de publicar no Lovable, execute `npm run verify`. O comando roda o typecheck, lint, build e testes existentes nessa ordem. Corrija qualquer erro antes de fazer commit e publicar.
+
+Fluxo curto: desenvolver, executar `npm run verify`, corrigir erros, fazer commit e publicar no Lovable.
+
 Configure as variáveis de ambiente em `.env` ou `.env.local`:
 
 ```env

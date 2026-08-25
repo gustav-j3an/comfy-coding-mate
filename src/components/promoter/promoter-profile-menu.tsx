@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { LogOut, UserRound } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export function PromoterProfileMenu({ hasPendingWork }: PromoterProfileMenuProps
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
-  const fullName = profile?.full_name || user?.user_metadata?.full_name || 'Promotor';
+  const fullName = profile?.full_name || user?.user_metadata?.['full_name'] || 'Promotor';
   const shortName = fullName.split(' ')[0];
   const initial = fullName.trim().charAt(0).toUpperCase() || 'P';
 

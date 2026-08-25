@@ -2,7 +2,7 @@
  * Configurações globais não secretas do aplicativo.
  */
 export const APP_CONFIG = {
-  publicAppUrl: import.meta.env.VITE_PUBLIC_APP_URL || 'http://localhost:3000',
+  publicAppUrl: import.meta.env['VITE_PUBLIC_APP_URL'] || 'http://localhost:3000',
 };
 
 /**

@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useLocation, useNavigate, Link } from '@tanstack/react-router';
 import { get, keys } from 'idb-keyval';
 import { useAuth } from '@/lib/auth/auth-context';
 import { LoginForm } from '@/components/auth/login-form';
@@ -17,6 +17,7 @@ export const Route = createFileRoute('/_authenticated')({
 function AuthenticatedLayout() {
   const { user, loading, role, previewPromoter, setPreviewPromoter } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [hasPendingSync, setHasPendingSync] = useState(false);
   const [hasAwaitingMedia, setHasAwaitingMedia] = useState(false);
 
@@ -52,7 +53,7 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     if (!loading && user) {
-      const path = window.location.pathname;
+      const path = location.pathname;
       // If we are exactly at the root of authenticated or index, redirect to dashboard
       if (path === '/_authenticated' || path === '/') {
         if (role === 'admin') navigate({ to: '/admin' });
@@ -60,13 +61,13 @@ function AuthenticatedLayout() {
         else if (role === 'industry') navigate({ to: '/industry/' as any });
       }
     }
-  }, [user, role, loading, navigate]);
+  }, [user, role, loading, navigate, location.pathname]);
 
   useEffect(() => {
-    if (!loading && !user && window.location.pathname.startsWith('/promoter')) {
+    if (!loading && !user && location.pathname.startsWith('/promoter')) {
       navigate({ to: '/login', replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   if (loading) {
     return (
@@ -76,7 +77,7 @@ function AuthenticatedLayout() {
     );
   }
 
-  if (!user && window.location.pathname.startsWith('/promoter')) {
+  if (!user && location.pathname.startsWith('/promoter')) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -96,7 +97,7 @@ function AuthenticatedLayout() {
     <>
       <ConnectionStatus />
       <ChangePasswordModal />
-      <PWAUpdateNotification isUploading={window.location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
+      <PWAUpdateNotification isUploading={location.pathname.includes('/promoter/visit/') || hasPendingSync || hasAwaitingMedia} />
       
       <div className="pt-0 min-h-screen flex flex-col">
         <Outlet />
