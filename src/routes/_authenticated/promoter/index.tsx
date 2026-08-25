@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
 import { getPromoterAgenda } from '@/lib/execution.functions';
 import { StopDetailDrawer } from '@/components/promoter/stop-detail-drawer';
+import { PromoterProfileMenu } from '@/components/promoter/promoter-profile-menu';
 
 import { PromoterErrorBoundary } from '@/components/promoter/promoter-error-boundary';
 
@@ -289,6 +290,14 @@ function PromoterDashboard() {
               <WifiOff className="h-3 w-3 mr-1" /> Offline
             </Badge>
           )}
+          <PromoterProfileMenu
+            hasPendingWork={
+              syncQueueSize > 0 ||
+              Object.values(offlineDrafts).some((draft: any) =>
+                ['offline_draft', 'awaiting_connection', 'awaiting_media', 'ready_to_send', 'sending'].includes(draft?.status),
+              )
+            }
+          />
         </div>
 
         <div className="flex justify-between items-start mb-6 pt-2">

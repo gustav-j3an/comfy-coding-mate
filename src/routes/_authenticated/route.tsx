@@ -62,9 +62,23 @@ function AuthenticatedLayout() {
     }
   }, [user, role, loading, navigate]);
 
+  useEffect(() => {
+    if (!loading && !user && window.location.pathname.startsWith('/promoter')) {
+      navigate({ to: '/login', replace: true });
+    }
+  }, [user, loading, navigate]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!user && window.location.pathname.startsWith('/promoter')) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
