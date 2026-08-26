@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { supabase } from '@/integrations/supabase/client';
-import { getPublicAppUrl } from '@/lib/app-config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -357,26 +356,8 @@ function UserManagement() {
         } 
       });
 
-      if (res.success && res.tempPassword) {
-        const message = `Olá, ${res.promoterName}! 👋\n\nSeu acesso ao Rota do Promotor está pronto.\n\nAcesse:\n${getPublicAppUrl()}/login\n\nE-mail: ${res.email}\nSenha temporária: ${res.tempPassword}\n\nNo primeiro acesso, você deverá criar sua própria senha.`;
-        
-        const encodedMessage = encodeURIComponent(message);
-        
-        // Normalize phone for wa.me link
-        const digitsOnly = (res.phone || '').replace(/\D/g, '');
-        let normalizedPhone = digitsOnly;
-        if (digitsOnly.length === 10 || digitsOnly.length === 11) {
-          normalizedPhone = '55' + digitsOnly;
-        }
-        
-        const waUrl = `https://wa.me/${normalizedPhone}?text=${encodedMessage}`;
-        
-        setTempAccessData({
-          tempPassword: res.tempPassword,
-          email: res.email,
-          waUrl,
-          message: message
-        });
+      if (res.success) {
+        toast.success('Acesso temporário gerado com segurança no servidor.');
       }
 
     } catch (error: any) {

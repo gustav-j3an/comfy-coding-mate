@@ -333,7 +333,7 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     const actionLink = linkData?.properties?.action_link;
     if (!actionLink) throw new Error("Não foi possível gerar o link de acesso");
 
-    const message = `Olá, ${promoter.name}! 👋\n\nSeu acesso ao **Rota do Promotor** está pronto.\n\nAcesse o link abaixo para criar sua senha e entrar no aplicativo:\n\n${actionLink}\n\nDepois de entrar, você poderá consultar seu roteiro e instalar o aplicativo na tela inicial do celular.`;
+    const message = `Olá, ${promoter.name}! 👋\n\nSeu acesso ao *Rota do Promotor* está pronto.\n\nPara criar sua senha e entrar no aplicativo, toque no link abaixo:\n\n${actionLink}\n\nDepois de entrar, você poderá consultar seu roteiro e instalar o aplicativo na tela inicial do celular.`;
     const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 
     // 6. Record audit log
@@ -423,10 +423,7 @@ export const generateTemporaryAccess = createServerFn({ method: "POST" })
 
     return { 
       success: true, 
-      tempPassword,
-      email: data.email,
-      promoterName: promoter.name,
-      phone: promoter.phone
+      email: data.email
     };
   });
 
