@@ -17,6 +17,12 @@ function getAuthRedirectTo() {
   return `${getPublicAppUrl()}/auth/callback?next=/primeiro-acesso`;
 }
 
+function enforceAuthRedirect(actionLink: string, redirectTo: string) {
+  const url = new URL(actionLink);
+  url.searchParams.set("redirect_to", redirectTo);
+  return url.toString();
+}
+
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => inviteUserSchema.parse(data))
@@ -335,8 +341,9 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
 
     const actionLink = linkData?.properties?.action_link;
     if (!actionLink) throw new Error("Não foi possível gerar o link de acesso");
+    const safeActionLink = enforceAuthRedirect(actionLink, redirectTo);
 
-    const message = `Olá, ${promoter.name}! 👋\n\nSeu acesso ao *Rota do Promotor* está pronto.\n\nPara criar sua senha e entrar no aplicativo, toque no link abaixo:\n\n${actionLink}\n\nDepois de entrar, você poderá consultar seu roteiro e instalar o aplicativo na tela inicial do celular.`;
+    const message = `Olá, ${promoter.name}! 👋\n\nSeu acesso ao *Rota do Promotor* está pronto.\n\nPara criar sua senha e entrar no aplicativo, toque no link abaixo:\n\n${safeActionLink}\n\nDepois de entrar, você poderá consultar seu roteiro e instalar o aplicativo na tela inicial do celular.`;
     const whatsappUrl = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`;
 
     // 6. Record audit log
