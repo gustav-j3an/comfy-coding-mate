@@ -78,6 +78,15 @@ function VisitExecution() {
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
 
+  useEffect(() => {
+    setSelectedIndustryId(requestedIndustryId || '');
+    setObservation('');
+    setEvidences([]);
+    setOccurrences([]);
+    setIsRestored(false);
+    setSignedUrls({});
+  }, [visitId, requestedIndustryId]);
+
   // Handle online/offline status
   useEffect(() => {
     const handleStatus = () => setOnline(navigator.onLine);
@@ -93,7 +102,8 @@ function VisitExecution() {
   useEffect(() => {
     async function restoreDraft() {
       if (!user?.id) return;
-      const draft = await getVisitDraft(user.id, visitId);
+      if (!requestedIndustryId) return;
+      const draft = await getVisitDraft(user.id, visitId, requestedIndustryId);
       if (draft && !isRestored) {
         setObservation(draft.observation || '');
         setEvidences(draft.evidences || []);
@@ -102,17 +112,19 @@ function VisitExecution() {
         setIsRestored(true);
         toast.info("Rascunho restaurado automaticamente.");
       }
+      setIsRestored(true);
     }
     restoreDraft();
   }, [visitId, isRestored]);
 
   // Auto-save draft
   useEffect(() => {
-    if (!visitId || !user?.id) return;
+    if (!visitId || !user?.id || !selectedIndustryId) return;
     
     const saveTimer = setTimeout(async () => {
       const draft = await saveVisitDraft(user.id, {
         visitId,
+        industryId: selectedIndustryId,
         executorId: user.id,
         checkinAt: checkinTime,
         observation,
@@ -126,7 +138,7 @@ function VisitExecution() {
     }, 2000);
 
     return () => clearTimeout(saveTimer);
-  }, [observation, evidences, occurrences, coords, visitId, user?.id, checkinTime]);
+  }, [observation, evidences, occurrences, coords, visitId, user?.id, checkinTime, selectedIndustryId]);
 
   const { data: executionData, error: loadError } = useSuspenseQuery({
     queryKey: ['visit-execution', visitId, requestedIndustryId ?? null],
@@ -154,16 +166,12 @@ function VisitExecution() {
       fileType: e.file_type,
       evidenceType: e.evidence_type,
       industryId: e.industry_id,
-    }));
+    })).filter((e: any) => e.industryId === selectedIndustryId);
     setEvidences((current) => current.length ? current : loaded);
     Promise.all(loaded.map(async (e: any) => {
       try { return [e.filePath, await getSignedUrl({ data: { filePath: e.filePath } })]; } catch { return null; }
     })).then((entries) => setSignedUrls(Object.fromEntries(entries.filter(Boolean) as [string, string][])));
-  }, [executionData]);
-
-  useEffect(() => {
-    if (requestedIndustryId) setSelectedIndustryId(requestedIndustryId);
-  }, [requestedIndustryId]);
+  }, [executionData, selectedIndustryId]);
 
   // Check for mandatory evidence requirements
   useEffect(() => {
@@ -187,7 +195,7 @@ function VisitExecution() {
     // Update draft status if offline
     if (user?.id && isRestored) {
       const updateStatus = async () => {
-        const draft = await getVisitDraft(user.id, visitId);
+        const draft = await getVisitDraft(user.id, visitId, selectedIndustryId);
         if (draft && (draft.status === 'awaiting_media' || draft.status === 'offline_draft' || draft.status === 'ready_to_send')) {
           const newStatus = missing.length > 0 ? 'awaiting_media' : 'ready_to_send';
           if (draft.status !== newStatus) {
@@ -334,6 +342,7 @@ function VisitExecution() {
     if (!online) {
       await saveVisitDraft(user!.id, {
         visitId,
+        industryId: selectedIndustryId,
         executorId: user!.id,
         checkinAt: checkinTime,
         observation,
@@ -365,7 +374,7 @@ function VisitExecution() {
         }
       });
 
-      await deleteVisitDraft(user!.id, visitId);
+      await deleteVisitDraft(user!.id, visitId, selectedIndustryId);
       await removeFromSyncQueue(user!.id, visitId);
       
       toast.success("Visita enviada para conferência administrativa.");

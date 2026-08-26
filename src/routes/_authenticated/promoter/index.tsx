@@ -235,7 +235,7 @@ function PromoterDashboard() {
           const drafts: Record<string, any> = {};
           for (const v of (visits || [])) {
             if (!v.id) continue;
-            const draft = await getVisitDraft(user.id, v.id).catch(() => null);
+            const draft = await getVisitDraft(user.id, v.id, v.industry_id).catch(() => null);
             if (draft) {
               drafts[v.id] = draft;
             }

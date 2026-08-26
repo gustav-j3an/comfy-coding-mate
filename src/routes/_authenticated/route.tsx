@@ -35,7 +35,10 @@ function AuthenticatedLayout() {
       let awaitingMedia = false;
       for (const key of allKeys) {
         if (typeof key === 'string' && key.startsWith(userPrefix)) {
-          const draft = await getVisitDraft(user.id, key.replace(userPrefix, ''));
+          const draftKey = key.replace(userPrefix, '');
+          const separator = draftKey.lastIndexOf('_');
+          if (separator < 0) continue;
+          const draft = await getVisitDraft(user.id, draftKey.slice(0, separator), draftKey.slice(separator + 1));
           if (draft?.status === 'awaiting_media') {
             awaitingMedia = true;
             break;
