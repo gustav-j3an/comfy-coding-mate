@@ -11,8 +11,11 @@ const inviteUserSchema = z.object({
   role: z.enum(['admin', 'promoter', 'industry']),
   promoterId: z.string().optional(),
   industryId: z.string().optional(),
-  redirectTo: z.string().optional(),
 });
+
+function getAuthRedirectTo() {
+  return `${getPublicAppUrl()}/auth/callback?next=/primeiro-acesso`;
+}
 
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -32,13 +35,13 @@ export const inviteUser = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Apenas administradores podem convidar usuários");
 
     // Use getPublicAppUrl() as the source of truth for the site URL
-    const siteUrl = getPublicAppUrl();
+    const redirectTo = getAuthRedirectTo();
 
     // 1. Invite user to Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
-        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+        redirectTo,
         data: {
           full_name: data.fullName,
         }
@@ -102,13 +105,13 @@ export const resendInvite = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Apenas administradores podem reenviar convites");
 
     // Get site URL
-    const siteUrl = getPublicAppUrl();
+    const redirectTo = getAuthRedirectTo();
 
     // Try to resend the invite (this invalidates the previous one)
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
-        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+        redirectTo,
       }
     );
 
@@ -136,7 +139,7 @@ export const resendInvite = createServerFn({ method: "POST" })
       });
 
       const { error: recoveryError } = await publicClient.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+        redirectTo,
       });
 
       if (recoveryError) {
@@ -175,13 +178,13 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     
     // Get site URL
-    const siteUrl = getPublicAppUrl();
+    const redirectTo = getAuthRedirectTo();
 
     const { error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: data.email,
       options: {
-        redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+        redirectTo,
       }
     });
 
@@ -206,7 +209,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
 export const sendPasswordResetEmail = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ email: z.string().email() }).parse(data))
   .handler(async ({ data }) => {
-    const siteUrl = getPublicAppUrl();
+    const redirectTo = getAuthRedirectTo();
     const { createClient } = await import('@supabase/supabase-js');
     const key = process.env['SUPABASE_PUBLISHABLE_KEY'];
     const supabaseUrl = process.env['SUPABASE_URL'];
@@ -219,7 +222,7 @@ export const sendPasswordResetEmail = createServerFn({ method: "POST" })
       auth: { persistSession: false },
     });
     const { error } = await publicClient.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso`,
+      redirectTo,
     });
 
     if (error) throw error;
@@ -318,14 +321,14 @@ export const generateWhatsAppInvite = createServerFn({ method: "POST" })
     }
 
     // 4. Get site URL
-    const siteUrl = getPublicAppUrl();
+    const redirectTo = getAuthRedirectTo();
 
     // 5. Generate Link
     // We'll use 'recovery' as it's the safest way to get a single-use link that forces password creation
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: data.email,
-      options: { redirectTo: `${siteUrl}/auth/callback?next=/primeiro-acesso` },
+      options: { redirectTo },
     });
 
     if (linkError) throw linkError;
