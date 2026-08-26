@@ -129,7 +129,7 @@ function VisitExecution() {
   }, [observation, evidences, occurrences, coords, visitId, user?.id, checkinTime]);
 
   const { data: executionData, error: loadError } = useSuspenseQuery({
-    queryKey: ['visit-execution', visitId],
+    queryKey: ['visit-execution', visitId, requestedIndustryId ?? null],
     queryFn: async () => {
       try {
         const result = await getPromoterVisitExecution({ data: { visitId, industryId: requestedIndustryId } });
@@ -144,9 +144,8 @@ function VisitExecution() {
   const visit = executionData?.visit;
   const store = executionData?.store;
   const industries = executionData?.industries || [];
-  const activeIndustries = selectedIndustryId
-    ? industries.filter((ind: any) => ind.id === selectedIndustryId)
-    : industries;
+  const activeIndustry = industries.find((ind: any) => ind.id === selectedIndustryId);
+  const activeIndustries = activeIndustry ? [activeIndustry] : [];
 
   useEffect(() => {
     const loaded = (executionData?.evidences || []).map((e: any) => ({
@@ -408,7 +407,7 @@ function VisitExecution() {
               <ChevronLeft className="h-6 w-6" />
             </button>
           </Button>
-          <h1 className="font-bold text-lg">Executar visita — {activeIndustries[0]?.name}</h1>
+          <h1 className="font-bold text-lg">Executar visita — {activeIndustry?.name}</h1>
         </div>
         
         <div className="flex items-center gap-2">

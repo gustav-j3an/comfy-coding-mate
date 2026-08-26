@@ -41,6 +41,10 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
   
   const handleStartVisit = async (industryId?: string) => {
+    if (!industryId) {
+      toast.info("Selecione uma indústria para iniciar a visita.");
+      return;
+    }
     // If we have a real visit in the group, we navigate directly to the first real one
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     
@@ -68,7 +72,8 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
       const result = await startVisit({
         data: {
           routeStopId: stopId,
-          date: format(selectedDate, 'yyyy-MM-dd')
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          industryId: industryId as string
         }
       });
 

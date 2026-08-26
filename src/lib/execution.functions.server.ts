@@ -20,7 +20,7 @@ export const startScheduledVisit = async ({ data, context }: any) => {
 
 
   const promoterId = profile.promoter_id;
-  const { routeStopId, date: scheduledDate } = data;
+  const { routeStopId, date: scheduledDate, industryId } = data;
 
   const now = new Date();
   const saoPauloDate = new Intl.DateTimeFormat('en-CA', { 
@@ -77,7 +77,9 @@ export const startScheduledVisit = async ({ data, context }: any) => {
     .select('industry_id')
     .eq('stop_id', routeStopId);
   
-  const industryId = (tasks && (tasks.length > 0)) ? (tasks[0] as any).industry_id : "";
+  if (!industryId || !(tasks || []).some((task: any) => task.industry_id === industryId)) {
+    throw new Error("Indústria não pertence a esta visita.");
+  }
 
   const { data: newVisit, error: insertError } = await supabaseAdmin
     .from('visits')
@@ -286,7 +288,7 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
   }
 
   if (data.industryId && !industries.some((industry: any) => industry.id === data.industryId)) {
-    throw new Error("Indústria não pertence à visita.");
+    throw new Error("Indústria não pertence a esta visita.");
   }
 
   const { data: evidences, error: evidenceError } = await supabaseAdmin
@@ -433,7 +435,7 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
     .eq('stop_id', visitRoute.route_stop_id)
     .eq('industry_id', data.industryId)
     .maybeSingle();
-  if (!task) throw new Error("Indústria não pertence à visita.");
+  if (!task) throw new Error("Indústria não pertence a esta visita.");
   // Verify file existence in storage
   const pathParts = data.filePath.split('/');
   const fileName = pathParts.pop();

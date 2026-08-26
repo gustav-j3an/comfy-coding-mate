@@ -363,6 +363,7 @@ export const startScheduledVisit = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({
     routeStopId: z.string(),
     date: z.string(),
+    industryId: z.string().uuid(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { startScheduledVisit: fn } = await import("./execution.functions.server");
