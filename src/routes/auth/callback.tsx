@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/auth/callback')({
@@ -7,27 +8,37 @@ export const Route = createFileRoute('/auth/callback')({
       next: (search['next'] as string) || '/',
     };
   },
-  loader: async ({ deps }) => {
-    const { next } = deps as { next: string };
-    
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (session) {
-      throw redirect({
-        to: next as any,
-      });
-    }
-
-    return { error: 'Sessão expirada ou convite inválido.' };
-  },
-  loaderDeps: ({ search }) => ({
-    next: search.next,
-  }),
   component: AuthCallback,
 });
 
 function AuthCallback() {
-  const { error } = Route.useLoaderData() as { error?: string };
+  const { next } = Route.useSearch();
+  const navigate = useNavigate();
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      if (active) setError('Sessão expirada ou convite inválido.');
+    }, 10000);
+
+    const finishAuthentication = (session: unknown) => {
+      if (!active || !session) return;
+      window.clearTimeout(timeout);
+      navigate({ to: next as any });
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => finishAuthentication(session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      finishAuthentication(session);
+    });
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      listener.subscription.unsubscribe();
+    };
+  }, [navigate, next]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-6 font-sans">
