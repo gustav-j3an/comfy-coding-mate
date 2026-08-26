@@ -46,11 +46,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    industryId: typeof search['industryId'] === 'string' ? search['industryId'] : undefined,
+  }),
   component: VisitExecution,
 });
 
 function VisitExecution() {
   const { visitId } = Route.useParams();
+  const { industryId: requestedIndustryId } = Route.useSearch();
   const { user, previewPromoter } = useAuth();
   const navigate = useNavigate();
   const { coords, loading: loadingGeo } = useGeolocation();
@@ -63,6 +67,7 @@ function VisitExecution() {
   const [checkinTime] = useState(new Date().toISOString());
   const [missingEvidences, setMissingEvidences] = useState<string[]>([]);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState(false);
   
   const [online, setOnline] = useState(isOnline());
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -70,7 +75,7 @@ function VisitExecution() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
-  const [selectedIndustryId, setSelectedIndustryId] = useState<string>('');
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
 
   // Handle online/offline status
   useEffect(() => {
@@ -138,15 +143,36 @@ function VisitExecution() {
   const visit = executionData?.visit;
   const store = executionData?.store;
   const industries = executionData?.industries || [];
+  const activeIndustries = selectedIndustryId
+    ? industries.filter((ind: any) => ind.id === selectedIndustryId)
+    : industries;
+
+  useEffect(() => {
+    const loaded = (executionData?.evidences || []).map((e: any) => ({
+      id: e.id,
+      filePath: e.file_path,
+      fileType: e.file_type,
+      evidenceType: e.evidence_type,
+      industryId: e.industry_id,
+    }));
+    setEvidences((current) => current.length ? current : loaded);
+    Promise.all(loaded.map(async (e: any) => {
+      try { return [e.filePath, await getSignedUrl({ data: { filePath: e.filePath } })]; } catch { return null; }
+    })).then((entries) => setSignedUrls(Object.fromEntries(entries.filter(Boolean) as [string, string][])));
+  }, [executionData]);
+
+  useEffect(() => {
+    if (requestedIndustryId) setSelectedIndustryId(requestedIndustryId);
+  }, [requestedIndustryId]);
 
   // Check for mandatory evidence requirements
   useEffect(() => {
-    // Mission E2.1: Only "reposicao" is mandatory per industry
+    // Only replenishment evidence is mandatory per industry.
     const missing: string[] = [];
     
     industries.forEach((ind: any) => {
       const hasReposicao = evidences.some(e => 
-        e.evidenceType === 'reposicao' && e.industryId === ind.id
+        e.evidenceType === 'replenishment' && e.industryId === ind.id
       );
       if (hasReposicao) return;
       
@@ -197,6 +223,10 @@ function VisitExecution() {
     }
 
     try {
+      setUploading(true);
+      const localPreview = URL.createObjectURL(file);
+      const pendingId = `pending-${Date.now()}`;
+      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: activeEvidenceType, industryId: selectedIndustryId, pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
         data: {
@@ -236,7 +266,7 @@ function VisitExecution() {
         }
       });
 
-      setEvidences([...evidences, {
+      setEvidences((current) => [...current.filter((e) => e.id !== pendingId), {
         id: evidence.id,
         filePath: evidence.file_path,
         fileType: evidence.file_type,
@@ -244,7 +274,8 @@ function VisitExecution() {
         industryId: evidence.industry_id
       }]);
 
-      toast.success("Evidência anexada com sucesso.");
+      URL.revokeObjectURL(localPreview);
+      toast.success("Evidência enviada.");
       
       // Get signed URL for preview
       try {
@@ -255,14 +286,15 @@ function VisitExecution() {
       }
     } catch (error: any) {
       console.error("Upload error details:", error);
-      toast.error("Erro no upload: " + (error.message || "Erro desconhecido"));
+      toast.error("Falha no envio — Tentar novamente");
     } finally {
+      setUploading(false);
       setUploadProgress(0);
     }
   };
 
   const triggerUpload = (type: string) => {
-    setActiveEvidenceType(type);
+      setActiveEvidenceType(type);
     fileInputRef.current?.click();
   };
 
@@ -283,7 +315,7 @@ function VisitExecution() {
     }
 
     if (missingEvidences.length > 0) {
-      toast.error(`Evidências obrigatórias pendentes: ${missingEvidences.join(', ')}`);
+      toast.error(`Foto de reposição pendente: ${missingEvidences.join(', ')}`);
       return;
     }
 
@@ -403,7 +435,7 @@ function VisitExecution() {
             <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl font-bold text-slate-800">{store?.name}</h2>
               <div className="flex flex-wrap gap-1">
-                {industries.map((ind: any, i: number) => (
+                {activeIndustries.map((ind: any, i: number) => (
                   <Badge key={i} variant="secondary" className="text-[10px]">{ind?.name}</Badge>
                 ))}
               </div>
@@ -418,11 +450,11 @@ function VisitExecution() {
         {/* Add Photos Button */}
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            {industries.map((ind: any) => (
+            {activeIndustries.map((ind: any) => (
               <div key={ind.id} className="w-full space-y-2 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-bold text-slate-700">{ind.name}</span>
-                  {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'reposicao') ? (
+                   {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'replenishment' && !e.pending) ? (
                     <Badge className="bg-green-100 text-green-700 border-none">
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Reposição OK
                     </Badge>
@@ -436,7 +468,7 @@ function VisitExecution() {
                     variant="outline" 
                     className="flex flex-col h-20 gap-1 border-blue-100 bg-blue-50/30 hover:bg-blue-50"
                     onClick={() => {
-                      setActiveEvidenceType('reposicao');
+                       setActiveEvidenceType('replenishment');
                       setSelectedIndustryId(ind.id);
                       fileInputRef.current?.click();
                     }}
@@ -450,7 +482,7 @@ function VisitExecution() {
                       variant="ghost" 
                       className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
                       onClick={() => {
-                        setActiveEvidenceType('relatorio_foto');
+                        setActiveEvidenceType('report');
                         setSelectedIndustryId(ind.id);
                         fileInputRef.current?.click();
                       }}
@@ -461,7 +493,7 @@ function VisitExecution() {
                       variant="ghost" 
                       className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
                       onClick={() => {
-                        setActiveEvidenceType('ocorrencia_foto');
+                        setActiveEvidenceType('occurrence');
                         setSelectedIndustryId(ind.id);
                         fileInputRef.current?.click();
                       }}
@@ -504,15 +536,16 @@ function VisitExecution() {
             <div className="flex gap-2 overflow-x-auto pb-2">
               {(evidences as any[]).map((ev, i) => (
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
-                  {ev.fileType.startsWith('image/') ? (
+                   {ev.fileType.startsWith('image/') ? (
                     <img 
-                      src={signedUrls[ev.filePath] || ''} 
+                      src={ev.pending ? ev.filePath : signedUrls[ev.filePath] || ''}
                       className="w-full h-full object-cover" 
                       alt="evidencia"
-                    />
+                  />
                   ) : (
                     <FileText className="h-8 w-8 text-slate-400" />
                   )}
+                  {ev.pending && <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] text-center">Enviando...</span>}
                   <button 
                     onClick={() => setEvidences(evidences.filter((_, idx) => idx !== i))}
                     className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"

@@ -285,6 +285,13 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     industries.push(visit.industry);
   }
 
+  const { data: evidences, error: evidenceError } = await supabaseAdmin
+    .from('visit_evidence')
+    .select('id, file_path, file_type, evidence_type, industry_id')
+    .eq('visit_id', data.visitId);
+
+  if (evidenceError) throw new Error("Não foi possível carregar as evidências da visita.");
+
   return {
     visit: {
       id: visit.id,
@@ -297,7 +304,7 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     },
     store: visit.store,
     industries: industries,
-    evidences: [],
+    evidences: evidences || [],
     occurrences: []
   };
 };
@@ -338,10 +345,25 @@ export const requestEvidenceUpload = async ({ data, context }: any) => {
     throw new Error("Arquivo muito grande. Limite de 5MB.");
   }
 
-  const allowedEvidenceTypes = ['reposicao', 'relatorio_foto', 'ocorrencia_foto'];
+  const allowedEvidenceTypes = ['replenishment', 'report', 'occurrence'];
   if (!allowedEvidenceTypes.includes(data.evidenceType)) {
     throw new Error("Tipo de evidência inválido.");
   }
+
+  if (!data.industryId) throw new Error("Indústria não selecionada.");
+  const { data: visitRoute } = await supabaseAdmin
+    .from('visits')
+    .select('route_stop_id')
+    .eq('id', data.visitId)
+    .single();
+  if (!visitRoute?.route_stop_id) throw new Error("Parada da visita não encontrada.");
+  const { data: task } = await supabaseAdmin
+    .from('stop_tasks')
+    .select('industry_id')
+    .eq('stop_id', visitRoute.route_stop_id)
+    .eq('industry_id', data.industryId)
+    .maybeSingle();
+  if (!task) throw new Error("Indústria não pertence à parada.");
 
   const fileExt = data.fileName.split('.').pop();
   const fileName = `${data.visitId}/${data.evidenceType}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -386,6 +408,15 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
 
   if (!visit || visit.promoter_id !== profile.promoter_id) throw new Error("Não autorizado.");
 
+  if (!['replenishment', 'report', 'occurrence'].includes(data.evidenceType)) {
+    throw new Error("Tipo de evidência inválido.");
+  }
+
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(data.fileType)) {
+    throw new Error("Formato de arquivo não permitido.");
+  }
+
+  if (!data.industryId) throw new Error("Indústria não selecionada.");
   // Verify file existence in storage
   const pathParts = data.filePath.split('/');
   const fileName = pathParts.pop();

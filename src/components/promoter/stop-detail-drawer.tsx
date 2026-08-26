@@ -40,12 +40,12 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
   const isTheoretical = group.all_items.every((i: any) => i.is_theoretical);
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
   
-  const handleStartVisit = async () => {
+  const handleStartVisit = async (industryId?: string) => {
     // If we have a real visit in the group, we navigate directly to the first real one
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     
     if (realVisit && realVisit.id && !realVisit.id.startsWith('theoretical-')) {
-      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id } });
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId: undefined } });
       onClose();
       return;
     }
@@ -74,7 +74,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
 
       if (result && result.visitId) {
         toast.success(result.action === 'reused' ? "Visita recuperada!" : "Visita iniciada com sucesso!");
-        navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId } });
+        navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId }, search: { industryId } });
         onClose();
       } else {
         throw new Error("Falha ao materializar visita: ID não retornado.");
@@ -85,6 +85,16 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
     } finally {
       setIsStarting(false);
     }
+  };
+
+  const handleSelectIndustry = async (industryId: string) => {
+    const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
+    if (realVisit?.id && !realVisit.id.startsWith('theoretical-')) {
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId } });
+      onClose();
+      return;
+    }
+    await handleStartVisit(industryId);
   };
 
   const dayOfWeekLabel = format(selectedDate, "EEEE", { locale: ptBR });
@@ -147,6 +157,9 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
                     <Badge variant="outline" className="text-[9px] h-4">Material obrigatório</Badge>
                   </div>
                   <div className="p-3 space-y-2">
+                    <Button size="sm" className="w-full" onClick={() => handleSelectIndustry(ind.id)}>
+                      <Play className="mr-2 h-4 w-4" /> Atender esta indústria
+                    </Button>
                     <div className="flex items-center text-xs text-slate-600 gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-slate-300" />
                       Registrar relatório (opcional)
@@ -196,7 +209,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
             <Button 
               size="lg" 
               className="bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold rounded-xl shadow-lg active:scale-95 transition-all"
-              onClick={handleStartVisit}
+              onClick={() => handleStartVisit()}
               disabled={isStarting}
             >
               {isStarting ? (

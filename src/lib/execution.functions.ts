@@ -94,7 +94,7 @@ export const submitVisit = createServerFn({ method: "POST" })
 
     for (const ind of taskIndustries) {
       const hasPhoto = data.evidences.some(e => 
-        e.evidenceType === 'reposicao' && 
+        e.evidenceType === 'replenishment' &&
         e.industryId === ind.id
       );
       if (!hasPhoto) {
