@@ -351,6 +351,7 @@ export const getPromoterVisitExecution = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     visitId: z.string(),
+    industryId: z.string().uuid().optional(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");

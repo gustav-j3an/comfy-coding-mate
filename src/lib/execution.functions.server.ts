@@ -285,6 +285,10 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     industries.push(visit.industry);
   }
 
+  if (data.industryId && !industries.some((industry: any) => industry.id === data.industryId)) {
+    throw new Error("Indústria não pertence à visita.");
+  }
+
   const { data: evidences, error: evidenceError } = await supabaseAdmin
     .from('visit_evidence')
     .select('id, file_path, file_type, evidence_type, industry_id')
@@ -417,6 +421,19 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
   }
 
   if (!data.industryId) throw new Error("Indústria não selecionada.");
+  const { data: visitRoute } = await supabaseAdmin
+    .from('visits')
+    .select('route_stop_id')
+    .eq('id', data.visitId)
+    .single();
+  if (!visitRoute?.route_stop_id) throw new Error("Parada da visita não encontrada.");
+  const { data: task } = await supabaseAdmin
+    .from('stop_tasks')
+    .select('industry_id')
+    .eq('stop_id', visitRoute.route_stop_id)
+    .eq('industry_id', data.industryId)
+    .maybeSingle();
+  if (!task) throw new Error("Indústria não pertence à visita.");
   // Verify file existence in storage
   const pathParts = data.filePath.split('/');
   const fileName = pathParts.pop();

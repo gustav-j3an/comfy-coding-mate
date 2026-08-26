@@ -45,7 +45,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     
     if (realVisit && realVisit.id && !realVisit.id.startsWith('theoretical-')) {
-      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId: undefined } });
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId } });
       onClose();
       return;
     }

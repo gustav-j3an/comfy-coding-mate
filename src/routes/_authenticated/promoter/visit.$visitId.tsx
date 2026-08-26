@@ -74,6 +74,7 @@ function VisitExecution() {
   const [isRestored, setIsRestored] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadContextRef = useRef<{ industryId: string; evidenceType: string } | null>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
 
@@ -131,7 +132,7 @@ function VisitExecution() {
     queryKey: ['visit-execution', visitId],
     queryFn: async () => {
       try {
-        const result = await getPromoterVisitExecution({ data: { visitId } });
+        const result = await getPromoterVisitExecution({ data: { visitId, industryId: requestedIndustryId } });
         return result;
       } catch (err: any) {
         console.error("Error loading visit execution:", err);
@@ -170,14 +171,14 @@ function VisitExecution() {
     // Only replenishment evidence is mandatory per industry.
     const missing: string[] = [];
     
-    industries.forEach((ind: any) => {
+    (selectedIndustryId ? industries.filter((ind: any) => ind.id === selectedIndustryId) : []).forEach((ind: any) => {
       const hasReposicao = evidences.some(e => 
         e.evidenceType === 'replenishment' && e.industryId === ind.id
       );
       if (hasReposicao) return;
       
       // Mandatory for specified industries or if it's the main industry of the visit
-      if (['KING', 'DON LUIZ', 'FRUTA POLPA'].includes(ind.name) || visit?.industry_id === ind.id) {
+      if (['KING', 'DON LUIZ', 'FRUTA POLPA'].includes(ind.name) || ind.id === selectedIndustryId) {
         missing.push(ind.name);
       }
     });
@@ -200,7 +201,7 @@ function VisitExecution() {
       };
       updateStatus();
     }
-  }, [evidences, user?.id, visitId, isRestored]);
+  }, [evidences, user?.id, visitId, isRestored, industries, selectedIndustryId]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (previewPromoter) {
@@ -208,7 +209,10 @@ function VisitExecution() {
       return;
     }
     const file = e.target.files?.[0];
-    if (!file || !activeEvidenceType) return;
+    const uploadContext = uploadContextRef.current;
+    if (!file || !uploadContext) return;
+    const uploadIndustryId = uploadContext.industryId;
+    const uploadEvidenceType = uploadContext.evidenceType;
 
     // Validate image formats (Mission E2.1)
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -226,13 +230,13 @@ function VisitExecution() {
       setUploading(true);
       const localPreview = URL.createObjectURL(file);
       const pendingId = `pending-${Date.now()}`;
-      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: activeEvidenceType, industryId: selectedIndustryId, pending: true }]);
+      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
         data: {
           visitId,
-          industryId: selectedIndustryId,
-          evidenceType: activeEvidenceType,
+          industryId: uploadIndustryId,
+          evidenceType: uploadEvidenceType,
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size
@@ -259,8 +263,8 @@ function VisitExecution() {
       const evidence = await confirmEvidenceUpload({
         data: {
           visitId,
-          industryId: selectedIndustryId,
-          evidenceType: activeEvidenceType,
+          industryId: uploadIndustryId,
+          evidenceType: uploadEvidenceType,
           filePath,
           fileType: file.type
         }
@@ -294,7 +298,16 @@ function VisitExecution() {
   };
 
   const triggerUpload = (type: string) => {
-      setActiveEvidenceType(type);
+    if (!selectedIndustryId) return;
+    uploadContextRef.current = { industryId: selectedIndustryId, evidenceType: type };
+    setActiveEvidenceType(type);
+    fileInputRef.current?.click();
+  };
+
+  const triggerIndustryUpload = (industryId: string, type: string) => {
+    uploadContextRef.current = { industryId, evidenceType: type };
+    setSelectedIndustryId(industryId);
+    setActiveEvidenceType(type);
     fileInputRef.current?.click();
   };
 
@@ -302,7 +315,7 @@ function VisitExecution() {
     // Basic occurrence structure for now
     setOccurrences([...occurrences, {
       type,
-      industryId: visit?.industry_id,
+      industryId: selectedIndustryId,
       storeId: store?.id,
       description: `Ocorrência de ${type} registrada pelo promotor.`
     }]);
@@ -367,6 +380,24 @@ function VisitExecution() {
     }
   };
 
+  if (!selectedIndustryId) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-4">
+        <Card className="mx-auto mt-12 max-w-lg">
+          <CardContent className="p-6 space-y-4">
+            <h1 className="text-xl font-bold">Selecionar indústria</h1>
+            <p className="text-sm text-slate-500">Escolha a indústria desta execução. Nenhuma indústria será selecionada automaticamente.</p>
+            {industries.map((ind: any) => (
+              <Button key={ind.id} variant="outline" className="w-full justify-start" onClick={() => navigate({ to: "/promoter/visit/$visitId", params: { visitId }, search: { industryId: ind.id } })}>
+                {ind.name}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-10">
       {/* Header */}
@@ -377,7 +408,7 @@ function VisitExecution() {
               <ChevronLeft className="h-6 w-6" />
             </button>
           </Button>
-          <h1 className="font-bold text-lg">Executar Visita</h1>
+          <h1 className="font-bold text-lg">Executar visita — {activeIndustries[0]?.name}</h1>
         </div>
         
         <div className="flex items-center gap-2">
@@ -456,7 +487,7 @@ function VisitExecution() {
                   <span className="text-sm font-bold text-slate-700">{ind.name}</span>
                    {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'replenishment' && !e.pending) ? (
                     <Badge className="bg-green-100 text-green-700 border-none">
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Reposição OK
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Enviada
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-amber-600 border-amber-200">Foto obrigatória</Badge>
@@ -468,9 +499,7 @@ function VisitExecution() {
                     variant="outline" 
                     className="flex flex-col h-20 gap-1 border-blue-100 bg-blue-50/30 hover:bg-blue-50"
                     onClick={() => {
-                       setActiveEvidenceType('replenishment');
-                      setSelectedIndustryId(ind.id);
-                      fileInputRef.current?.click();
+                      triggerIndustryUpload(ind.id, 'replenishment');
                     }}
                   >
                     <Camera className="h-5 w-5 text-blue-600" />
@@ -482,9 +511,7 @@ function VisitExecution() {
                       variant="ghost" 
                       className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
                       onClick={() => {
-                        setActiveEvidenceType('report');
-                        setSelectedIndustryId(ind.id);
-                        fileInputRef.current?.click();
+                        triggerIndustryUpload(ind.id, 'report');
                       }}
                     >
                       <Images className="h-3.5 w-3.5 mr-1 text-orange-500" /> Foto Relatório
@@ -493,9 +520,7 @@ function VisitExecution() {
                       variant="ghost" 
                       className="h-9 text-[10px] border border-slate-100 bg-slate-50/50"
                       onClick={() => {
-                        setActiveEvidenceType('occurrence');
-                        setSelectedIndustryId(ind.id);
-                        fileInputRef.current?.click();
+                        triggerIndustryUpload(ind.id, 'occurrence');
                       }}
                     >
                       <AlertCircle className="h-3.5 w-3.5 mr-1 text-red-500" /> Foto Ocorrência
