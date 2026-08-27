@@ -57,7 +57,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     
     if (realVisit && realVisit.id && !realVisit.id.startsWith('theoretical-')) {
-      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId } });
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId, debugEvidence: undefined } });
       onClose();
       return;
     }
@@ -87,7 +87,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
 
       if (result && result.visitId) {
         toast.success(result.action === 'reused' ? "Visita recuperada!" : "Visita iniciada com sucesso!");
-        navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId }, search: { industryId } });
+        navigate({ to: "/promoter/visit/$visitId", params: { visitId: result.visitId }, search: { industryId, debugEvidence: undefined } });
         onClose();
       } else {
         throw new Error("Falha ao materializar visita: ID não retornado.");
@@ -108,7 +108,7 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
     }
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     if (realVisit?.id && !realVisit.id.startsWith('theoretical-')) {
-      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId } });
+      navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId, debugEvidence: undefined } });
       onClose();
       return;
     }

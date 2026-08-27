@@ -49,6 +49,7 @@ import { ptBR } from 'date-fns/locale';
 export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')({
   validateSearch: (search: Record<string, unknown>) => ({
     industryId: typeof search['industryId'] === 'string' ? search['industryId'] : undefined,
+    debugEvidence: search['debugEvidence'] === '1' ? true : undefined,
   }),
   errorComponent: VisitExecutionError,
   component: VisitExecution,
@@ -77,7 +78,7 @@ function VisitExecutionError({ error }: { error: unknown }) {
 
 function VisitExecution() {
   const { visitId } = Route.useParams();
-  const { industryId: requestedIndustryId } = Route.useSearch();
+  const { industryId: requestedIndustryId, debugEvidence } = Route.useSearch();
   const { user, previewPromoter } = useAuth();
   const navigate = useNavigate();
   const { coords, loading: loadingGeo } = useGeolocation();
@@ -481,7 +482,7 @@ function VisitExecution() {
             <h1 className="text-xl font-bold">Selecionar indústria</h1>
             <p className="text-sm text-slate-500">Escolha a indústria desta execução. Nenhuma indústria será selecionada automaticamente.</p>
             {industries.map((ind: any) => (
-              <Button key={ind.id} variant="outline" className="w-full justify-start" onClick={() => navigate({ to: "/promoter/visit/$visitId", params: { visitId }, search: { industryId: ind.id } })}>
+              <Button key={ind.id} variant="outline" className="w-full justify-start" onClick={() => navigate({ to: "/promoter/visit/$visitId", params: { visitId }, search: { industryId: ind.id, debugEvidence: undefined } })}>
                 {ind.name}
               </Button>
             ))}
@@ -684,7 +685,7 @@ function VisitExecution() {
           </div>
         )}
 
-        {import.meta.env.DEV && (
+        {(import.meta.env.DEV || debugEvidence) && user?.id && (
           <Card className="border-fuchsia-300 bg-fuchsia-50">
             <CardContent className="space-y-2 p-3">
               <div className="flex items-center justify-between gap-2">
