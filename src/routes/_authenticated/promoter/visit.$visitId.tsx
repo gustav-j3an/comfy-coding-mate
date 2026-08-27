@@ -96,7 +96,8 @@ function VisitExecution() {
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isRestored, setIsRestored] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const uploadContextRef = useRef<{ industryId: string; evidenceType: string } | null>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
@@ -251,7 +252,7 @@ function VisitExecution() {
     const uploadEvidenceType = uploadContext.evidenceType;
 
     // Validate image formats (Mission E2.1)
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Formato inválido: Aceitamos apenas JPG, PNG e WEBP.");
       return;
@@ -267,7 +268,7 @@ function VisitExecution() {
       setUploading(true);
       const localPreview = URL.createObjectURL(file);
       const clientUploadId = crypto.randomUUID();
-      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
+      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
         data: {
@@ -325,18 +326,18 @@ function VisitExecution() {
     }
   };
 
-  const triggerUpload = (type: string) => {
+  const triggerUpload = (type: string, source: 'camera' | 'gallery' = 'gallery') => {
     if (!selectedIndustryId) return;
     uploadContextRef.current = { industryId: selectedIndustryId, evidenceType: type };
     setActiveEvidenceType(type);
-    fileInputRef.current?.click();
+    (source === 'camera' ? cameraInputRef : galleryInputRef).current?.click();
   };
 
-  const triggerIndustryUpload = (industryId: string, type: string) => {
+  const triggerIndustryUpload = (industryId: string, type: string, source: 'camera' | 'gallery' = 'gallery') => {
     uploadContextRef.current = { industryId, evidenceType: type };
     setSelectedIndustryId(industryId);
     setActiveEvidenceType(type);
-    fileInputRef.current?.click();
+    (source === 'camera' ? cameraInputRef : galleryInputRef).current?.click();
   };
 
   const addOccurrence = (type: string) => {
@@ -539,13 +540,17 @@ function VisitExecution() {
                     variant="outline" 
                     className="flex flex-col h-20 gap-1 border-blue-100 bg-blue-50/30 hover:bg-blue-50"
                     onClick={() => {
-                      triggerIndustryUpload(ind.id, 'replenishment');
+                      triggerIndustryUpload(ind.id, 'replenishment', 'camera');
                     }}
                   >
                     <Camera className="h-5 w-5 text-blue-600" />
-                    <span className="text-[10px] font-bold">Foto Reposição</span>
+                    <span className="text-[10px] font-bold">Tirar foto</span>
                   </Button>
                   
+                  <Button variant="outline" className="flex flex-col h-20 gap-1 border-blue-100 bg-blue-50/30 hover:bg-blue-50" onClick={() => triggerIndustryUpload(ind.id, 'replenishment', 'gallery')}>
+                    <Images className="h-5 w-5 text-blue-600" />
+                    <span className="text-[10px] font-bold">Escolher da galeria</span>
+                  </Button>
                   <div className="grid grid-rows-2 gap-1">
                     <Button 
                       variant="ghost" 
@@ -574,12 +579,13 @@ function VisitExecution() {
 
         <input 
           type="file" 
-          ref={fileInputRef} 
+          ref={galleryInputRef} 
           className="hidden" 
           onChange={handleFileUpload}
-          accept="image/jpeg,image/png,image/webp"
-          capture="environment"
+          accept="image/jpeg,image/jpg,image/png,image/heic,image/heif"
+          
         />
+        <input type="file" ref={cameraInputRef} className="hidden" onChange={handleFileUpload} accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" capture="environment" />
 
         {/* Upload Progress */}
         {uploadProgress > 0 && (
@@ -602,7 +608,7 @@ function VisitExecution() {
               {(evidences as any[]).map((ev, i) => (
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                    {ev.fileType.startsWith('image/') ? (
-                    ev.pending ? <img src={ev.filePath} className="w-full h-full object-cover" alt="evidencia" />
+                    ev.localPreview ? <img src={ev.localPreview} className="w-full h-full object-cover" alt="evidencia" />
                     : signedUrls[ev.filePath] ? <img src={signedUrls[ev.filePath]} className="w-full h-full object-cover" alt="evidencia" />
                     : <button className="text-[9px] text-slate-600 text-center p-1" onClick={async () => {
                         try { const result = await getSignedUrl({ data: { filePath: ev.filePath } }); setSignedUrls(prev => ({ ...prev, [ev.filePath]: result.signedUrl })); }

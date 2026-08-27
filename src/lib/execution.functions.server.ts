@@ -428,7 +428,7 @@ export const requestEvidenceUpload = async ({ data, context }: any) => {
   if (visit.promoter_id !== profile.promoter_id) throw new Error("Não autorizado: Esta visita não pertence a você.");
 
   // Validation
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
   if (!allowedTypes.includes(data.fileType)) {
     throw new Error("Formato de arquivo não permitido. Use JPG, PNG ou WEBP.");
   }
@@ -513,7 +513,7 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
     throw new Error("Servidor não retornou uma URL de upload válida.");
   }
 
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(data.fileType)) {
+  if (!['image/jpeg', 'image/png', 'image/heic', 'image/heif'].includes(data.fileType)) {
     throw new Error("Formato de arquivo não permitido.");
   }
 
