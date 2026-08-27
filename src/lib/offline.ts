@@ -62,7 +62,12 @@ export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'la
 }
 
 export async function getVisitDraft(userId: string, visitId: string, scheduledDate: string, industryId: string): Promise<VisitDraft | null> {
-  const draft = await get(getDraftKey(userId, visitId, scheduledDate, industryId)) as VisitDraft | null;
+  const exactKey = getDraftKey(userId, visitId, scheduledDate, industryId);
+  const draft = await get(exactKey) as VisitDraft | null;
+  if (import.meta.env.DEV) {
+    const indexedDbKeys = (await keys()).filter((key) => typeof key === 'string' && (key.includes('visit_draft') || key.includes('evidence')));
+    console.debug('[E4.8 IndexedDB read]', { exactKey, found: Boolean(draft), indexedDbKeys, userId, visitId, scheduledDate, industryId, evidenceCount: draft?.evidences?.length || 0, clientUploadIds: draft?.evidences?.map((e: any) => e.clientUploadId).filter(Boolean) || [], filePaths: draft?.evidences?.map((e: any) => e.filePath).filter(Boolean) || [] });
+  }
   
   // Validate ownership
   if (draft && (draft.executorId !== userId || draft.visitId !== visitId || draft.scheduledDate !== scheduledDate || draft.industryId !== industryId)) {

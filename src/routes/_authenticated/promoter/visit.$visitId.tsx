@@ -83,7 +83,7 @@ function VisitExecution() {
   const { coords, loading: loadingGeo } = useGeolocation();
   
   const [observation, setObservation] = useState('');
-  const [evidences, setEvidences] = useState<any[]>([]);
+  const [evidences, setEvidencesState] = useState<any[]>([]);
   const [occurrences, setOccurrences] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -102,6 +102,34 @@ function VisitExecution() {
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
   const [scheduledDate, setScheduledDate] = useState('');
+  const [diagnosticEvents, setDiagnosticEvents] = useState<any[]>([]);
+  const evidenceMutationRef = useRef('unknown');
+  const diagnosticErrorRef = useRef<string | undefined>(undefined);
+  const setEvidences = useCallback((update: Parameters<typeof setEvidencesState>[0]) => {
+    setEvidencesState((previous) => {
+      const next = typeof update === 'function' ? update(previous) : update;
+      if (import.meta.env.DEV) {
+        const event = {
+          time: new Date().toISOString(),
+          origin: evidenceMutationRef.current,
+          previousCount: previous.length,
+          nextCount: next.length,
+          visitId,
+          industryId: selectedIndustryId || requestedIndustryId,
+          scheduledDate,
+          indexedDbKey: user?.id && scheduledDate && (selectedIndustryId || requestedIndustryId) ? `user_${user.id}_visit_draft_${visitId}_${scheduledDate}_${selectedIndustryId || requestedIndustryId}` : null,
+          clientUploadIds: next.map((e: any) => e.clientUploadId).filter(Boolean),
+          filePaths: next.map((e: any) => e.filePath).filter(Boolean),
+          error: diagnosticErrorRef.current,
+          stack: new Error().stack?.split('\\n').slice(2, 5)
+        };
+        console.debug('[E4.9 evidences]', event);
+        setDiagnosticEvents((events) => [...events, event].slice(-30));
+        diagnosticErrorRef.current = undefined;
+      }
+      return next;
+    });
+  }, [visitId, selectedIndustryId, requestedIndustryId, scheduledDate, user?.id]);
   const restoreEpochRef = useRef(0);
   const restoredKeyRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
@@ -109,6 +137,7 @@ function VisitExecution() {
   useEffect(() => {
     setSelectedIndustryId(requestedIndustryId || '');
     setObservation('');
+    evidenceMutationRef.current = 'context-change: visitId/industryId';
     setEvidences([]);
     setOccurrences([]);
     setIsRestored(false);
@@ -142,6 +171,7 @@ function VisitExecution() {
       restoredKeyRef.current = draftKey;
       if (draft) {
         setObservation(draft.observation || '');
+        evidenceMutationRef.current = 'restoreDraft: IndexedDB';
         setEvidences((draft.evidences || []).filter((e: any) => e.visitId === visitId && e.industryId === requestedIndustryId && e.scheduledDate === scheduledDate && e.clientUploadId));
         setOccurrences(draft.occurrences || []);
         setLastSaved(draft.lastSaved);
@@ -210,6 +240,7 @@ function VisitExecution() {
       industryId: e.industryId,
       status: 'registered',
     })).filter((e: any) => e.industryId === selectedIndustryId);
+    evidenceMutationRef.current = 'server-side execution load / React Query';
     setEvidences((current) => current.length ? current : loaded);
     Promise.all(loaded.map(async (e: any) => {
       try { const result = await getSignedUrl({ data: { filePath: e.filePath } }); return [e.filePath, (executionData as any).evidences.find((item: any) => item.filePath === e.filePath)?.signedUrl || result.signedUrl]; } catch { return null; }
@@ -281,6 +312,7 @@ function VisitExecution() {
       setUploading(true);
       const localPreview = URL.createObjectURL(file);
       const clientUploadId = crypto.randomUUID();
+      evidenceMutationRef.current = 'camera/gallery input: local preview';
       setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, visitId, scheduledDate, clientUploadId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
@@ -316,6 +348,7 @@ function VisitExecution() {
         throw new Error('Servidor não confirmou todos os dados da evidência.');
       }
 
+      evidenceMutationRef.current = 'upload return: server confirmation';
       setEvidences((current) => [...current.filter((e) => e.id !== pendingId), {
         id: evidence.evidenceId,
         filePath: evidence.filePath,
@@ -331,6 +364,8 @@ function VisitExecution() {
       
     } catch (error: any) {
       console.error("Upload error details:", error);
+      evidenceMutationRef.current = 'upload failure';
+      diagnosticErrorRef.current = error?.message || 'Falha desconhecida';
       setEvidences((current) => current.map((e) => e.id === pendingId ? { ...e, status: online ? 'failed' : 'pending_sync', pending: false, error: error?.message || 'Falha desconhecida' } : e));
       toast.error("Falha no envio — Tentar novamente");
     } finally {
@@ -351,6 +386,7 @@ function VisitExecution() {
     setSelectedIndustryId(industryId);
     setActiveEvidenceType(type);
     restoreEpochRef.current += 1;
+    evidenceMutationRef.current = source === 'camera' ? 'camera input opened' : 'gallery input opened';
     (source === 'camera' ? cameraInputRef : galleryInputRef).current?.click();
   };
 
@@ -637,7 +673,7 @@ function VisitExecution() {
                   {ev.status === 'registered' && <span className="absolute bottom-0 inset-x-0 bg-green-600 text-white text-[9px] text-center">Foto enviada</span>}
                   {ev.status === 'failed' && <span className="absolute bottom-0 inset-x-0 bg-red-600 text-white text-[9px] text-center">Falha — tentar novamente</span>}
                   <button 
-                    onClick={() => setEvidences(evidences.filter((_, idx) => idx !== i))}
+                    onClick={() => { evidenceMutationRef.current = 'user removed evidence'; setEvidences(evidences.filter((_, idx) => idx !== i)); }}
                     className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -646,6 +682,25 @@ function VisitExecution() {
               ))}
             </div>
           </div>
+        )}
+
+        {import.meta.env.DEV && (
+          <Card className="border-fuchsia-300 bg-fuchsia-50">
+            <CardContent className="space-y-2 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-fuchsia-900">Diagnóstico de evidências ({diagnosticEvents.length}/30)</h3>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(JSON.stringify(diagnosticEvents, null, 2))}>Copiar diagnóstico</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setDiagnosticEvents([])}>Limpar diagnóstico</Button>
+                </div>
+              </div>
+              <div className="max-h-80 overflow-auto space-y-1 text-[10px] font-mono">
+                {diagnosticEvents.length === 0 ? <p className="text-fuchsia-700">Nenhum evento registrado.</p> : diagnosticEvents.map((event, index) => (
+                  <pre key={`${event.time}-${index}`} className="whitespace-pre-wrap rounded bg-white p-2 text-slate-700">{JSON.stringify(event, null, 2)}</pre>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Occurrences section */}
