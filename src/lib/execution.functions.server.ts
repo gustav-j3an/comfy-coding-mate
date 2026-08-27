@@ -287,16 +287,35 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     industries.push(visit.industry);
   }
 
-  if (data.industryId && !industries.some((industry: any) => industry.id === data.industryId)) {
+  if (!data.industryId) {
+    throw new Error("Selecione uma indústria para iniciar.");
+  }
+  if (!industries.some((industry: any) => industry.id === data.industryId)) {
     throw new Error("Indústria não pertence a esta visita.");
   }
 
   const { data: evidences, error: evidenceError } = await supabaseAdmin
     .from('visit_evidence')
     .select('id, file_path, file_type, evidence_type, industry_id')
-    .eq('visit_id', data.visitId);
+    .eq('visit_id', data.visitId)
+    .eq('industry_id', data.industryId);
 
   if (evidenceError) throw new Error("Não foi possível carregar as evidências da visita.");
+
+  const normalizedEvidences = await Promise.all((evidences || []).map(async (e: any) => {
+    const { data: signed, error } = await supabaseAdmin
+      .storage
+      .from('visit-evidences')
+      .createSignedUrl(e.file_path, 3600);
+    return {
+      id: e.id,
+      filePath: e.file_path,
+      fileType: e.file_type,
+      evidenceType: e.evidence_type,
+      industryId: e.industry_id,
+      signedUrl: error ? null : signed?.signedUrl || null,
+    };
+  }));
 
   return {
     visit: {
@@ -310,9 +329,19 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
     },
     store: visit.store,
     industries: industries,
-    evidences: evidences || [],
+    evidences: normalizedEvidences,
     occurrences: []
   };
+};
+
+export const getPromoterVisitIndustries = async ({ data, context }: any) => {
+  const { userId } = context;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (!userId) throw new Error("Não autorizado.");
+  const { data: profile } = await supabaseAdmin.from('profiles').select('promoter_id').eq('id', userId).single();
+  const { data: visit } = await supabaseAdmin.from('visits').select('promoter_id, route_stop:route_stops(stop_tasks(industry:industries(*)))').eq('id', data.visitId).single();
+  if (!profile?.promoter_id || !visit || visit.promoter_id !== profile.promoter_id) throw new Error("Acesso negado a esta visita.");
+  return { industries: ((visit as any).route_stop?.stop_tasks || []).map((task: any) => task.industry).filter(Boolean) };
 };
 
 export const requestEvidenceUpload = async ({ data, context }: any) => {

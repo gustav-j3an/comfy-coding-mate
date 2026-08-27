@@ -351,10 +351,18 @@ export const getPromoterVisitExecution = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({
     visitId: z.string(),
-    industryId: z.string().uuid().optional(),
+    industryId: z.string().uuid(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { getPromoterVisitExecution: fn } = await import("./execution.functions.server");
+    return fn({ data, context: { userId: context.userId } });
+  });
+
+export const getPromoterVisitIndustries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ visitId: z.string() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { getPromoterVisitIndustries: fn } = await import("./execution.functions.server");
     return fn({ data, context: { userId: context.userId } });
   });
 

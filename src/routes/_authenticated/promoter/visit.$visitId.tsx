@@ -30,6 +30,7 @@ import {
   submitVisit, 
   getSignedUrl, 
   getPromoterVisitExecution,
+  getPromoterVisitIndustries,
   requestEvidenceUpload,
   confirmEvidenceUpload
 } from '@/lib/execution.functions';
@@ -144,7 +145,9 @@ function VisitExecution() {
     queryKey: ['visit-execution', visitId, requestedIndustryId ?? null],
     queryFn: async () => {
       try {
-        const result = await getPromoterVisitExecution({ data: { visitId, industryId: requestedIndustryId } });
+        const result = requestedIndustryId
+          ? await getPromoterVisitExecution({ data: { visitId, industryId: requestedIndustryId } })
+          : await getPromoterVisitIndustries({ data: { visitId } });
         return result;
       } catch (err: any) {
         console.error("Error loading visit execution:", err);
@@ -153,23 +156,23 @@ function VisitExecution() {
     }
   });
 
-  const visit = executionData?.visit;
-  const store = executionData?.store;
-  const industries = executionData?.industries || [];
+  const visit = (executionData as any)?.visit;
+  const store = (executionData as any)?.store;
+  const industries = (executionData as any)?.industries || [];
   const activeIndustry = industries.find((ind: any) => ind.id === selectedIndustryId);
   const activeIndustries = activeIndustry ? [activeIndustry] : [];
 
   useEffect(() => {
-    const loaded = (executionData?.evidences || []).map((e: any) => ({
+    const loaded = ((executionData as any)?.evidences || []).map((e: any) => ({
       id: e.id,
-      filePath: e.file_path,
-      fileType: e.file_type,
-      evidenceType: e.evidence_type,
-      industryId: e.industry_id,
+      filePath: e.filePath,
+      fileType: e.fileType,
+      evidenceType: e.evidenceType,
+      industryId: e.industryId,
     })).filter((e: any) => e.industryId === selectedIndustryId);
     setEvidences((current) => current.length ? current : loaded);
     Promise.all(loaded.map(async (e: any) => {
-      try { return [e.filePath, await getSignedUrl({ data: { filePath: e.filePath } })]; } catch { return null; }
+      try { return [e.filePath, (executionData as any).evidences.find((item: any) => item.filePath === e.filePath)?.signedUrl || await getSignedUrl({ data: { filePath: e.filePath } })]; } catch { return null; }
     })).then((entries) => setSignedUrls(Object.fromEntries(entries.filter(Boolean) as [string, string][])));
   }, [executionData, selectedIndustryId]);
 
@@ -570,11 +573,12 @@ function VisitExecution() {
               {(evidences as any[]).map((ev, i) => (
                 <div key={i} className="relative bg-slate-200 w-20 h-20 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                    {ev.fileType.startsWith('image/') ? (
-                    <img 
-                      src={ev.pending ? ev.filePath : signedUrls[ev.filePath] || ''}
-                      className="w-full h-full object-cover" 
-                      alt="evidencia"
-                  />
+                    ev.pending ? <img src={ev.filePath} className="w-full h-full object-cover" alt="evidencia" />
+                    : signedUrls[ev.filePath] ? <img src={signedUrls[ev.filePath]} className="w-full h-full object-cover" alt="evidencia" />
+                    : <button className="text-[9px] text-slate-600 text-center p-1" onClick={async () => {
+                        try { const url = await getSignedUrl({ data: { filePath: ev.filePath } }); setSignedUrls(prev => ({ ...prev, [ev.filePath]: url })); }
+                        catch { toast.error("Não foi possível carregar esta foto"); }
+                      }}>Não foi possível carregar esta foto<br /><u>Tentar novamente</u></button>
                   ) : (
                     <FileText className="h-8 w-8 text-slate-400" />
                   )}
