@@ -152,7 +152,7 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
     .select(`
       *,
       store:stores(name, address),
-      industry:industries(name)
+      industry:industries(id, name)
     `)
     .eq('promoter_id', effectivePromoterId)
     .eq('scheduled_date', scheduledDateStr)
@@ -177,7 +177,7 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
         store:stores(name, address),
         stop_tasks (
           industry_id,
-          industry:industries(name)
+          industry:industries(id, name)
         )
       )
     `)
@@ -219,7 +219,8 @@ export const getPromoterAgenda = async ({ data, context }: any) => {
                 scheduled_date: scheduledDateStr,
                 visit_order: stop.visit_order,
                 store: stop.store,
-                industry: task.industry,
+                industry: task.industry ? { ...task.industry, id: task.industry_id } : null,
+                task: { industryId: task.industry_id },
                 observation: stop.observation,
                 frequency: stop.frequency,
                 is_theoretical: true,

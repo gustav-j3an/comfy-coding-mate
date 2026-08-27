@@ -39,6 +39,14 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
 
   const isTheoretical = group.all_items.every((i: any) => i.is_theoretical);
   const isToday = format(new Date(), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+  const industries = Array.isArray(group.industries) ? group.industries.filter((ind: any) => ind?.id && ind?.name) : [];
+
+  if (import.meta.env.DEV && isOpen && industries.length === 0) {
+    console.error('[StopDetailDrawer] Nenhuma indústria foi vinculada a esta parada', {
+      visitId: group.visitId || group.id,
+      stopId: group.route_stop_id,
+    });
+  }
   
   const handleStartVisit = async (industryId?: string) => {
     if (!industryId) {
@@ -155,7 +163,11 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
               Indústrias e Checklist
             </h4>
             <div className="space-y-3">
-              {group.industries.map((ind: any, i: number) => (
+              {industries.length === 0 ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  Nenhuma indústria foi vinculada a esta parada
+                </div>
+              ) : industries.map((ind: any, i: number) => (
                 <div key={i} className="border border-slate-100 rounded-xl overflow-hidden">
                   <div className="bg-slate-50 p-2 px-3 border-b border-slate-100 flex justify-between items-center">
                     <span className="text-xs font-bold text-slate-700">{ind?.name}</span>
