@@ -59,9 +59,18 @@ export const startScheduledVisit = async ({ data, context }: any) => {
     throw new Error("O roteiro de origem não está ativo ou publicado.");
   }
 
+  const { data: tasks } = await supabaseAdmin
+    .from('stop_tasks')
+    .select('industry_id')
+    .eq('stop_id', routeStopId);
+
+  if (!industryId || !(tasks || []).some((task: any) => task.industry_id === industryId)) {
+    throw new Error("Indústria não pertence a esta parada.");
+  }
+
   const { data: existingVisit } = await supabaseAdmin
     .from('visits')
-    .select('id')
+    .select('id, route_stop_id')
     .eq('promoter_id', promoterId)
     .eq('store_id', (stop as any).store_id)
     .eq('scheduled_date', scheduledDate)
@@ -69,14 +78,13 @@ export const startScheduledVisit = async ({ data, context }: any) => {
     .maybeSingle();
 
   if (existingVisit) {
+    if (!existingVisit.route_stop_id) {
+      const { error: linkError } = await supabaseAdmin.from('visits').update({ route_stop_id: routeStopId } as any).eq('id', existingVisit.id);
+      if (linkError) throw new Error("Não foi possível restaurar o vínculo da visita com a parada.");
+    }
     return { visitId: existingVisit.id, action: 'reused' as const };
   }
 
-  const { data: tasks } = await supabaseAdmin
-    .from('stop_tasks')
-    .select('industry_id')
-    .eq('stop_id', routeStopId);
-  
   if (!industryId || !(tasks || []).some((task: any) => task.industry_id === industryId)) {
     throw new Error("Indústria não pertence a esta visita.");
   }
@@ -281,17 +289,12 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
   }
 
   const routeStop = (visit as any).route_stop;
-  const tasks = routeStop?.stop_tasks || [];
-  let industries = tasks.map((t: any) => t.industry).filter(Boolean);
-
-  if (industries.length === 0 && visit.route_stop_id) {
-    const { data: explicitTasks, error: taskError } = await supabaseAdmin
-      .from('stop_tasks')
-      .select('industry_id, industry:industries(*)')
-      .eq('stop_id', visit.route_stop_id);
-    if (taskError) throw new Error(`Não foi possível carregar as indústrias da parada: ${taskError.message}`);
-    industries = (explicitTasks || []).map((task: any) => task.industry ? { ...task.industry, id: task.industry_id } : null).filter(Boolean);
-  }
+  const { data: explicitTasks, error: taskError } = await supabaseAdmin
+    .from('stop_tasks')
+    .select('industry_id, industry:industries(*)')
+    .eq('stop_id', visit.route_stop_id || routeStop?.id || '');
+  if (taskError) throw new Error(`Não foi possível carregar as indústrias da parada: ${taskError.message}`);
+  const industries = (explicitTasks || []).map((task: any) => task.industry ? { ...task.industry, id: task.industry_id } : null).filter(Boolean);
 
   if (industries.length === 0 && visit.industry) {
     industries.push(visit.industry);
