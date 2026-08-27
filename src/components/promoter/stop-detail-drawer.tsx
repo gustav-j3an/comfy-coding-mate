@@ -101,6 +101,11 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
   };
 
   const handleSelectIndustry = async (industryId: string) => {
+    const selectedIndustry = industries.find((industry: any) => industry.id === industryId);
+    if (selectedIndustry && ['submitted', 'approved', 'rejected'].includes(selectedIndustry.status)) {
+      const confirmed = window.confirm('Este atendimento já foi enviado. Deseja corrigir e reenviar?');
+      if (!confirmed) return;
+    }
     const realVisit = group.all_items.find((i: any) => !i.is_theoretical);
     if (realVisit?.id && !realVisit.id.startsWith('theoretical-')) {
       navigate({ to: "/promoter/visit/$visitId", params: { visitId: realVisit.id }, search: { industryId } });
@@ -174,8 +179,19 @@ export function StopDetailDrawer({ group, isOpen, onClose, selectedDate }: StopD
                     <Badge variant="outline" className="text-[9px] h-4">Material obrigatório</Badge>
                   </div>
                   <div className="p-3 space-y-2">
-                    <Button size="sm" className="w-full" onClick={() => handleSelectIndustry(ind.id)}>
-                      <Play className="mr-2 h-4 w-4" /> Atender esta indústria
+                    <Button
+                      size="sm"
+                      className={`w-full font-bold ${
+                        ['submitted', 'approved'].includes(ind.status)
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : ind.status === 'rejected'
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                      onClick={() => handleSelectIndustry(ind.id)}
+                    >
+                      {['submitted', 'approved'].includes(ind.status) ? <CheckCircle2 className="mr-2 h-4 w-4" /> : ind.status === 'rejected' ? <AlertCircle className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                      {['submitted', 'approved'].includes(ind.status) ? 'Atendimento realizado' : ind.status === 'rejected' ? 'Corrigir atendimento' : 'Atender indústria'}
                     </Button>
                     <div className="flex items-center text-xs text-slate-600 gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-slate-300" />

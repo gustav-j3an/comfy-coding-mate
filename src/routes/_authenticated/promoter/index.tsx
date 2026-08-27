@@ -22,11 +22,12 @@ import {
 import { format, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { cachePromoterVisits, getCachedVisits, getSyncQueue, isOnline, getVisitDraft } from '@/lib/offline';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PWAInstallBanner } from '@/components/common/pwa-install-banner';
-import { getPromoterAgenda } from '@/lib/execution.functions';
+import { getPromoterAgenda, getPromoterPendingVisits } from '@/lib/execution.functions';
 import { StopDetailDrawer } from '@/components/promoter/stop-detail-drawer';
 import { PromoterProfileMenu } from '@/components/promoter/promoter-profile-menu';
 
@@ -47,6 +48,7 @@ function PromoterDashboardWrapper() {
 
 function PromoterDashboard() {
   const { user, profile, role, loading: authLoading, previewPromoter } = useAuth();
+  const navigate = useNavigate();
   
   // Weekly selection state
   const [simulatedDay, setSimulatedDay] = useState<number>(new Date().getDay()); // 0=Sunday, 1=Monday...
@@ -156,8 +158,19 @@ function PromoterDashboard() {
         }
       });
 
-      return Array.from(groupedVisitsMap.values());
+      return Array.from(groupedVisitsMap.values()).map((group: any) => ({
+        ...group,
+        industries: group.industries.map((industry: any) => {
+          const item = group.all_items.find((candidate: any) => candidate.industry_id === industry.id);
+          return { ...industry, visitId: item?.id, status: item?.status || 'planned', submittedAt: item?.submitted_at || null };
+        })
+      }));
     }
+  });
+
+  const { data: pendingVisits = [] } = useSuspenseQuery({
+    queryKey: ['promoter-pending-visits', user?.id, profile?.promoter_id],
+    queryFn: () => getPromoterPendingVisits({ data: { promoterId: profile?.promoter_id } })
   });
 
   const { data: weeklyVisits = [], isError: isWeeklyError } = useSuspenseQuery({
@@ -180,12 +193,12 @@ function PromoterDashboard() {
   const weeklyStats = useMemo(() => {
     if (!weeklyVisits) return { total: 0, completed: 0, pending: 0 };
     
-    // Group weekly results by store_id and date to count unique stops per PDV/Day
+    // Count each scheduled industry, not only each store/day.
     const uniqueStops = new Set();
     const completedStops = new Set();
     
     weeklyVisits.forEach((item: any) => {
-      const key = `${item.store_id}-${item.scheduled_date}`;
+      const key = `${item.store_id}-${item.scheduled_date}-${item.industry_id}`;
       uniqueStops.add(key);
       if (['submitted', 'approved'].includes(item.status)) {
         completedStops.add(key);
@@ -328,6 +341,20 @@ function PromoterDashboard() {
       <div className="p-4 space-y-6">
         <PWAInstallBanner />
 
+        {pendingVisits.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader><CardTitle className="text-amber-800 flex items-center gap-2"><Clock className="h-5 w-5" /> Visitas pendentes</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              {pendingVisits.map((pending: any) => (
+                <div key={pending.id} className="flex items-center justify-between gap-3 rounded-lg bg-white p-3 border border-amber-100">
+                  <div className="min-w-0"><p className="font-bold text-slate-800 truncate">{pending.store?.name} — {pending.industry?.name}</p><p className="text-xs text-amber-700">Pendente desde {format(new Date(`${pending.scheduled_date}T12:00:00Z`), 'dd/MM/yyyy')}</p></div>
+                  <Button size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700" onClick={() => navigate({ to: '/promoter/visit/$visitId', params: { visitId: pending.id }, search: { industryId: pending.industry_id } })}>Realizar agora</Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Weekly Selector */}
         <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex justify-between gap-1 overflow-x-auto no-scrollbar">
           {weekDays.map((day) => {
@@ -467,8 +494,10 @@ function PromoterDashboard() {
                                 <h4 className="font-bold text-slate-800">{group.store?.name}</h4>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   {group.industries.map((ind: any, i: number) => (
-                                    <Badge key={i} variant="secondary" className="text-[9px] h-4 px-1.5 py-0 bg-slate-100 text-slate-600 border-none font-medium">
-                                      {ind?.name}
+                                    <Badge key={i} variant="secondary" className={`text-[9px] h-4 px-1.5 py-0 border-none font-medium ${
+                                      ['submitted', 'approved'].includes(ind.status) ? 'bg-green-100 text-green-700' : ind.status === 'rejected' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                                    }`}>
+                                      {['submitted', 'approved'].includes(ind.status) ? '✓ ' : ind.status === 'rejected' ? '⚠ ' : ''}{ind?.name}
                                     </Badge>
                                   ))}
                                 </div>

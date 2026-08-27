@@ -78,7 +78,9 @@ function VisitsPage() {
 
       const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-      if (search.filter === 'predicted-today') {
+      if (!search.filter || search.filter === 'all' || search.filter === 'pending') {
+        query = query.in('status', ['submitted', 'approved', 'rejected'] as any);
+      } else if (search.filter === 'predicted-today') {
         query = query.eq('scheduled_date', todayStr).eq('status', 'planned' as any);
       } else if (search.filter === 'sent-today') {
         query = query.eq('scheduled_date', todayStr).eq('status', 'submitted');
@@ -111,8 +113,8 @@ function VisitsPage() {
       const evidencesWithUrls = await Promise.all(
         (data || []).map(async (ev) => {
           try {
-            const url = await getSignedUrl({ data: { filePath: ev.file_path } });
-            return { ...ev, signedUrl: url };
+            const result = await getSignedUrl({ data: { filePath: ev.file_path } });
+            return { ...ev, signedUrl: result.signedUrl };
           } catch (e) {
             console.error('Error getting signed URL:', e);
             return ev;

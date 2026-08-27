@@ -11,18 +11,20 @@ export const submitVisit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
 
   .inputValidator((data) => z.object({
-    visitId: z.string(),
-    executorId: z.string(),
+    visitId: z.string().uuid(),
+    industryId: z.string().uuid(),
+    executorId: z.string().uuid(),
     checkinAt: z.string(),
     checkoutAt: z.string(),
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
+    latitude: z.number(),
+    longitude: z.number(),
     observation: z.string().optional(),
     evidences: z.array(z.object({
       filePath: z.string(),
       fileType: z.string(),
       evidenceType: z.string(),
-      industryId: z.string().optional()
+      industryId: z.string().optional(),
+      status: z.string().optional()
     })),
     occurrences: z.array(z.object({
       type: z.string(),
@@ -44,6 +46,11 @@ export const submitVisit = createServerFn({ method: "POST" })
     if (!userId) {
       throw new Error("Não autorizado: Usuário não autenticado no servidor.");
     }
+
+    const debugSubmit = (stage: string, extra: Record<string, unknown> = {}) => {
+      if (import.meta.env?.DEV) console.debug('[submitVisit]', { stage, visitId: data.visitId, industryId: data.industryId, ...extra });
+    };
+    debugSubmit('authenticated', { evidenceCount: data.evidences.length, locationPresent: Boolean(data.latitude && data.longitude) });
 
     // AUTH REINFORCEMENT: Check if the user is an admin or the owner
     const { data: userRole } = await supabaseAdmin
@@ -72,7 +79,11 @@ export const submitVisit = createServerFn({ method: "POST" })
       throw new Error("Visita não encontrada ou erro ao validar permissão.");
     }
 
-    if (visitData.status === 'submitted' || visitData.status === 'approved') {
+    const currentStatus = String(visitData.status || '');
+    if (currentStatus === 'submitted') {
+      return { success: true, visitId: data.visitId, industryId: data.industryId, status: 'submitted', submittedAt: new Date().toISOString() };
+    }
+    if (currentStatus === 'submitted' || currentStatus === 'approved') {
       return { success: true, message: "Visita já foi enviada anteriormente." };
     }
 
@@ -89,8 +100,14 @@ export const submitVisit = createServerFn({ method: "POST" })
       .eq('id', data.visitId)
       .single();
 
-    const taskIndustries = (industries as any)?.route_stop?.stop_tasks?.map((t: any) => t.industry) || [];
+    const taskIndustries = (industries as any)?.route_stop?.stop_tasks
+      ?.map((t: any) => t.industry)
+      .filter((industry: any) => industry?.id === data.industryId) || [];
     const missingPhotos: string[] = [];
+    if (!taskIndustries.some((ind: any) => ind.id === data.industryId)) throw new Error(`Indústria não pertence à parada (industryId=${data.industryId}).`);
+    const { data: confirmedEvidence, error: evidenceError } = await supabaseAdmin.from('visit_evidence').select('id').eq('visit_id', data.visitId).eq('industry_id', data.industryId).eq('evidence_type', 'replenishment').limit(1).maybeSingle();
+    if (evidenceError) throw new Error(`Falha ao validar evidência: ${evidenceError.message}`);
+    if (!confirmedEvidence) throw new Error(`Foto de reposição confirmada ausente (visitId=${data.visitId}, industryId=${data.industryId}).`);
 
     for (const ind of taskIndustries) {
       const hasPhoto = data.evidences.some(e => 
@@ -138,9 +155,11 @@ export const submitVisit = createServerFn({ method: "POST" })
         execution_longitude: data.longitude ?? null,
         observation: data.observation || null
       } as any)
-      .filter('id', 'eq', data.visitId);
+      .eq('id', data.visitId)
+      .in('status', ['pending', 'planned'] as any);
 
-    if (visitUpdateError) throw new Error("Erro ao atualizar status da visita.");
+    if (visitUpdateError) { debugSubmit('visits update failed', { code: visitUpdateError.code, message: visitUpdateError.message }); throw new Error(`Erro ao atualizar status da visita: ${visitUpdateError.message}`); }
+    debugSubmit('visits persisted', { status: 'submitted' });
 
     // 5. Evidences are already inserted via confirmEvidenceUpload during the upload process.
     // We just need to make sure they exist for mandatory check (already done in step 2).
@@ -169,13 +188,13 @@ export const submitVisit = createServerFn({ method: "POST" })
       if (occurrenceError) throw new Error("Erro ao registrar ocorrências.");
     }
 
-    await triggerAutomationEvent('visit.submitted', {
+    try { await triggerAutomationEvent('visit.submitted', {
       visitId: data.visitId,
       executorId: data.executorId,
       timestamp: new Date().toISOString()
-    });
+    }); } catch (n8nError: any) { debugSubmit('n8n failed', { message: n8nError?.message }); }
 
-    return { success: true };
+    return { success: true, visitId: data.visitId, industryId: data.industryId, status: 'submitted', submittedAt: new Date().toISOString() };
   });
 
 /**
@@ -332,8 +351,29 @@ export const getSignedUrl = createServerFn({ method: "GET" })
       .from('visit-evidences')
       .createSignedUrl(data.filePath, 3600); 
 
-    if (error) throw error;
-    return signedUrl.signedUrl;
+    if (error) throw new Error(`Falha ao gerar URL assinada de leitura: ${error.message}`);
+    if (!signedUrl?.signedUrl) throw new Error("Servidor não retornou URL assinada de leitura.");
+    return { signedUrl: signedUrl.signedUrl };
+  });
+
+export const getPromoterPendingVisits = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ promoterId: z.string().uuid().optional() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin.from('profiles').select('promoter_id').eq('id', context.userId).single();
+    const promoterId = profile?.promoter_id;
+    if (!promoterId) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: pending, error } = await supabaseAdmin
+      .from('visits')
+      .select('id, store_id, industry_id, scheduled_date, status, store:stores(name), industry:industries(name)')
+      .eq('promoter_id', promoterId)
+      .lt('scheduled_date', today)
+      .in('status', ['planned', 'pending'] as any)
+      .order('scheduled_date', { ascending: true });
+    if (error) throw new Error(`Não foi possível carregar visitas pendentes: ${error.message}`);
+    return pending || [];
   });
 
 export const getPromoterAgenda = createServerFn({ method: "GET" })
@@ -388,6 +428,7 @@ export const requestEvidenceUpload = createServerFn({ method: "POST" })
     fileName: z.string(),
     fileType: z.string(),
     fileSize: z.number(),
+    clientUploadId: z.string().uuid(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { requestEvidenceUpload: fn } = await import("./execution.functions.server");
@@ -402,6 +443,7 @@ export const confirmEvidenceUpload = createServerFn({ method: "POST" })
     evidenceType: z.string(),
     filePath: z.string(),
     fileType: z.string(),
+    clientUploadId: z.string().uuid(),
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { confirmEvidenceUpload: fn } = await import("./execution.functions.server");

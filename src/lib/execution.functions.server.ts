@@ -289,10 +289,49 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
   }
 
   const routeStop = (visit as any).route_stop;
+  let routeStopId = visit.route_stop_id || routeStop?.id;
+  if (!routeStopId) {
+    const scheduledDate = String(visit.scheduled_date || '').slice(0, 10);
+    const visitDayOfWeek = new Date(`${scheduledDate}T12:00:00Z`).getUTCDay();
+    const { data: candidateRoutes, error: candidateRoutesError } = await supabaseAdmin
+      .from('routes')
+      .select('id, valid_from, route_stops(id, store_id, day_of_week)')
+      .eq('promoter_id', visit.promoter_id)
+      .eq('active', true)
+      .eq('status', 'published');
+
+    if (candidateRoutesError) {
+      throw new Error(`Não foi possível resolver a parada legada: ${candidateRoutesError.message}`);
+    }
+
+    const candidateStopIds = (candidateRoutes || []).flatMap((route: any) => {
+      if (route.valid_from && String(route.valid_from).slice(0, 10) > scheduledDate) return [];
+      return (route.route_stops || [])
+        .filter((stop: any) => stop.store_id === visit.store_id && Number(stop.day_of_week) === visitDayOfWeek)
+        .map((stop: any) => stop.id);
+    }).filter(Boolean);
+    const uniqueCandidateStopIds = [...new Set(candidateStopIds)] as string[];
+
+    if (uniqueCandidateStopIds.length > 1) {
+      throw new Error(`Não foi possível resolver a parada legada: há ${uniqueCandidateStopIds.length} paradas possíveis para storeId=${visit.store_id}, promoterId=${visit.promoter_id}, data=${scheduledDate}, dia da semana=${visitDayOfWeek}. Correção administrativa necessária.`);
+    }
+    if (uniqueCandidateStopIds.length === 0) {
+      throw new Error(`Parada legada não encontrada: storeId=${visit.store_id}, promoterId=${visit.promoter_id}, data=${scheduledDate}, dia da semana=${visitDayOfWeek}. Correção administrativa necessária.`);
+    }
+
+    routeStopId = uniqueCandidateStopIds[0];
+    const { error: linkError } = await supabaseAdmin
+      .from('visits')
+      .update({ route_stop_id: routeStopId } as any)
+      .eq('id', visit.id)
+      .is('route_stop_id', null);
+    if (linkError) throw new Error(`Não foi possível persistir o vínculo da parada legada: ${linkError.message}`);
+  }
+
   const { data: explicitTasks, error: taskError } = await supabaseAdmin
     .from('stop_tasks')
     .select('industry_id, industry:industries(*)')
-    .eq('stop_id', visit.route_stop_id || routeStop?.id || '');
+    .eq('stop_id', routeStopId);
   if (taskError) throw new Error(`Não foi possível carregar as indústrias da parada: ${taskError.message}`);
   const industries = (explicitTasks || []).map((task: any) => task.industry ? { ...task.industry, id: task.industry_id } : null).filter(Boolean);
 
@@ -420,8 +459,8 @@ export const requestEvidenceUpload = async ({ data, context }: any) => {
   if (!task) throw new Error("Indústria não pertence à parada.");
 
   const fileExt = data.fileName.split('.').pop();
-  const fileName = `${data.visitId}/${data.evidenceType}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const filePath = `evidences/${fileName}`;
+  const fileName = `${data.evidenceType}_${data.clientUploadId}.${fileExt}`;
+  const filePath = `${userId}/${data.visitId}/${data.industryId}/${fileName}`;
 
   const { data: uploadData, error: uploadError } = await supabaseAdmin
     .storage
@@ -431,6 +470,10 @@ export const requestEvidenceUpload = async ({ data, context }: any) => {
   if (uploadError) {
     console.error("Signed URL Error:", uploadError);
     throw new Error("Erro ao gerar autorização de upload.");
+  }
+
+  if (!uploadData?.signedUrl || !uploadData?.token) {
+    throw new Error("Servidor não retornou uma URL de upload válida.");
   }
 
   return {
@@ -464,6 +507,10 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
 
   if (!['replenishment', 'report', 'occurrence'].includes(data.evidenceType)) {
     throw new Error("Tipo de evidência inválido.");
+  }
+
+  if (data.filePath === "") {
+    throw new Error("Servidor não retornou uma URL de upload válida.");
   }
 
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(data.fileType)) {
@@ -501,7 +548,19 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
     throw new Error("Arquivo não encontrado no servidor.");
   }
 
-  // Insert into visit_evidence
+  const { data: existingEvidence } = await supabaseAdmin
+    .from('visit_evidence')
+    .select('*')
+    .eq('visit_id', data.visitId)
+    .eq('file_path', data.filePath)
+    .maybeSingle();
+  if (existingEvidence) {
+    const { data: signed, error: signedError } = await supabaseAdmin.storage.from('visit-evidences').createSignedUrl(data.filePath, 3600);
+    if (signedError || !signed?.signedUrl) throw new Error(`Registro existe, mas URL assinada falhou: ${signedError?.message || 'URL ausente'}`);
+    return { success: true, evidenceId: existingEvidence.id, filePath: existingEvidence.file_path, visitId: existingEvidence.visit_id, industryId: existingEvidence.industry_id, status: 'registered', signedUrl: signed.signedUrl };
+  }
+
+  // Insert into visit_evidence only after Storage confirmation
   const { data: evidence, error: insertError } = await supabaseAdmin
     .from('visit_evidence')
     .insert({
@@ -509,12 +568,28 @@ export const confirmEvidenceUpload = async ({ data, context }: any) => {
       file_path: data.filePath,
       file_type: data.fileType,
       evidence_type: data.evidenceType,
-      industry_id: data.industryId || null
+      industry_id: data.industryId || null,
+      created_at: new Date().toISOString()
     })
     .select()
     .single();
 
-  if (insertError) throw insertError;
+  if (insertError) throw new Error(`Não foi possível registrar a evidência: ${insertError.message}`);
+  const { data: persistedEvidence, error: persistedEvidenceError } = await supabaseAdmin
+    .from('visit_evidence')
+    .select('id, visit_id, industry_id, evidence_type, file_path, file_type')
+    .eq('id', evidence.id)
+    .eq('visit_id', data.visitId)
+    .eq('industry_id', data.industryId)
+    .eq('file_path', data.filePath)
+    .eq('evidence_type', 'replenishment')
+    .single();
+  if (persistedEvidenceError || !persistedEvidence) throw new Error(`Registro da evidência não foi confirmado após insert: ${persistedEvidenceError?.message || 'registro ausente'}`);
 
-  return evidence;
+  const { data: persistedObject, error: persistedStorageError } = await supabaseAdmin.storage.from('visit-evidences').list(folder, { limit: 1, search: fileName || '' });
+  if (persistedStorageError || !persistedObject?.length) throw new Error(`Arquivo desapareceu do Storage após registro: ${persistedStorageError?.message || data.filePath}`);
+
+  const { data: signed, error: signedError } = await supabaseAdmin.storage.from('visit-evidences').createSignedUrl(persistedEvidence.file_path, 3600);
+  if (signedError || !signed?.signedUrl) throw new Error(`Evidência registrada, mas URL assinada falhou: ${signedError?.message || 'URL ausente'}`);
+  return { success: true, evidenceId: persistedEvidence.id, filePath: persistedEvidence.file_path, visitId: persistedEvidence.visit_id, industryId: persistedEvidence.industry_id, status: 'registered', signedUrl: signed.signedUrl };
 };

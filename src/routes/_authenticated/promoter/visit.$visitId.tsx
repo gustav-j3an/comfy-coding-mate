@@ -182,6 +182,9 @@ function VisitExecution() {
   const store = (executionData as any)?.store;
   const industries = (executionData as any)?.industries || [];
   const activeIndustry = industries.find((ind: any) => ind.id === selectedIndustryId);
+  const hasUploadingEvidence = evidences.some((e: any) => e.status === 'uploading');
+  const hasFailedEvidence = evidences.some((e: any) => e.status === 'failed');
+  const hasUnconfirmedEvidence = evidences.some((e: any) => e.status !== 'registered');
   const activeIndustries = activeIndustry ? [activeIndustry] : [];
 
   useEffect(() => {
@@ -191,10 +194,11 @@ function VisitExecution() {
       fileType: e.fileType,
       evidenceType: e.evidenceType,
       industryId: e.industryId,
+      status: 'registered',
     })).filter((e: any) => e.industryId === selectedIndustryId);
     setEvidences((current) => current.length ? current : loaded);
     Promise.all(loaded.map(async (e: any) => {
-      try { return [e.filePath, (executionData as any).evidences.find((item: any) => item.filePath === e.filePath)?.signedUrl || await getSignedUrl({ data: { filePath: e.filePath } })]; } catch { return null; }
+      try { const result = await getSignedUrl({ data: { filePath: e.filePath } }); return [e.filePath, (executionData as any).evidences.find((item: any) => item.filePath === e.filePath)?.signedUrl || result.signedUrl]; } catch { return null; }
     })).then((entries) => setSignedUrls(Object.fromEntries(entries.filter(Boolean) as [string, string][])));
   }, [executionData, selectedIndustryId]);
 
@@ -258,11 +262,12 @@ function VisitExecution() {
       return;
     }
 
+    const pendingId = `pending-${Date.now()}`;
     try {
       setUploading(true);
       const localPreview = URL.createObjectURL(file);
-      const pendingId = `pending-${Date.now()}`;
-      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, pending: true }]);
+      const clientUploadId = crypto.randomUUID();
+      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
         data: {
@@ -271,25 +276,16 @@ function VisitExecution() {
           evidenceType: uploadEvidenceType,
           fileName: file.name,
           fileType: file.type,
-          fileSize: file.size
+          fileSize: file.size,
+          clientUploadId
         }
       });
 
-      // 2. Perform the upload to storage
-      // Note: We use the signed URL directly. 
-      // Supabase storage signed URLs for upload usually expect the file in the body.
-      const response = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-          'x-upsert': 'true'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Falha no upload para o Storage.");
-      }
+      // 2. Upload using the exact signed path/token returned by the server.
+      const { error: storageUploadError } = await supabase.storage
+        .from('visit-evidences')
+        .uploadToSignedUrl(filePath, token, file, { contentType: file.type, upsert: true });
+      if (storageUploadError) throw new Error(`Falha no upload para o Storage: ${storageUploadError.message}`);
 
       // 3. Confirm upload and create DB record
       const evidence = await confirmEvidenceUpload({
@@ -298,30 +294,30 @@ function VisitExecution() {
           industryId: uploadIndustryId,
           evidenceType: uploadEvidenceType,
           filePath,
-          fileType: file.type
+          fileType: file.type,
+          clientUploadId
         }
       });
+      if (!evidence.success || evidence.visitId !== visitId || evidence.industryId !== uploadIndustryId || evidence.filePath !== filePath || !evidence.signedUrl) {
+        throw new Error('Servidor não confirmou todos os dados da evidência.');
+      }
 
       setEvidences((current) => [...current.filter((e) => e.id !== pendingId), {
-        id: evidence.id,
-        filePath: evidence.file_path,
-        fileType: evidence.file_type,
-        evidenceType: evidence.evidence_type,
-        industryId: evidence.industry_id
+        id: evidence.evidenceId,
+        filePath: evidence.filePath,
+        fileType: file.type,
+        evidenceType: uploadEvidenceType,
+        industryId: evidence.industryId,
+        status: 'registered'
       }]);
 
       URL.revokeObjectURL(localPreview);
-      toast.success("Evidência enviada.");
+      setSignedUrls(prev => ({ ...prev, [evidence.filePath]: evidence.signedUrl }));
+      // A confirmação visual é o selo do item; o envio da visita tem seu próprio resultado.
       
-      // Get signed URL for preview
-      try {
-        const url = await getSignedUrl({ data: { filePath } });
-        setSignedUrls(prev => ({ ...prev, [filePath]: url }));
-      } catch (err) {
-        console.error("Error getting preview URL:", err);
-      }
     } catch (error: any) {
       console.error("Upload error details:", error);
+      setEvidences((current) => current.map((e) => e.id === pendingId ? { ...e, status: online ? 'failed' : 'pending_sync', pending: false, error: error?.message || 'Falha desconhecida' } : e));
       toast.error("Falha no envio — Tentar novamente");
     } finally {
       setUploading(false);
@@ -364,6 +360,11 @@ function VisitExecution() {
       return;
     }
 
+    if (!selectedIndustryId || !coords?.latitude || !coords?.longitude) {
+      toast.error('Localização obrigatória ainda não está disponível.');
+      return;
+    }
+
     if (!online) {
       await saveVisitDraft(user!.id, {
         visitId,
@@ -385,19 +386,23 @@ function VisitExecution() {
 
     setIsSubmitting(true);
     try {
-      await submitVisit({
+      if (import.meta.env.DEV) console.debug('[submitVisit] before', { visitId, industryId: selectedIndustryId, status: visit?.status, evidenceCount: evidences.length, locationPresent: Boolean(coords?.latitude && coords?.longitude) });
+      const submitResult = await submitVisit({
         data: {
           visitId,
+          industryId: selectedIndustryId,
           executorId: user!.id,
           checkinAt: checkinTime,
           checkoutAt: new Date().toISOString(),
           latitude: coords?.latitude,
           longitude: coords?.longitude,
           observation,
-          evidences,
+          evidences: evidences.filter((e: any) => e.status === 'registered' || !e.status),
           occurrences
         }
       });
+      if (import.meta.env.DEV) console.debug('[submitVisit] after', submitResult);
+      if (!submitResult.success) throw new Error('Servidor não confirmou o envio.');
 
       await deleteVisitDraft(user!.id, visitId, selectedIndustryId);
       await removeFromSyncQueue(user!.id, visitId);
@@ -406,6 +411,8 @@ function VisitExecution() {
       navigate({ to: '/promoter' });
     } catch (error: any) {
       console.error("Submit error:", error);
+      const details = error?.data || error?.cause || {};
+      toast.error(`submitVisit falhou — HTTP ${error?.status ?? error?.statusCode ?? 'n/a'} — código ${error?.code ?? details?.code ?? 'n/a'} — ${error?.message || 'erro desconhecido'} (visitId=${visitId}, industryId=${selectedIndustryId}, status=${visit?.status ?? 'desconhecido'})`);
       await addToSyncQueue(user!.id, visitId);
       toast.error("Erro ao enviar. O rascunho foi mantido na fila de sincronização.");
     } finally {
@@ -518,7 +525,7 @@ function VisitExecution() {
               <div key={ind.id} className="w-full space-y-2 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-bold text-slate-700">{ind.name}</span>
-                   {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'replenishment' && !e.pending) ? (
+                  {evidences.some(e => e.industryId === ind.id && e.evidenceType === 'replenishment' && e.status === 'registered') ? (
                     <Badge className="bg-green-100 text-green-700 border-none">
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Enviada
                     </Badge>
@@ -598,13 +605,15 @@ function VisitExecution() {
                     ev.pending ? <img src={ev.filePath} className="w-full h-full object-cover" alt="evidencia" />
                     : signedUrls[ev.filePath] ? <img src={signedUrls[ev.filePath]} className="w-full h-full object-cover" alt="evidencia" />
                     : <button className="text-[9px] text-slate-600 text-center p-1" onClick={async () => {
-                        try { const url = await getSignedUrl({ data: { filePath: ev.filePath } }); setSignedUrls(prev => ({ ...prev, [ev.filePath]: url })); }
+                        try { const result = await getSignedUrl({ data: { filePath: ev.filePath } }); setSignedUrls(prev => ({ ...prev, [ev.filePath]: result.signedUrl })); }
                         catch { toast.error("Não foi possível carregar esta foto"); }
                       }}>Não foi possível carregar esta foto<br /><u>Tentar novamente</u></button>
                   ) : (
                     <FileText className="h-8 w-8 text-slate-400" />
                   )}
-                  {ev.pending && <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] text-center">Enviando...</span>}
+                  {ev.status === 'uploading' && <span className="absolute bottom-0 inset-x-0 bg-blue-600 text-white text-[9px] text-center">Enviando foto…</span>}
+                  {ev.status === 'registered' && <span className="absolute bottom-0 inset-x-0 bg-green-600 text-white text-[9px] text-center">Foto enviada</span>}
+                  {ev.status === 'failed' && <span className="absolute bottom-0 inset-x-0 bg-red-600 text-white text-[9px] text-center">Falha — tentar novamente</span>}
                   <button 
                     onClick={() => setEvidences(evidences.filter((_, idx) => idx !== i))}
                     className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5"
@@ -667,7 +676,7 @@ function VisitExecution() {
         <Button 
           className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
           onClick={handleSubmit}
-          disabled={isSubmitting || loadingGeo}
+          disabled={isSubmitting || loadingGeo || hasUploadingEvidence || hasFailedEvidence || hasUnconfirmedEvidence || missingEvidences.length > 0}
         >
           {isSubmitting ? (
             <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Enviando...</>
