@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth/auth-context';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -101,6 +101,10 @@ function VisitExecution() {
   const uploadContextRef = useRef<{ industryId: string; evidenceType: string } | null>(null);
   const [activeEvidenceType, setActiveEvidenceType] = useState<string>('');
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(requestedIndustryId || '');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const restoreEpochRef = useRef(0);
+  const restoredKeyRef = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setSelectedIndustryId(requestedIndustryId || '');
@@ -109,6 +113,9 @@ function VisitExecution() {
     setOccurrences([]);
     setIsRestored(false);
     setSignedUrls({});
+    setScheduledDate('');
+    restoreEpochRef.current += 1;
+    restoredKeyRef.current = null;
   }, [visitId, requestedIndustryId]);
 
   // Handle online/offline status
@@ -124,22 +131,26 @@ function VisitExecution() {
 
   // Restore draft on load
   useEffect(() => {
+    const draftKey = `${user?.id}:${visitId}:${scheduledDate}:${requestedIndustryId}`;
+    if (restoredKeyRef.current === draftKey) return;
+    const restoreEpoch = restoreEpochRef.current;
     async function restoreDraft() {
-      if (!user?.id) return;
+    if (!user?.id || !scheduledDate) return;
       if (!requestedIndustryId) return;
       const draft = await getVisitDraft(user.id, visitId, scheduledDate, requestedIndustryId);
-      if (draft && !isRestored) {
+      if (restoreEpoch !== restoreEpochRef.current || restoredKeyRef.current === draftKey) return;
+      restoredKeyRef.current = draftKey;
+      if (draft) {
         setObservation(draft.observation || '');
         setEvidences((draft.evidences || []).filter((e: any) => e.visitId === visitId && e.industryId === requestedIndustryId && e.scheduledDate === scheduledDate && e.clientUploadId));
         setOccurrences(draft.occurrences || []);
         setLastSaved(draft.lastSaved);
-        setIsRestored(true);
         toast.info("Rascunho restaurado automaticamente.");
       }
       setIsRestored(true);
     }
     restoreDraft();
-  }, [visitId, isRestored]);
+  }, [visitId, requestedIndustryId, scheduledDate, user?.id]);
 
   // Auto-save draft
   useEffect(() => {
@@ -182,7 +193,7 @@ function VisitExecution() {
 
   const visit = (executionData as any)?.visit;
   const store = (executionData as any)?.store;
-  const scheduledDate = String(visit?.scheduled_date || '').slice(0, 10);
+  useEffect(() => { setScheduledDate(String(visit?.scheduled_date || '').slice(0, 10)); }, [visit?.scheduled_date]);
   const industries = (executionData as any)?.industries || [];
   const activeIndustry = industries.find((ind: any) => ind.id === selectedIndustryId);
   const hasUploadingEvidence = evidences.some((e: any) => e.status === 'uploading');
@@ -339,6 +350,7 @@ function VisitExecution() {
     uploadContextRef.current = { industryId, evidenceType: type };
     setSelectedIndustryId(industryId);
     setActiveEvidenceType(type);
+    restoreEpochRef.current += 1;
     (source === 'camera' ? cameraInputRef : galleryInputRef).current?.click();
   };
 
@@ -409,6 +421,7 @@ function VisitExecution() {
       if (!submitResult.success) throw new Error('Servidor não confirmou o envio.');
 
       await deleteVisitDraft(user!.id, visitId, scheduledDate, selectedIndustryId);
+      await queryClient.invalidateQueries({ queryKey: ['visit-execution', visitId, selectedIndustryId] });
       await removeFromSyncQueue(user!.id, visitId);
       
       toast.success("Visita enviada para conferência administrativa.");
