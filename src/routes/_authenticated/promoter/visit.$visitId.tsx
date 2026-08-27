@@ -50,8 +50,30 @@ export const Route = createFileRoute('/_authenticated/promoter/visit/$visitId')(
   validateSearch: (search: Record<string, unknown>) => ({
     industryId: typeof search['industryId'] === 'string' ? search['industryId'] : undefined,
   }),
+  errorComponent: VisitExecutionError,
   component: VisitExecution,
 });
+
+function VisitExecutionError({ error }: { error: unknown }) {
+  const { visitId } = Route.useParams();
+  const { industryId } = Route.useSearch();
+  const details = error as { status?: number; statusCode?: number; message?: string };
+  return (
+    <div className="min-h-screen bg-slate-50 p-6">
+      <Card className="mx-auto mt-12 max-w-xl border-red-200">
+        <CardContent className="space-y-3 p-6">
+          <h1 className="text-lg font-bold text-red-700">Não foi possível abrir a execução</h1>
+          <p className="text-sm text-slate-700">Erro original: {details?.message || String(error)}</p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-slate-500">
+            <dt>visitId</dt><dd className="font-mono">{visitId}</dd>
+            <dt>industryId</dt><dd className="font-mono">{industryId || '(ausente)'}</dd>
+            <dt>status HTTP</dt><dd>{details?.status ?? details?.statusCode ?? 'não informado'}</dd>
+          </dl>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function VisitExecution() {
   const { visitId } = Route.useParams();

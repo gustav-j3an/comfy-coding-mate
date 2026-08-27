@@ -282,7 +282,16 @@ export const getPromoterVisitExecution = async ({ data, context }: any) => {
 
   const routeStop = (visit as any).route_stop;
   const tasks = routeStop?.stop_tasks || [];
-  const industries = tasks.map((t: any) => t.industry).filter(Boolean);
+  let industries = tasks.map((t: any) => t.industry).filter(Boolean);
+
+  if (industries.length === 0 && visit.route_stop_id) {
+    const { data: explicitTasks, error: taskError } = await supabaseAdmin
+      .from('stop_tasks')
+      .select('industry_id, industry:industries(*)')
+      .eq('stop_id', visit.route_stop_id);
+    if (taskError) throw new Error(`Não foi possível carregar as indústrias da parada: ${taskError.message}`);
+    industries = (explicitTasks || []).map((task: any) => task.industry ? { ...task.industry, id: task.industry_id } : null).filter(Boolean);
+  }
 
   if (industries.length === 0 && visit.industry) {
     industries.push(visit.industry);
@@ -340,9 +349,15 @@ export const getPromoterVisitIndustries = async ({ data, context }: any) => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (!userId) throw new Error("Não autorizado.");
   const { data: profile } = await supabaseAdmin.from('profiles').select('promoter_id').eq('id', userId).single();
-  const { data: visit } = await supabaseAdmin.from('visits').select('promoter_id, route_stop:route_stops(stop_tasks(industry:industries(*)))').eq('id', data.visitId).single();
+  const { data: visit } = await supabaseAdmin.from('visits').select('id, promoter_id, route_stop_id, route_stop:route_stops(stop_tasks(industry:industries(*)))').eq('id', data.visitId).single();
   if (!profile?.promoter_id || !visit || visit.promoter_id !== profile.promoter_id) throw new Error("Acesso negado a esta visita.");
-  return { industries: ((visit as any).route_stop?.stop_tasks || []).map((task: any) => task.industry).filter(Boolean) };
+  let tasks = (visit as any).route_stop?.stop_tasks || [];
+  if (tasks.length === 0 && (visit as any).route_stop_id) {
+    const { data: explicitTasks, error } = await supabaseAdmin.from('stop_tasks').select('industry_id, industry:industries(*)').eq('stop_id', (visit as any).route_stop_id);
+    if (error) throw new Error(`Não foi possível carregar as indústrias da parada: ${error.message}`);
+    tasks = explicitTasks || [];
+  }
+  return { industries: tasks.map((task: any) => task.industry ? { ...task.industry, id: task.industry_id } : null).filter(Boolean) };
 };
 
 export const requestEvidenceUpload = async ({ data, context }: any) => {
