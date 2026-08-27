@@ -5,12 +5,13 @@ const getUserPrefix = (userId: string) => `user_${userId}_`;
 
 // Key templates
 const getVisitsCacheKey = (userId: string) => `${getUserPrefix(userId)}cached_promoter_visits`;
-const getDraftKey = (userId: string, visitId: string, industryId: string) => `${getUserPrefix(userId)}visit_draft_${visitId}_${industryId}`;
+const getDraftKey = (userId: string, visitId: string, scheduledDate: string, industryId: string) => `${getUserPrefix(userId)}visit_draft_${visitId}_${scheduledDate}_${industryId}`;
 const getSyncQueueKey = (userId: string) => `${getUserPrefix(userId)}sync_queue`;
 
 export interface VisitDraft {
   visitId: string;
   industryId: string;
+  scheduledDate: string;
   executorId: string;
   checkinAt: string;
   observation: string;
@@ -47,7 +48,7 @@ export async function getCachedVisits(userId: string) {
  * Saves a visit draft locally.
  */
 export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'lastSaved' | 'status'> & { status?: VisitDraft['status'] }) {
-  const currentDraft = await getVisitDraft(userId, draft.visitId, draft.industryId);
+  const currentDraft = await getVisitDraft(userId, draft.visitId, draft.scheduledDate, draft.industryId);
   
   const fullDraft: VisitDraft = {
     ...draft,
@@ -56,15 +57,15 @@ export async function saveVisitDraft(userId: string, draft: Omit<VisitDraft, 'la
     requiredEvidenceTypes: currentDraft?.requiredEvidenceTypes || ['replenishment'] // Default requirement
   };
   
-  await set(getDraftKey(userId, draft.visitId, draft.industryId), fullDraft);
+  await set(getDraftKey(userId, draft.visitId, draft.scheduledDate, draft.industryId), fullDraft);
   return fullDraft;
 }
 
-export async function getVisitDraft(userId: string, visitId: string, industryId: string): Promise<VisitDraft | null> {
-  const draft = await get(getDraftKey(userId, visitId, industryId)) as VisitDraft | null;
+export async function getVisitDraft(userId: string, visitId: string, scheduledDate: string, industryId: string): Promise<VisitDraft | null> {
+  const draft = await get(getDraftKey(userId, visitId, scheduledDate, industryId)) as VisitDraft | null;
   
   // Validate ownership
-  if (draft && draft.executorId !== userId) {
+  if (draft && (draft.executorId !== userId || draft.visitId !== visitId || draft.scheduledDate !== scheduledDate || draft.industryId !== industryId)) {
     console.warn('Draft ownership mismatch detected and blocked.');
     return null;
   }
@@ -72,8 +73,8 @@ export async function getVisitDraft(userId: string, visitId: string, industryId:
   return draft;
 }
 
-export async function deleteVisitDraft(userId: string, visitId: string, industryId: string) {
-  await del(getDraftKey(userId, visitId, industryId));
+export async function deleteVisitDraft(userId: string, visitId: string, scheduledDate: string, industryId: string) {
+  await del(getDraftKey(userId, visitId, scheduledDate, industryId));
 }
 
 /**

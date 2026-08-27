@@ -127,10 +127,10 @@ function VisitExecution() {
     async function restoreDraft() {
       if (!user?.id) return;
       if (!requestedIndustryId) return;
-      const draft = await getVisitDraft(user.id, visitId, requestedIndustryId);
+      const draft = await getVisitDraft(user.id, visitId, scheduledDate, requestedIndustryId);
       if (draft && !isRestored) {
         setObservation(draft.observation || '');
-        setEvidences(draft.evidences || []);
+        setEvidences((draft.evidences || []).filter((e: any) => e.visitId === visitId && e.industryId === requestedIndustryId && e.scheduledDate === scheduledDate && e.clientUploadId));
         setOccurrences(draft.occurrences || []);
         setLastSaved(draft.lastSaved);
         setIsRestored(true);
@@ -149,6 +149,7 @@ function VisitExecution() {
       const draft = await saveVisitDraft(user.id, {
         visitId,
         industryId: selectedIndustryId,
+        scheduledDate,
         executorId: user.id,
         checkinAt: checkinTime,
         observation,
@@ -181,6 +182,7 @@ function VisitExecution() {
 
   const visit = (executionData as any)?.visit;
   const store = (executionData as any)?.store;
+  const scheduledDate = String(visit?.scheduled_date || '').slice(0, 10);
   const industries = (executionData as any)?.industries || [];
   const activeIndustry = industries.find((ind: any) => ind.id === selectedIndustryId);
   const hasUploadingEvidence = evidences.some((e: any) => e.status === 'uploading');
@@ -225,7 +227,7 @@ function VisitExecution() {
     // Update draft status if offline
     if (user?.id && isRestored) {
       const updateStatus = async () => {
-        const draft = await getVisitDraft(user.id, visitId, selectedIndustryId);
+        const draft = await getVisitDraft(user.id, visitId, scheduledDate, selectedIndustryId);
         if (draft && (draft.status === 'awaiting_media' || draft.status === 'offline_draft' || draft.status === 'ready_to_send')) {
           const newStatus = missing.length > 0 ? 'awaiting_media' : 'ready_to_send';
           if (draft.status !== newStatus) {
@@ -268,7 +270,7 @@ function VisitExecution() {
       setUploading(true);
       const localPreview = URL.createObjectURL(file);
       const clientUploadId = crypto.randomUUID();
-      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
+      setEvidences((current) => [...current, { id: pendingId, filePath: localPreview, localPreview, fileType: file.type, evidenceType: uploadEvidenceType, industryId: uploadIndustryId, visitId, scheduledDate, clientUploadId, status: online ? 'uploading' : 'pending_sync', pending: true }]);
       // 1. Request upload authorization
       const { uploadUrl, filePath, token } = await requestEvidenceUpload({
         data: {
@@ -370,6 +372,7 @@ function VisitExecution() {
       await saveVisitDraft(user!.id, {
         visitId,
         industryId: selectedIndustryId,
+        scheduledDate,
         executorId: user!.id,
         checkinAt: checkinTime,
         observation,
@@ -405,7 +408,7 @@ function VisitExecution() {
       if (import.meta.env.DEV) console.debug('[submitVisit] after', submitResult);
       if (!submitResult.success) throw new Error('Servidor não confirmou o envio.');
 
-      await deleteVisitDraft(user!.id, visitId, selectedIndustryId);
+      await deleteVisitDraft(user!.id, visitId, scheduledDate, selectedIndustryId);
       await removeFromSyncQueue(user!.id, visitId);
       
       toast.success("Visita enviada para conferência administrativa.");

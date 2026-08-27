@@ -365,15 +365,34 @@ export const getPromoterPendingVisits = createServerFn({ method: "GET" })
     const promoterId = profile?.promoter_id;
     if (!promoterId) return [];
     const today = new Date().toISOString().slice(0, 10);
-    const { data: pending, error } = await supabaseAdmin
+    // Do not build this list from stop_tasks/evidences/occurrences joins. Those
+    // one-to-many relationships can repeat the same scheduled industry.
+    const { data: visits, error } = await supabaseAdmin
       .from('visits')
       .select('id, store_id, industry_id, scheduled_date, status, store:stores(name), industry:industries(name)')
       .eq('promoter_id', promoterId)
       .lt('scheduled_date', today)
-      .in('status', ['planned', 'pending'] as any)
+      .in('status', ['planned', 'pending', 'submitted', 'approved'] as any)
       .order('scheduled_date', { ascending: true });
     if (error) throw new Error(`Não foi possível carregar visitas pendentes: ${error.message}`);
-    return pending || [];
+
+    type VisitRow = NonNullable<typeof visits>[number] & { promoter_id?: string };
+    const unique = new Map<string, VisitRow>();
+    for (const visit of (visits || []) as VisitRow[]) {
+      const key = `${promoterId}+${visit.scheduled_date}+${visit.store_id}+${visit.industry_id}`;
+      const existing = unique.get(key);
+      const isCompleted = ['submitted', 'approved'].includes(String(visit.status));
+      const existingCompleted = existing && ['submitted', 'approved'].includes(String(existing.status));
+
+      // A confirmed attendance wins over any duplicated planned/pending row.
+      if (!existing || (isCompleted && !existingCompleted)) {
+        unique.set(key, { ...visit, promoter_id: promoterId, pendingKey: key } as VisitRow & { pendingKey: string });
+      }
+    }
+
+    return Array.from(unique.values())
+      .filter((visit) => !['submitted', 'approved'].includes(String(visit.status)))
+      .map((visit: any) => ({ ...visit, pendingKey: `${promoterId}+${visit.scheduled_date}+${visit.store_id}+${visit.industry_id}` }));
   });
 
 export const getPromoterAgenda = createServerFn({ method: "GET" })

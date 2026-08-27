@@ -248,7 +248,7 @@ function PromoterDashboard() {
           const drafts: Record<string, any> = {};
           for (const v of (visits || [])) {
             if (!v.id) continue;
-            const draft = await getVisitDraft(user.id, v.id, v.industry_id).catch(() => null);
+            const draft = await getVisitDraft(user.id, v.id, String(v.scheduled_date).slice(0, 10), v.industry_id).catch(() => null);
             if (draft) {
               drafts[v.id] = draft;
             }
@@ -346,7 +346,7 @@ function PromoterDashboard() {
             <CardHeader><CardTitle className="text-amber-800 flex items-center gap-2"><Clock className="h-5 w-5" /> Visitas pendentes</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {pendingVisits.map((pending: any) => (
-                <div key={pending.id} className="flex items-center justify-between gap-3 rounded-lg bg-white p-3 border border-amber-100">
+                <div key={pending.pendingKey || pending.id} className="relative flex items-center justify-between gap-3 rounded-lg bg-white p-3 border border-amber-100">
                   <div className="min-w-0"><p className="font-bold text-slate-800 truncate">{pending.store?.name} — {pending.industry?.name}</p><p className="text-xs text-amber-700">Pendente desde {format(new Date(`${pending.scheduled_date}T12:00:00Z`), 'dd/MM/yyyy')}</p></div>
                   <Button size="sm" className="shrink-0 bg-amber-600 hover:bg-amber-700" onClick={() => navigate({ to: '/promoter/visit/$visitId', params: { visitId: pending.id }, search: { industryId: pending.industry_id } })}>Realizar agora</Button>
                 </div>
